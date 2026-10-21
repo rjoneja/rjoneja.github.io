@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A picture-first ordering game for 6 to 8 year olds. No ads, no sign-up.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#E6FAF2">
+<title>Line Up!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Andika:wght@400;700&display=swap">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}</style>
+</head>
+<body>
+<style>
+/* Layout: one big friendly column. Chunky tiles, pictures first, words second. A single bright daytime look. */
+:root {
+  --bg: #E6FAF2;
+  --surface: #FFFFFF;
+  --ink: #0B2E4F;
+  --soft: #4E6A82;
+  --line: #BFE6D8;
+  --blue: #0066BB;
+  --lime: #9BC21B;
+  --aqua: #3FE0C5;
+  --sun: #FFD23F;
+  --coral: #FF6B5B;
+  --ok: #2FA84F;
+  --shadow: 0 5px 0 #0B2E4F;
+  --font-display: "Baloo 2", "Arial Rounded MT Bold", ui-rounded, system-ui, sans-serif;
+  --font-body: "Andika", "Comic Sans MS", ui-rounded, system-ui, sans-serif;
+  color-scheme: light;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.4; -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+.app {
+  max-width: 480px; margin: 0 auto; min-height: 100%; box-sizing: border-box;
+  padding-block: 12px 28px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* Header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.logo { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 800; font-size: 26px; letter-spacing: -0.01em; background: none; border: 0; padding: 0; cursor: pointer; }
+.logo-mark { display: grid; gap: 3px; }
+.logo-mark i { display: block; height: 6px; border-radius: 3px; border: 2px solid var(--ink); }
+.logo-mark i:nth-child(1) { width: 14px; background: var(--coral); }
+.logo-mark i:nth-child(2) { width: 20px; background: var(--sun); }
+.logo-mark i:nth-child(3) { width: 26px; background: var(--aqua); }
+.top-btns { display: flex; gap: 8px; }
+.icon-btn {
+  width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--surface);
+  display: grid; place-items: center; cursor: pointer; box-shadow: 0 3px 0 var(--ink); font-size: 22px; padding: 0;
+}
+.icon-btn[aria-pressed="true"] { background: var(--sun); }
+.icon-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.icon-btn:focus-visible, .big:focus-visible, .tile:focus-visible, .row:focus-visible .card, .age button:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.sticker-count { position: relative; }
+.sticker-count b { position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; border-radius: 11px; background: var(--coral); color: #fff; font-size: 13px; display: grid; place-items: center; border: 2px solid var(--ink); font-family: var(--font-display); }
+
+/* Home */
+.hello { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 34px; line-height: 1.05; text-wrap: balance; }
+.age { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 700; }
+.age button { min-width: 54px; height: 44px; border-radius: 22px; border: 2.5px solid var(--ink); background: var(--surface); font-family: var(--font-display); font-weight: 800; font-size: 20px; cursor: pointer; }
+.age button[aria-pressed="true"] { background: var(--blue); color: #fff; }
+.big {
+  appearance: none; border: 3px solid var(--ink); border-radius: 24px; background: var(--lime); color: var(--ink);
+  font-family: var(--font-display); font-weight: 800; font-size: 30px; padding: 14px 20px; cursor: pointer; box-shadow: var(--shadow);
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.big:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.big.blue { background: var(--blue); color: #fff; }
+.big.small { font-size: 22px; padding: 10px 16px; border-radius: 18px; }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.tile {
+  appearance: none; border: 3px solid var(--ink); border-radius: 22px; background: var(--surface); padding: 12px; cursor: pointer;
+  display: grid; justify-items: start; gap: 2px; text-align: left; box-shadow: 0 4px 0 var(--ink); min-width: 0;
+}
+.tile:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.tile .em { font-size: 38px; line-height: 1.1; }
+.tile b { font-family: var(--font-display); font-weight: 800; font-size: 21px; line-height: 1.1; }
+.tile span { font-size: 14px; color: var(--soft); }
+.section-h { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 22px; }
+
+/* Game */
+.dots { display: flex; gap: 8px; justify-content: center; }
+.dots i { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--surface); }
+.dots i.done { background: var(--sun); }
+.dots i.now { background: var(--aqua); transform: scale(1.2); }
+.ask { display: flex; align-items: flex-start; gap: 10px; }
+.ask h1 { margin: 0; flex: 1; font-family: var(--font-display); font-weight: 800; font-size: 30px; line-height: 1.08; text-wrap: balance; }
+.end { display: flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 800; font-size: 18px; color: var(--blue); }
+.end.low { color: var(--soft); }
+.stack { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.row { position: relative; height: 76px; touch-action: none; user-select: none; -webkit-user-select: none; transition: transform .25s cubic-bezier(.2, .8, .2, 1); outline: none; cursor: grab; }
+.row.dragging { z-index: 5; transition: none; cursor: grabbing; }
+.card {
+  position: absolute; inset: 0; display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  background: var(--surface); border: 3px solid var(--ink); border-radius: 22px; padding: 0 14px 0 8px; box-shadow: 0 4px 0 var(--ink);
+  transition: background .25s, border-color .25s, transform .2s;
+}
+.row.dragging .card { transform: rotate(-2deg) scale(1.03); box-shadow: 0 10px 0 var(--ink); }
+.row.picked .card { background: #FFF6C9; border-color: var(--blue); box-shadow: 0 4px 0 var(--blue); transform: translateX(8px); }
+.row.ok .card { background: #E3F8E6; }
+.pic { width: 56px; height: 56px; border-radius: 50%; background: var(--bg); display: grid; place-items: center; font-size: 36px; line-height: 1; }
+.label { font-family: var(--font-display); font-weight: 700; font-size: 23px; line-height: 1.1; min-width: 0; overflow-wrap: anywhere; }
+.label.huge { font-size: 34px; font-weight: 800; }
+.right { display: flex; align-items: center; gap: 6px; }
+.tick { width: 30px; height: 30px; border-radius: 50%; background: var(--ok); color: #fff; display: grid; place-items: center; font-weight: 800; opacity: 0; transform: scale(.4); transition: opacity .2s, transform .3s cubic-bezier(.34, 1.56, .64, 1); }
+.row.ok .tick { opacity: 1; transform: none; }
+.val { font-family: var(--font-display); font-weight: 800; font-size: 17px; color: var(--blue); white-space: nowrap; }
+.coin { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 17px; border: 3px solid #8a5a17; background: radial-gradient(circle at 35% 30%, #F7C28A, #C9762B); color: #4a2a05; }
+.coin.silver { border-color: #7d8792; background: radial-gradient(circle at 35% 30%, #F4F6F8, #AEB6BF); color: #2c3540; }
+.coin.gold { border-color: #9a7a0c; background: radial-gradient(circle at 35% 30%, #FFF0A0, #D9B22C); color: #4a3a00; }
+.coin.two { border: 7px solid #D9B22C; background: radial-gradient(circle at 35% 30%, #F4F6F8, #AEB6BF); color: #2c3540; font-size: 15px; }
+.planet { width: 48px; height: 48px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff8, transparent 55%), var(--p); border: 2.5px solid var(--ink); position: relative; }
+.planet.ring::after { content: ""; position: absolute; left: -12px; right: -12px; top: 50%; height: 10px; margin-top: -5px; border: 3px solid var(--ink); border-radius: 50%; transform: rotate(-18deg); }
+.shape svg { width: 46px; height: 46px; }
+
+/* Round result */
+.cheer { display: grid; gap: 10px; padding: 16px; border: 3px solid var(--ink); border-radius: 24px; background: var(--surface); box-shadow: var(--shadow); animation: up .35s cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes up { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+.cheer h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 32px; line-height: 1; }
+.stars { display: flex; gap: 6px; }
+.stars svg { width: 40px; height: 40px; fill: var(--line); stroke: var(--ink); stroke-width: 1.5px; transform: scale(.5); transition: transform .4s cubic-bezier(.34, 1.56, .64, 1), fill .2s; }
+.stars svg.on { fill: var(--sun); transform: none; }
+.fact { margin: 0; font-size: 18px; }
+.fact b { font-family: var(--font-display); }
+
+/* Reward and stickers */
+.reward { display: grid; justify-items: center; gap: 14px; text-align: center; }
+.reward h1 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 38px; line-height: 1; }
+.badge { width: 160px; height: 160px; border-radius: 50%; border: 4px solid var(--ink); background: var(--sun); display: grid; place-items: center; font-size: 96px; box-shadow: var(--shadow); animation: spin-in .8s cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes spin-in { from { transform: scale(.2) rotate(-200deg); } to { transform: none; } }
+.reward p { margin: 0; font-size: 19px; }
+.btn-row { display: grid; gap: 10px; width: 100%; }
+.book { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.book i { aspect-ratio: 1; max-width: 100%; border-radius: 50%; border: 3px solid var(--ink); background: var(--surface); display: grid; place-items: center; font-style: normal; font-size: 40px; }
+.book i.no { background: var(--line); color: var(--soft); font-family: var(--font-display); font-weight: 800; font-size: 26px; border-style: dashed; }
+
+/* Grown-ups */
+.hold { position: relative; overflow: hidden; }
+.hold::after { content: ""; position: absolute; inset: 0; background: var(--aqua); transform: scaleX(0); transform-origin: left; opacity: .6; }
+.hold.holding::after { transform: scaleX(1); transition: transform 2s linear; }
+.grown { display: grid; gap: 12px; padding: 16px; border: 3px solid var(--ink); border-radius: 20px; background: var(--surface); }
+.grown h2 { margin: 0; font-family: var(--font-display); font-size: 24px; }
+.grown p { margin: 0; font-size: 15px; color: var(--soft); }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 700; }
+.toggle { border: 2.5px solid var(--ink); border-radius: 18px; padding: 6px 14px; background: var(--surface); font-family: var(--font-display); font-weight: 800; cursor: pointer; }
+.toggle[aria-pressed="true"] { background: var(--lime); }
+.fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
+
+@media (prefers-reduced-motion: reduce) {
+  .row, .card, .tick, .stars svg { transition: none !important; }
+  .cheer, .badge { animation: none; }
+}
+</style>
+
+<main class="app">
+  <header class="top">
+    <button class="logo" id="homeBtn" type="button" aria-label="Line Up! home"><span class="logo-mark" aria-hidden="true"><i></i><i></i><i></i></span>Line Up!</button>
+    <div class="top-btns">
+      <button class="icon-btn" id="soundBtn" type="button" aria-pressed="false" aria-label="Read aloud">🔈</button>
+      <button class="icon-btn sticker-count" id="bookBtn" type="button" aria-label="Sticker book">⭐<b id="stickerN">0</b></button>
+    </div>
+  </header>
+
+  <!-- Home -->
+  <section id="home" class="home" style="display:flex;flex-direction:column;gap:16px">
+    <h1 class="hello">Put things in the right order!</h1>
+    <div class="age" role="group" aria-label="How old are you?">I'm
+      <button type="button" data-age="6" aria-pressed="false">6</button>
+      <button type="button" data-age="7" aria-pressed="true">7</button>
+      <button type="button" data-age="8" aria-pressed="false">8</button>
+    </div>
+    <button class="big" id="playBtn" type="button">▶ Play!</button>
+    <h2 class="section-h">Or pick a topic</h2>
+    <div class="tiles" id="tiles"></div>
+    <button class="toggle hold" id="grownBtn" type="button" style="justify-self:start">Grown-ups: hold for 2 seconds</button>
+    <div class="grown" id="grown" hidden>
+      <h2>For grown-ups</h2>
+      <div class="switch">Read questions aloud when a round starts<button class="toggle" id="autoRead" type="button" aria-pressed="false">Off</button></div>
+      <div class="switch">Clear the sticker book<button class="toggle" id="resetBtn" type="button">Clear</button></div>
+      <p>No ads and no sign-up. Progress is saved only on this device. Facts use rounded, typical figures, for example an average adult elephant's weight.</p>
+    </div>
+  </section>
+
+  <!-- Game -->
+  <section id="game" hidden style="display:flex;flex-direction:column;gap:14px">
+    <div class="dots" id="dots" aria-hidden="true"></div>
+    <div class="ask"><h1 id="q">Which is heaviest?</h1><button class="icon-btn" id="sayBtn" type="button" aria-label="Read the question">🔊</button></div>
+    <div class="end" id="topEnd">⬆ Heaviest</div>
+    <ol class="stack" id="stack"></ol>
+    <div class="end low" id="botEnd">⬇ Lightest</div>
+    <div class="cheer" id="cheer" hidden aria-live="polite">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h2 id="cheerT">Brilliant!</h2><div class="stars" id="stars"></div></div>
+      <p class="fact" id="fact"></p>
+      <button class="big blue" id="nextBtn" type="button">Next ▶</button>
+    </div>
+  </section>
+
+  <!-- Reward -->
+  <section id="reward" class="reward" hidden>
+    <h1 id="rewardT">You won a sticker!</h1>
+    <div class="badge" id="badge">🦊</div>
+    <p id="rewardP">You got 12 stars.</p>
+    <div class="btn-row">
+      <button class="big" id="againBtn" type="button">Play again</button>
+      <button class="big small blue" id="toBook" type="button">See my stickers</button>
+    </div>
+  </section>
+
+  <!-- Sticker book -->
+  <section id="bookView" hidden style="display:flex;flex-direction:column;gap:14px">
+    <h1 class="hello" id="bookT">My stickers</h1>
+    <div class="book" id="book"></div>
+    <button class="big small" id="bookHome" type="button">Back</button>
+  </section>
+
+  <canvas class="fx" id="fx" aria-hidden="true"></canvas>
+</main>
+
+<script>
+(() => {
+  // ---------- Saved progress (this device only) ----------
+  const KEY = 'lineup.kids';
+  let P = { age: 7, stickers: [], sound: false, autoRead: false, games: 0 };
+  try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch {} };
+  const $ = id => document.getElementById(id);
+  const rnd = n => Math.floor(Math.random() * n);
+  const pick = a => a[rnd(a.length)];
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const n0 = v => v.toLocaleString('en-GB');
+  const buzz = p => { try { navigator.vibrate && navigator.vibrate(p); } catch {} };
+
+  // ---------- Pictures ----------
+  const E = (e, t, v, s) => ({ kind: 'emoji', e, t, v, s });
+  const shapeSvg = n => {
+    const pts = [];
+    for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / n; pts.push(`${(50 + 42 * Math.cos(a)).toFixed(1)},${(52 + 42 * Math.sin(a)).toFixed(1)}`); }
+    return `<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${pts.join(' ')}" fill="#3FE0C5" stroke="#0B2E4F" stroke-width="7" stroke-linejoin="round"/></svg>`;
+  };
+  const COCOON = '<svg viewBox="0 0 100 100" width="44" height="44" aria-hidden="true"><line x1="50" y1="4" x2="50" y2="18" stroke="#0B2E4F" stroke-width="6" stroke-linecap="round"/><ellipse cx="50" cy="55" rx="22" ry="38" fill="#9BC21B" stroke="#0B2E4F" stroke-width="6"/><path d="M34 45 Q50 52 66 45 M33 62 Q50 69 67 62" fill="none" stroke="#0B2E4F" stroke-width="4"/></svg>';
+  function picHtml(it) {
+    if (it.kind === 'emoji') return `<span class="pic">${it.e}</span>`;
+    if (it.kind === 'coin') return `<span class="coin ${it.cls || ''}">${it.t}</span>`;
+    if (it.kind === 'planet') return `<span class="pic"><span class="planet${it.ring ? ' ring' : ''}" style="--p:${it.c}"></span></span>`;
+    if (it.kind === 'shape') return `<span class="pic shape">${shapeSvg(it.sides)}</span>`;
+    if (it.kind === 'svg') return `<span class="pic">${it.svg}</span>`;
+    return '';
+  }
+
+  // ---------- Question bank ----------
+  // Each builder returns { q, top, bottom, asc, items, fact, say? }. Values are typical, rounded figures; every pair shown is far apart.
+  const ANIMAL_WEIGHT = [E('🐋', 'Blue whale', 150000, 'about 150,000 kg'), E('🐘', 'Elephant', 6000, 'about 6,000 kg'), E('🦛', 'Hippo', 1500, 'about 1,500 kg'),
+    E('🐎', 'Horse', 500, 'about 500 kg'), E('🧍', 'Grown-up', 70, 'about 70 kg'), E('🐕', 'Dog', 30, 'about 30 kg'), E('🐈', 'Cat', 4, 'about 4 kg'),
+    E('🐇', 'Rabbit', 2, 'about 2 kg'), E('🐁', 'Mouse', 0.02, 'about 20 g')];
+  const ANIMAL_SPEED = [E('🐆', 'Cheetah', 110, 'about 110 km/h'), E('🐎', 'Horse', 70, 'about 70 km/h'), E('🏃', 'Fast runner', 40, 'about 40 km/h'),
+    E('🐔', 'Chicken', 14, 'about 14 km/h'), E('🐢', 'Tortoise', 0.3, 'very slow!'), E('🐌', 'Snail', 0.05, 'super slow!')];
+  const LEGS = [E('🐍', 'Snake', 0, '0 legs'), E('🐔', 'Chicken', 2, '2 legs'), E('🐕', 'Dog', 4, '4 legs'), E('🐜', 'Ant', 6, '6 legs'),
+    E('🕷️', 'Spider', 8, '8 legs'), E('🦀', 'Crab', 10, '10 legs')];
+  const TALL_ANIMALS = [E('🦒', 'Giraffe', 5.5, 'about 5.5 m'), E('🐘', 'Elephant', 3.3, 'about 3 m'), E('🧍', 'Grown-up', 1.7, 'about 1.7 m'),
+    E('🐕', 'Dog', 0.6, 'about 60 cm'), E('🐈', 'Cat', 0.25, 'about 25 cm'), E('🐁', 'Mouse', 0.05, 'about 5 cm')];
+  const TALL_THINGS = [E('🏙️', 'The Shard', 310, '310 m'), E('🕰️', 'Big Ben', 96, '96 m'), E('🏠', 'House', 8, 'about 8 m'), E('🦒', 'Giraffe', 5.5, 'about 5.5 m'),
+    E('🚌', 'Double-decker bus', 4.4, 'about 4.4 m'), E('🧍', 'Grown-up', 1.7, 'about 1.7 m')];
+  const HOT = [E('🌞', "The Sun's surface", 5500, 'about 5,500 °C'), E('🌋', 'Lava', 1100, 'about 1,100 °C'), E('🍕', 'Hot oven', 200, 'about 200 °C'),
+    E('☕', 'Cup of tea', 80, 'about 80 °C'), E('🛁', 'Warm bath', 38, 'about 38 °C'), E('🏖️', "Summer's day", 25, 'about 25 °C'),
+    E('🥛', 'Inside the fridge', 4, 'about 4 °C'), E('❄️', 'Freezer', -18, 'about −18 °C')];
+  const COINS = [['1p', 1, ''], ['2p', 2, ''], ['5p', 5, 'silver'], ['10p', 10, 'silver'], ['20p', 20, 'silver'], ['50p', 50, 'silver'], ['£1', 100, 'gold'], ['£2', 200, 'two']]
+    .map(([t, v, cls]) => ({ kind: 'coin', t, v, cls, s: v >= 100 ? `${v / 100} pound${v > 100 ? 's' : ''}` : v === 1 ? '1 penny' : `${v} pence` }));
+  const SHAPES = [['Triangle', 3], ['Square', 4], ['Pentagon', 5], ['Hexagon', 6], ['Octagon', 8]].map(([t, n]) => ({ kind: 'shape', t, v: n, sides: n, s: `${n} sides` }));
+  const PLANETS = [['Mercury', '#B9B3AA', 4879], ['Venus', '#E8C27A', 12104], ['Earth', '#3B8EEA', 12756], ['Mars', '#E0663A', 6792],
+    ['Jupiter', '#D9A06B', 142984], ['Saturn', '#E9D08F', 120536], ['Uranus', '#8FE3E8', 51118], ['Neptune', '#4F6BEF', 49528]]
+    .map(([t, c, d], i) => ({ kind: 'planet', t, c, ring: t === 'Saturn', order: i + 1, size: d }));
+  const ABC = [['🍎', 'Apple'], ['⚽', 'Ball'], ['🐱', 'Cat'], ['🐶', 'Dog'], ['🥚', 'Egg'], ['🐟', 'Fish'], ['🍇', 'Grapes'], ['🎩', 'Hat'], ['🍦', 'Ice cream'],
+    ['🪁', 'Kite'], ['🍋', 'Lemon'], ['🌙', 'Moon'], ['🦉', 'Owl'], ['🐷', 'Pig'], ['🐰', 'Rabbit'], ['☀️', 'Sun'], ['🌳', 'Tree'], ['☂️', 'Umbrella'],
+    ['🚐', 'Van'], ['🐳', 'Whale'], ['🦓', 'Zebra']].map(([e, t]) => E(e, t, t.charCodeAt(0), t[0]));
+  const SEQS = [
+    { q: 'How does a butterfly grow?', fact: 'Inside the chrysalis, a caterpillar turns into a butterfly!',
+      items: [E('🥚', 'Egg'), E('🐛', 'Caterpillar'), { kind: 'svg', svg: COCOON, t: 'Chrysalis' }, E('🦋', 'Butterfly')] },
+    { q: 'How does a chicken grow?', fact: 'A chick hatches about 3 weeks after the egg is laid.',
+      items: [E('🥚', 'Egg'), E('🐣', 'Hatching'), E('🐥', 'Chick'), E('🐔', 'Hen')] },
+    { q: 'How does a sunflower grow?', fact: 'Sunflowers turn to face the Sun while they are growing.',
+      items: [E('🌰', 'Seed'), E('🌱', 'Sprout'), E('🌿', 'Plant'), E('🌻', 'Flower')] },
+    { q: 'How do people grow up?', fact: 'Babies have more bones than grown-ups. Some join together as we grow!',
+      items: [E('👶', 'Baby'), E('🧒', 'Child'), E('🧑', 'Grown-up'), E('🧓', 'Grandparent')] },
+    { q: 'Put the day in order.', fact: 'Children need about 10 hours of sleep every night.',
+      items: [E('⏰', 'Wake up'), E('🥣', 'Breakfast'), E('🥪', 'Lunch'), E('🍝', 'Dinner'), E('🛏️', 'Bedtime')] },
+    { q: 'Put the seasons in order, starting with spring.', fact: 'The seasons happen because the Earth is tilted as it goes round the Sun.',
+      items: [E('🌷', 'Spring'), E('☀️', 'Summer'), E('🍂', 'Autumn'), E('⛄', 'Winter')] },
+    { q: 'Put the days in order, starting with Monday.', fact: 'Saturday is named after the planet Saturn!',
+      items: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(t => E('📅', t)) },
+    { q: 'Which month comes first in the year?', fact: 'August is named after a Roman emperor called Augustus.',
+      items: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(t => E('🗓️', t)) }
+  ].map(sq => { sq.items.forEach((it, i) => { it.v = i; it.s = it.s || ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'][i]; }); return sq; });
+
+  // Pick n items whose values are clearly apart, keeping any order subset (for sequences, any subset still has one right order).
+  function choose(pool, n, gap = 0) {
+    for (let t = 0; t < 60; t++) {
+      const got = [];
+      for (const it of shuffle(pool.slice())) {
+        if (got.every(g => Math.abs(g.v - it.v) > gap && (gap === 0 || Math.abs(g.v - it.v) / Math.max(Math.abs(g.v), Math.abs(it.v)) > 0.12))) got.push(it);
+        if (got.length === n) return got.map(x => Object.assign({}, x));
+      }
+    }
+    return shuffle(pool.slice()).slice(0, n).map(x => Object.assign({}, x));
+  }
+  const NUMWORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen',
+    'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+  const numItem = (v, t) => ({ kind: 'num', t: t != null ? t : String(v), v, s: t != null ? String(v) : '' });
+  function distinctNums(n, lo, hi, minGap = 1) {
+    const out = new Set();
+    let guard = 0;
+    while (out.size < n && guard++ < 500) {
+      const x = lo + rnd(hi - lo + 1);
+      if ([...out].every(y => Math.abs(y - x) >= minGap)) out.add(x);
+    }
+    return [...out];
+  }
+  // Sums by age, following the UK curriculum: Year 1 within 20, Year 2 within 100 and the 2, 5 and 10 times tables, Year 3 the 3, 4 and 8 tables.
+  function makeSum(age) {
+    const r = Math.random();
+    if (age <= 6) {
+      if (r < 0.6) { const a = 1 + rnd(9), b = 1 + rnd(10 - a); return [`${a} + ${b}`, a + b]; }
+      const a = 3 + rnd(8), b = 1 + rnd(a - 1); return [`${a} − ${b}`, a - b];
+    }
+    if (age === 7) {
+      if (r < 0.35) { const a = 2 + rnd(15), b = 1 + rnd(20 - a); return [`${a} + ${b}`, a + b]; }
+      if (r < 0.6) { const a = 6 + rnd(15), b = 1 + rnd(a - 1); return [`${a} − ${b}`, a - b]; }
+      if (r < 0.8) { const a = 2 + rnd(9); return [`double ${a}`, a * 2]; }
+      const t = pick([2, 5, 10]), k = 1 + rnd(10); return [`${k} × ${t}`, k * t];
+    }
+    if (r < 0.3) { const a = 10 + rnd(60), b = 5 + rnd(30); return [`${a} + ${b}`, a + b]; }
+    if (r < 0.55) { const a = 30 + rnd(60), b = 5 + rnd(25); return [`${a} − ${b}`, a - b]; }
+    const t = pick([2, 3, 4, 5, 8, 10]), k = 2 + rnd(11); return [`${k} × ${t}`, k * t];
+  }
+
+  const TOPICS = [
+    { id: 'animals', em: '🐾', name: 'Animals', sub: 'Big, fast, legs', make: n => pick([
+      () => ({ q: 'Which animal is heaviest?', top: 'Heaviest', bottom: 'Lightest', asc: false, items: choose(ANIMAL_WEIGHT, n, 1e-9), fact: 'A blue whale is the heaviest animal that has ever lived. It weighs as much as 25 elephants!' }),
+      () => ({ q: 'Which animal is fastest?', top: 'Fastest', bottom: 'Slowest', asc: false, items: choose(ANIMAL_SPEED, n, 1e-9), fact: 'A cheetah can run as fast as a car on a motorway!' }),
+      () => ({ q: 'Which has the most legs?', top: 'Most legs', bottom: 'Fewest legs', asc: false, items: choose(LEGS, n), fact: 'Spiders have 8 legs, so they are not insects. Insects like ants have 6.' }),
+      () => ({ q: 'Which animal is tallest?', top: 'Tallest', bottom: 'Shortest', asc: false, items: choose(TALL_ANIMALS, n, 1e-9), fact: 'A giraffe is taller than a double-decker bus!' })
+    ])() },
+    { id: 'numbers', em: '🔢', name: 'Numbers', sub: 'Biggest and smallest', make: (n, age) => {
+      const hi = age <= 6 ? 20 : age === 7 ? 100 : 1000;
+      const kind = Math.random();
+      if (age <= 7 && kind < 0.3) {
+        const vs = distinctNums(n, 0, 20);
+        return { q: 'Which number is smallest?', top: 'Smallest', bottom: 'Biggest', asc: true, items: vs.map(v => numItem(v, NUMWORDS[v])), fact: 'Reading number words is a super skill!' };
+      }
+      if (age >= 7 && kind < 0.55) {
+        const vs = distinctNums(n, 11, 99);
+        return { q: 'Which is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false,
+          items: vs.map(v => numItem(v, `${Math.floor(v / 10)} tens and ${v % 10} ones`)), fact: 'The tens matter most. 4 tens is more than 39 ones put together!' };
+      }
+      const big = Math.random() < 0.5;
+      const vs = distinctNums(n, 0, hi, age >= 8 ? 5 : 1);
+      return { q: big ? 'Which number is biggest?' : 'Which number is smallest?', top: big ? 'Biggest' : 'Smallest', bottom: big ? 'Smallest' : 'Biggest', asc: !big,
+        items: vs.map(v => numItem(v)), fact: `The biggest number here is ${n0(Math.max(...vs))}.`, huge: true };
+    } },
+    { id: 'sums', em: '➕', name: 'Sums', sub: 'Add, take away, times', make: (n, age) => {
+      const seen = new Set(), items = [];
+      let guard = 0;
+      while (items.length < n && guard++ < 200) {
+        const [t, v] = makeSum(age);
+        if (seen.has(v)) continue;
+        seen.add(v); items.push({ kind: 'num', t, v, s: `= ${v}` });
+      }
+      const big = Math.random() < 0.6;
+      return { q: big ? 'Which answer is biggest?' : 'Which answer is smallest?', top: big ? 'Biggest answer' : 'Smallest answer', bottom: big ? 'Smallest answer' : 'Biggest answer',
+        asc: !big, items, fact: 'Work out each answer first, then put them in order.', huge: true };
+    } },
+    { id: 'grow', em: '🦋', name: 'What comes next', sub: 'Life cycles, days, seasons', make: n => {
+      const sq = pick(SEQS);
+      const k = Math.min(n, sq.items.length);
+      // Keep the order: pick k items, then they get shuffled on screen.
+      const idx = shuffle(sq.items.map((_, i) => i)).slice(0, k).sort((a, b) => a - b);
+      const items = idx.map(i => Object.assign({}, sq.items[i]));
+      return { q: sq.q, top: 'First', bottom: 'Last', asc: true, items, fact: sq.fact };
+    } },
+    { id: 'space', em: '🪐', name: 'Space', sub: 'Planets and the Sun', make: n => pick([
+      () => ({ q: 'Which planet is closest to the Sun?', top: 'Closest', bottom: 'Furthest', asc: true,
+        items: choose(PLANETS.map(p => Object.assign({}, p, { v: p.order, s: `${['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'][p.order - 1]} from the Sun` })), n),
+        fact: 'Mercury is closest to the Sun, but Venus is the hottest planet!' }),
+      () => ({ q: 'Which planet is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false,
+        items: choose(PLANETS.map(p => Object.assign({}, p, { v: p.size, s: `${n0(p.size)} km wide` })), n, 1e-9),
+        fact: 'More than 1,000 Earths could fit inside Jupiter!' }),
+      () => ({ q: 'Which is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false,
+        items: [E('☀️', 'The Sun', 1392700, '1,392,700 km wide'), E('🌍', 'The Earth', 12742, '12,742 km wide'), E('🌕', 'The Moon', 3474, '3,474 km wide')].slice(0, 3),
+        fact: 'About a million Earths could fit inside the Sun!' })
+    ])() },
+    { id: 'world', em: '🌍', name: 'Our world', sub: 'Coins, hot and cold, shapes, ABC', make: n => pick([
+      () => ({ q: 'Which coin is worth the most?', top: 'Most money', bottom: 'Least money', asc: false, items: choose(COINS, n), fact: 'A £2 coin is worth the same as two hundred 1p coins!' }),
+      () => ({ q: 'Which is hottest?', top: 'Hottest', bottom: 'Coldest', asc: false, items: choose(HOT, n), fact: 'The surface of the Sun is about 5,500 °C. That is hotter than any oven on Earth!' }),
+      () => ({ q: 'Which shape has the most sides?', top: 'Most sides', bottom: 'Fewest sides', asc: false, items: choose(SHAPES, n), fact: 'A stop sign is an octagon. It has 8 sides!' }),
+      () => ({ q: 'Put them in ABC order.', top: 'A', bottom: 'Z', asc: true, items: choose(ABC, n), fact: 'There are 26 letters in the alphabet.' }),
+      () => ({ q: 'Which is tallest?', top: 'Tallest', bottom: 'Shortest', asc: false, items: choose(TALL_THINGS, n, 1e-9), fact: 'The Shard in London is as tall as 70 double-decker buses stacked up!' })
+    ])() }
+  ];
+
+  // ---------- Read aloud ----------
+  let voice = null;
+  function pickVoice() {
+    try { const vs = speechSynthesis.getVoices(); voice = vs.find(v => /en-GB/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null; } catch {}
+  }
+  try { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; } catch {}
+  function say(text) {
+    if (!P.sound) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text.replace(/−/g, ' minus ').replace(/×/g, ' times ').replace(/\+/g, ' plus '));
+      if (voice) u.voice = voice;
+      u.rate = 0.92; u.pitch = 1.05;
+      speechSynthesis.speak(u);
+    } catch {}
+  }
+  const soundBtn = $('soundBtn');
+  const paintSound = () => { soundBtn.setAttribute('aria-pressed', String(P.sound)); soundBtn.textContent = P.sound ? '🔊' : '🔈'; };
+  soundBtn.addEventListener('click', () => { P.sound = !P.sound; save(); paintSound(); if (P.sound) say('Read aloud is on.'); else try { speechSynthesis.cancel(); } catch {} });
+  paintSound();
+
+  // ---------- Confetti ----------
+  const fx = $('fx'), fxc = fx.getContext && fx.getContext('2d');
+  let bits = [], running = false;
+  const calm = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
+  function confetti(count) {
+    if (!fxc || calm()) return;
+    const pal = ['#FF6B5B', '#FFD23F', '#9BC21B', '#3FE0C5', '#0066BB'];
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    fx.width = innerWidth * dpr; fx.height = innerHeight * dpr; fxc.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (let i = 0; i < count; i++) {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.4, sp = 6 + Math.random() * 10;
+      bits.push({ x: innerWidth / 2, y: innerHeight * 0.4, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, s: 6 + Math.random() * 8, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: pal[i % pal.length], life: 120 });
+    }
+    if (!running) { running = true; requestAnimationFrame(step); }
+  }
+  function step() {
+    fxc.clearRect(0, 0, innerWidth, innerHeight);
+    bits = bits.filter(b => b.life > 0 && b.y < innerHeight + 30);
+    for (const b of bits) {
+      b.vy += 0.3; b.vx *= 0.985; b.x += b.vx; b.y += b.vy; b.r += b.vr; b.life--;
+      fxc.save(); fxc.translate(b.x, b.y); fxc.rotate(b.r); fxc.fillStyle = b.c; fxc.globalAlpha = Math.min(1, b.life / 30);
+      fxc.fillRect(-b.s / 2, -b.s / 3, b.s, b.s * 0.66); fxc.restore();
+    }
+    if (bits.length) requestAnimationFrame(step); else { running = false; fxc.clearRect(0, 0, innerWidth, innerHeight); }
+  }
+
+  // ---------- Screens ----------
+  const views = ['home', 'game', 'reward', 'bookView'];
+  function show(id) { views.forEach(v => { $(v).hidden = v !== id; }); window.scrollTo(0, 0); }
+  $('tiles').innerHTML = TOPICS.map(t => `<button class="tile" type="button" data-t="${t.id}"><span class="em" aria-hidden="true">${t.em}</span><b>${t.name}</b><span>${t.sub}</span></button>`).join('');
+  document.querySelectorAll('.age button').forEach(b => {
+    b.setAttribute('aria-pressed', String(Number(b.dataset.age) === P.age));
+    b.addEventListener('click', () => {
+      P.age = Number(b.dataset.age); save();
+      document.querySelectorAll('.age button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    });
+  });
+  const STICKERS = ['🦊', '🐼', '🐨', '🐯', '🦁', '🐸', '🐵', '🦄', '🐙', '🦖', '🐢', '🦒', '🐧', '🦉', '🐳', '🦋', '🐝', '🐞', '🦜', '🦩', '🐬', '🦔', '🐿️', '🦥'];
+  const paintCount = () => { $('stickerN').textContent = P.stickers.length; };
+  paintCount();
+
+  // ---------- A game: 5 rounds ----------
+  const ROUNDS = 5;
+  let G = null, R = null;
+  function startGame(topicId) {
+    G = { topic: topicId, i: 0, stars: 0, order: [] };
+    // Mixed play rotates topics and always includes some maths.
+    if (!topicId) {
+      const others = shuffle(['animals', 'grow', 'space', 'world']);
+      G.order = shuffle([pick(['numbers', 'sums']), 'sums', others[0], others[1], others[2]]);
+    }
+    show('game');
+    nextRound();
+  }
+  function sizeFor(i) { return P.age >= 8 ? (i < 1 ? 3 : 4) : i < 2 ? 3 : 4; }
+  function nextRound() {
+    const topic = TOPICS.find(t => t.id === (G.topic || G.order[G.i]));
+    const n = sizeFor(G.i);
+    const r = topic.make(n, P.age);
+    const correct = r.items.slice().sort((a, b) => r.asc ? a.v - b.v : b.v - a.v);
+    let order;
+    do { order = shuffle(correct.slice()); } while (order.every((it, k) => it === correct[k]));
+    R = Object.assign(r, { correct, order, moves: 0, done: false, picked: null });
+    R.min = Math.min(minMoves(order, correct), minSwaps(order, correct));
+    $('dots').innerHTML = Array.from({ length: ROUNDS }, (_, k) => `<i class="${k < G.i ? 'done' : k === G.i ? 'now' : ''}"></i>`).join('');
+    $('q').textContent = r.q;
+    $('topEnd').textContent = '⬆ ' + r.top;
+    $('botEnd').textContent = '⬇ ' + r.bottom;
+    $('cheer').hidden = true;
+    build();
+    if (P.sound && P.autoRead) say(r.q);
+  }
+  function minMoves(order, correct) {
+    const a = order.map(it => correct.indexOf(it)), best = a.map(() => 1);
+    for (let i = 0; i < a.length; i++) for (let j = 0; j < i; j++) if (a[j] < a[i]) best[i] = Math.max(best[i], best[j] + 1);
+    return a.length - Math.max(...best);
+  }
+  function minSwaps(order, correct) {
+    const a = order.map(it => correct.indexOf(it)), seen = a.map(() => false);
+    let cycles = 0;
+    for (let i = 0; i < a.length; i++) { if (seen[i]) continue; cycles++; for (let j = i; !seen[j]; j = a[j]) seen[j] = true; }
+    return a.length - cycles;
+  }
+
+  const stack = $('stack');
+  function build() {
+    stack.innerHTML = '';
+    R.order.forEach(it => {
+      const li = document.createElement('li');
+      li.className = 'row';
+      li.tabIndex = 0;
+      const pic = picHtml(it);
+      li.innerHTML = `<div class="card">${pic || '<span></span>'}<span class="label${R.huge || it.kind === 'num' ? ' huge' : ''}"></span><span class="right"><span class="val"></span><span class="tick" aria-hidden="true">✓</span></span></div>`;
+      if (!pic) li.querySelector('.card').style.gridTemplateColumns = '0 minmax(0, 1fr) auto';
+      li.querySelector('.label').textContent = it.t;
+      if (it.kind === 'num' && it.t.length > 9) li.querySelector('.label').classList.remove('huge');
+      it.el = li;
+      li.addEventListener('pointerdown', e => down(e, it));
+      li.addEventListener('pointermove', move);
+      li.addEventListener('pointerup', up);
+      li.addEventListener('pointercancel', up);
+      li.addEventListener('keydown', e => key(e, it));
+      stack.appendChild(li);
+    });
+    paint();
+  }
+  function paint() {
+    R.order.forEach((it, i) => {
+      it.el.classList.toggle('ok', R.correct[i] === it);
+      it.el.setAttribute('aria-label', `${i + 1}: ${it.t}${R.correct[i] === it ? ', correct' : ''}`);
+    });
+  }
+  function flip(mutate) {
+    const rows = [...stack.children];
+    const before = new Map(rows.map(r => [r, r.getBoundingClientRect().top]));
+    rows.forEach(r => { r.style.transition = 'none'; r.style.transform = ''; });
+    mutate();
+    rows.forEach(r => { const d = before.get(r) - r.getBoundingClientRect().top; r.style.transform = d ? `translateY(${d}px)` : ''; });
+    void stack.offsetHeight;
+    requestAnimationFrame(() => rows.forEach(r => { r.style.transition = ''; r.style.transform = ''; }));
+  }
+  function apply() { R.order.forEach(it => stack.appendChild(it.el)); paint(); }
+  function after() {
+    R.moves++;
+    const okNow = R.order.filter((it, i) => R.correct[i] === it).length;
+    buzz(okNow > (R.lastOk || 0) ? 15 : 6);
+    R.lastOk = okNow;
+    if (okNow === R.order.length) solved();
+  }
+  function swapItems(a, b) {
+    const i = R.order.indexOf(a), j = R.order.indexOf(b);
+    flip(() => { [R.order[i], R.order[j]] = [R.order[j], R.order[i]]; apply(); });
+    after();
+  }
+  function moveItem(from, to) {
+    if (from === to) { flip(() => {}); return; }
+    flip(() => { const [it] = R.order.splice(from, 1); R.order.splice(to, 0, it); apply(); });
+    after();
+  }
+  function clearPick() { if (R.picked) R.picked.el.classList.remove('picked'); R.picked = null; }
+  function tap(it) {
+    if (R.done) return;
+    if (P.sound) say(it.t);
+    if (!R.picked) { R.picked = it; it.el.classList.add('picked'); buzz(5); return; }
+    if (R.picked === it) return clearPick();
+    const a = R.picked; clearPick(); swapItems(a, it);
+  }
+  let D = null;
+  function down(e, it) {
+    if (R.done || D) return;
+    D = { it, id: e.pointerId, y0: e.clientY, x0: e.clientX, drag: false, start: R.order.indexOf(it), target: R.order.indexOf(it), h: 86 };
+    try { it.el.setPointerCapture(e.pointerId); } catch {}
+  }
+  function move(e) {
+    if (!D || e.pointerId !== D.id) return;
+    const dy = e.clientY - D.y0;
+    if (!D.drag) {
+      if (Math.abs(dy) < 8) return;
+      D.drag = true; clearPick();
+      const rows = R.order.map(o => o.el);
+      D.h = rows.length > 1 ? rows[1].offsetTop - rows[0].offsetTop : 86;
+      D.it.el.classList.add('dragging');
+    }
+    D.it.el.style.transform = `translateY(${dy}px)`;
+    const t = Math.max(0, Math.min(R.order.length - 1, Math.round(D.start + dy / D.h)));
+    D.target = t;
+    R.order.forEach((o, i) => {
+      if (o === D.it) return;
+      let s = 0;
+      if (D.start < t && i > D.start && i <= t) s = -D.h;
+      if (t < D.start && i >= t && i < D.start) s = D.h;
+      o.el.style.transform = s ? `translateY(${s}px)` : '';
+    });
+  }
+  function up(e) {
+    if (!D || e.pointerId !== D.id) return;
+    const d = D; D = null;
+    if (d.drag) { d.it.el.classList.remove('dragging'); if (e.type === 'pointercancel') return flip(() => {}); moveItem(d.start, d.target); }
+    else if (e.type === 'pointerup') tap(d.it);
+  }
+  function key(e, it) {
+    if (R.done) return;
+    const i = R.order.indexOf(it);
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); return tap(it); }
+    const to = { ArrowUp: i - 1, ArrowDown: i + 1 }[e.key];
+    if (to == null || to < 0 || to >= R.order.length) return;
+    e.preventDefault(); moveItem(i, to); R.order[to].el.focus({ preventScroll: true });
+  }
+
+  const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg>';
+  function solved() {
+    R.done = true;
+    R.order.forEach(it => { it.el.querySelector('.val').textContent = it.s || ''; });
+    const stars = R.moves <= R.min ? 3 : R.moves <= R.min + 2 ? 2 : 1;
+    G.stars += stars;
+    $('cheerT').textContent = pick(stars === 3 ? ['Amazing!', 'Perfect!', 'Superstar!'] : stars === 2 ? ['Brilliant!', 'Great job!', 'Well done!'] : ['You did it!', 'Nice work!', 'Hooray!']);
+    $('stars').innerHTML = STAR.repeat(3);
+    [...$('stars').children].forEach((s, i) => { if (i < stars) setTimeout(() => { s.classList.add('on'); buzz(12); }, 250 + i * 250); });
+    $('fact').innerHTML = '<b>Fun fact:</b> ';
+    $('fact').append(R.fact);
+    $('nextBtn').textContent = G.i < ROUNDS - 1 ? 'Next ▶' : 'Finish ▶';
+    $('cheer').hidden = false;
+    confetti(stars === 3 ? 90 : 50);
+    say(`${$('cheerT').textContent} ${R.fact}`);
+    setTimeout(() => $('cheer').scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'nearest' }), 150);
+  }
+  $('nextBtn').addEventListener('click', () => {
+    G.i++;
+    if (G.i < ROUNDS) return nextRound();
+    finish();
+  });
+  function finish() {
+    P.games++;
+    const left = STICKERS.filter(s => !P.stickers.includes(s));
+    const got = left.length ? pick(left) : pick(STICKERS);
+    if (left.length) P.stickers.push(got);
+    save(); paintCount();
+    $('badge').textContent = got;
+    $('rewardT').textContent = left.length ? 'You won a sticker!' : 'Sticker book full!';
+    $('rewardP').textContent = `You got ${G.stars} out of ${ROUNDS * 3} stars.`;
+    show('reward');
+    confetti(160);
+    buzz([30, 60, 30, 60, 90]);
+    say(`${$('rewardT').textContent} You got ${G.stars} stars!`);
+  }
+  function showBook() {
+    $('book').innerHTML = STICKERS.map(s => P.stickers.includes(s) ? `<i>${s}</i>` : '<i class="no">?</i>').join('');
+    $('bookT').textContent = `My stickers: ${P.stickers.length} of ${STICKERS.length}`;
+    show('bookView');
+  }
+
+  $('playBtn').addEventListener('click', () => startGame(null));
+  $('tiles').addEventListener('click', e => { const t = e.target.closest('.tile'); if (t) startGame(t.dataset.t); });
+  $('againBtn').addEventListener('click', () => startGame(G && G.topic));
+  $('toBook').addEventListener('click', showBook);
+  $('bookBtn').addEventListener('click', showBook);
+  $('bookHome').addEventListener('click', () => show('home'));
+  $('homeBtn').addEventListener('click', () => { try { speechSynthesis.cancel(); } catch {} show('home'); });
+  $('sayBtn').addEventListener('click', () => {
+    if (!P.sound) { P.sound = true; save(); paintSound(); }
+    say(R ? `${R.q} ${R.order.map(it => it.t).join(', ')}` : '');
+  });
+
+  // Grown-ups: hold for 2 seconds so a quick tap from a child does nothing.
+  const gb = $('grownBtn');
+  let holdT = 0;
+  const startHold = e => { e.preventDefault(); gb.classList.add('holding'); holdT = setTimeout(() => { gb.classList.remove('holding'); $('grown').hidden = !$('grown').hidden; }, 2000); };
+  const stopHold = () => { clearTimeout(holdT); gb.classList.remove('holding'); };
+  gb.addEventListener('pointerdown', startHold);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => gb.addEventListener(t, stopHold));
+  gb.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) startHold(e); });
+  gb.addEventListener('keyup', stopHold);
+  const ar = $('autoRead');
+  const paintAR = () => { ar.setAttribute('aria-pressed', String(P.autoRead)); ar.textContent = P.autoRead ? 'On' : 'Off'; };
+  ar.addEventListener('click', () => { P.autoRead = !P.autoRead; if (P.autoRead) P.sound = true; save(); paintAR(); paintSound(); });
+  paintAR();
+  let resetArm = false;
+  $('resetBtn').addEventListener('click', () => {
+    if (!resetArm) { resetArm = true; $('resetBtn').textContent = 'Tap again to clear'; setTimeout(() => { resetArm = false; $('resetBtn').textContent = 'Clear'; }, 3000); return; }
+    P.stickers = []; save(); paintCount(); resetArm = false; $('resetBtn').textContent = 'Cleared';
+  });
+
+  show('home');
+})();
+</script>
+
+</body>
+</html>
