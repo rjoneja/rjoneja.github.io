@@ -998,6 +998,8 @@ h1 {
   const saveProg = () => { try { localStorage.setItem(PROG_KEY, JSON.stringify(prog)); } catch {} };
   // Shared scores live on a small Cloudflare Worker. The ID is random and only marks "this device" on the boards.
   const API = 'https://api.ordogame.com';
+  // Player counts only show once they look healthy; "3 people played" puts people off.
+  const SHOW_COUNT = 50;
   if (!prog.pid) {
     let id = '';
     try { id = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => (b % 36).toString(36)).join(''); } catch {}
@@ -1661,7 +1663,7 @@ h1 {
     if (res && res.board) {
       const players = Math.max(res.board.players || 0, res.rankDay);
       const rk = $('dRank');
-      rk.textContent = `You're ${ordinal(res.rankDay)} of ${n0(players)} today.`;
+      rk.textContent = players >= SHOW_COUNT ? `You're ${ordinal(res.rankDay)} of ${n0(players)} today.` : `You're ${ordinal(res.rankDay)} today.`;
       rk.hidden = false;
       const inAll = res.rankAll <= 5, inDay = res.rankDay <= 5;
       if ((!inDay && !inAll) || !res.score) return;
@@ -1714,8 +1716,8 @@ h1 {
       if (!b || boardTab !== tab || $('boards').hidden) return;
       renderShared(list, tab === 'day' ? b.today : b.all, tab === 'all');
       note.textContent = tab === 'day'
-        ? `Everyone's scores for today's puzzle. ${n0(b.players)} ${b.players === 1 ? 'person has' : 'people have'} played.`
-        : `Best daily scores ever, from ${n0(b.playersEver)} ${b.playersEver === 1 ? 'player' : 'players'}.`;
+        ? `Everyone's scores for today's puzzle.` + (b.players >= SHOW_COUNT ? ` ${n0(b.players)} people have played.` : '')
+        : `Best daily scores ever` + (b.playersEver >= SHOW_COUNT ? `, from ${n0(b.playersEver)} players.` : '.');
     });
   }
   $('boardsBtn').addEventListener('click', showBoards);
@@ -1946,7 +1948,7 @@ h1 {
       : run ? `In progress · round ${run.res.length + 1} of 4 · tap to carry on` : '4 rounds · about 90 seconds · same puzzle for everyone';
     api(`/api/board?day=${no}`).then(b => {
       const n = b && b.players, el2 = $('dcPlayers');
-      if (!n || dailyNo() !== no) return;
+      if (!n || n < SHOW_COUNT || dailyNo() !== no) return;
       el2.textContent = n === 1 ? '1 person has played today' : `${n0(n)} people have played today`;
       el2.hidden = false;
     });
