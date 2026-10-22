@@ -4,13 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Put things in the right order before the clock runs out. A new puzzle every day, the same for everyone.">
-<meta property="og:title" content="QuickRank">
+<meta property="og:title" content="Ordo">
 <meta property="og:description" content="Put things in the right order before the clock runs out. A new puzzle every day, the same for everyone.">
 <meta property="og:image" content="https://ordogame.com/og.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#EDF0FF">
-<title>QuickRank</title>
+<meta name="apple-mobile-web-app-title" content="Ordo">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" type="image/png" sizes="64x64">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<title>Ordo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Atkinson+Hyperlegible:wght@400;700&family=Martian+Mono:wght@400;600&family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap">
@@ -91,12 +96,21 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-body); f
 
 /* Header */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.mark { display: flex; align-items: center; gap: 9px; font-family: var(--font-display); font-weight: var(--dw); font-size: 20px; letter-spacing: -0.03em; }
-.glyph { display: grid; gap: 2px; }
-.glyph i { display: block; height: 4px; border-radius: 1px; }
-.glyph i:nth-child(1) { width: 18px; background: var(--g1); }
-.glyph i:nth-child(2) { width: 13px; background: var(--g2); }
-.glyph i:nth-child(3) { width: 8px; background: var(--g3); }
+.mark { display: flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: var(--dw); font-size: 20px; letter-spacing: -0.03em; }
+/* Brand: mark B (ranked bars between an up and a down arrowhead) in fixed brand colours. */
+.logo { width: 34px; height: 34px; flex: none; overflow: visible; }
+.logo polygon, .logo rect { stroke: #1A1033; stroke-linejoin: round; }
+.logo polygon { stroke-width: 5; }
+.logo rect { stroke-width: 4; fill: #FFC82E; transform-box: fill-box; transform-origin: center; }
+.logo .lg-up { fill: #F2353B; }
+.logo .lg-dn { fill: #3FB6E0; }
+.wordmark { font-family: "Fredoka", "Arial Rounded MT Bold", ui-rounded, system-ui, sans-serif; font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
+.mark .wordmark { font-size: 25px; transform: translateY(-1px); }
+.splash { position: fixed; inset: 0; z-index: 50; background: var(--bg); color: var(--fg); display: grid; place-content: center; justify-items: center; gap: 14px;
+  transition: opacity .35s ease; cursor: pointer; }
+.splash.out { opacity: 0; pointer-events: none; }
+.splash .logo { width: 150px; height: 150px; }
+.splash .wordmark { font-size: 56px; }
 .hud { display: flex; align-items: center; gap: 14px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
 .lives { display: flex; gap: 3px; }
 .lives i { width: 14px; height: 6px; border-radius: 2px; background: var(--accent); transition: background .3s, transform .3s; }
@@ -381,8 +395,6 @@ h1 {
 .tool { display: flex; align-items: center; gap: 8px; }
 
 /* ---------- Toybox skin: structure ---------- */
-:root[data-skin="pop"] .mark { font-size: 22px; letter-spacing: -0.01em; }
-:root[data-skin="pop"] .glyph i { height: 5px; border-radius: 3px; border: 1.5px solid var(--edge); }
 :root[data-skin="pop"] .lives i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--edge); background: var(--c0); }
 :root[data-skin="pop"] .lives i.lost { background: transparent; transform: scale(.75); }
 :root[data-skin="pop"] .eyebrow, :root[data-skin="pop"] .end, :root[data-skin="pop"] .tool-label { font-weight: 800; letter-spacing: .06em; }
@@ -468,9 +480,26 @@ h1 {
 }
 </style>
 
+<div class="splash" id="splash" hidden aria-hidden="true">
+  <svg class="logo" viewBox="0 0 120 120" aria-hidden="true">
+      <polygon class="lg-up" points="60,6 86,28 34,28"/>
+      <rect class="lg-b" x="20" y="38" width="80" height="13" rx="6.5"/>
+      <rect class="lg-b" x="28" y="55" width="64" height="13" rx="6.5"/>
+      <rect class="lg-b" x="36" y="72" width="48" height="13" rx="6.5"/>
+      <polygon class="lg-dn" points="34,92 86,92 60,114"/>
+    </svg>
+  <span class="wordmark">ordo</span>
+</div>
+
 <main class="app">
   <header class="top">
-    <div class="mark"><span class="glyph" aria-hidden="true"><i></i><i></i><i></i></span>QuickRank</div>
+    <div class="mark" id="mark" role="img" aria-label="Ordo"><svg class="logo" viewBox="0 0 120 120" aria-hidden="true">
+      <polygon class="lg-up" points="60,6 86,28 34,28"/>
+      <rect class="lg-b" x="20" y="38" width="80" height="13" rx="6.5"/>
+      <rect class="lg-b" x="28" y="55" width="64" height="13" rx="6.5"/>
+      <rect class="lg-b" x="36" y="72" width="48" height="13" rx="6.5"/>
+      <polygon class="lg-dn" points="34,92 86,92 60,114"/>
+    </svg><span class="wordmark" aria-hidden="true">ordo</span></div>
     <div class="hud">
       <div class="lives" id="lives" aria-label="Lives"><i></i><i></i><i></i></div>
       <span class="score-wrap" aria-label="Score"><b class="score" id="score">0</b><span class="score-max" id="scoreMax"></span></span>
@@ -507,7 +536,7 @@ h1 {
   <section class="picker" id="picker">
     <div class="streak" id="streak" hidden><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2c1 3.2-.6 5-2.2 6.8C8.3 10.5 7 12 7 14.6 7 18 9.4 21 12.4 21c3.3 0 5.6-2.6 5.6-6 0-2.4-1.1-4.2-2.3-5.6-.3 1.4-1 2.5-2.2 3 .6-3.5-.2-7.3-1.5-10.4z"/></svg><span id="streakText"></span></div>
     <button type="button" class="daily-card" id="dailyCard">
-      <span class="dc-eyebrow">Today's QuickRank</span>
+      <span class="dc-eyebrow">Today's Ordo</span>
       <span class="dc-title" id="dcTitle">#1</span>
       <span class="dc-status" id="dcStatus">4 rounds · about 90 seconds · same puzzle for everyone</span>
     </button>
@@ -526,8 +555,8 @@ h1 {
   </section>
 
   <section class="daily" id="dailyDone" hidden>
-    <div class="eyebrow">Today's QuickRank</div>
-    <h1 id="dTitle">QuickRank #1</h1>
+    <div class="eyebrow">Today's Ordo</div>
+    <h1 id="dTitle">Ordo #1</h1>
     <div class="d-score"><b id="dScore">0</b><span id="dMax">/400</span></div>
     <div class="d-grid" id="dGrid" aria-hidden="true"></div>
     <ol class="d-rounds" id="dRounds"></ol>
@@ -961,6 +990,37 @@ h1 {
 
   const reduceMotion = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
   const buzz = p => { try { navigator.vibrate && navigator.vibrate(p); } catch {} };
+
+  function sortLogo(svg, delay = 0) {
+    if (!svg || reduceMotion() || !svg.animate) return 0;
+    const [b1, b2, b3] = svg.querySelectorAll('.lg-b');
+    svg.getAnimations?.({ subtree: true }).forEach(a => a.cancel());
+    const ease = 'cubic-bezier(.3,.7,.3,1)', T = 620, opt = { duration: T, delay, easing: ease, fill: 'backwards' };
+    b1.animate([
+      { transform: 'translate(0px, 34px)', fill: '#FFC82E' },
+      { transform: 'translate(14px, 26px) rotate(-6deg)', fill: '#F2353B', offset: .25 },
+      { transform: 'translate(16px, 8px) rotate(-8deg)', fill: '#F2353B', offset: .62 },
+      { transform: 'translate(0px, 0px) rotate(0deg)', fill: '#FFC82E' }
+    ], opt);
+    [b2, b3].forEach(b => b.animate([
+      { transform: 'translateY(-17px)' }, { transform: 'translateY(-17px)', offset: .3 }, { transform: 'translateY(0px)' }
+    ], opt));
+    [b1, b2, b3].forEach((b, i) => b.animate([
+      { fill: '#FFC82E' }, { fill: '#3ED62C', offset: .25 }, { fill: '#3ED62C', offset: .7 }, { fill: '#FFC82E' }
+    ], { duration: 640, delay: delay + T + i * 50, easing: 'ease-out' }));
+    return delay + T + 740;
+  }
+  function splash() {
+    const sp = $('splash');
+    let seen = false;
+    try { seen = sessionStorage.getItem('ordo.splash') === '1'; sessionStorage.setItem('ordo.splash', '1'); } catch {}
+    if (!sp || seen || reduceMotion()) return;
+    sp.hidden = false;
+    const done = () => { sp.classList.add('out'); setTimeout(() => { sp.hidden = true; }, 380); };
+    const ms = sortLogo(sp.querySelector('.logo'), 280);
+    const t = setTimeout(done, Math.max(ms, 900) + 150);
+    sp.addEventListener('click', () => { clearTimeout(t); done(); }, { once: true });
+  }
 
   // Toasts queue so two rewards in a row both get their moment.
   const FLAME_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2c1 3.2-.6 5-2.2 6.8C8.3 10.5 7 12 7 14.6 7 18 9.4 21 12.4 21c3.3 0 5.6-2.6 5.6-6 0-2.4-1.1-4.2-2.3-5.6-.3 1.4-1 2.5-2.2 3 .6-3.5-.2-7.3-1.5-10.4z"/></svg>';
@@ -1460,7 +1520,7 @@ h1 {
     const link = `${BASE}#qr-${R.ci}-${R.start.join('.')}-${solved ? Math.round(eff * 10) : 'x'}-${R.moves}`;
     const trail = R.trail.map(h => SQ[h]).join('');
     const result = solved ? `${trail} ${'⭐'.repeat(R.stars || 1)} ${R.pts}/100 in ${R.elapsed.toFixed(1)}s` : `${trail} ⏰ ran out of time`;
-    const lines = [`QuickRank: ${R.cat.q} (${R.n} items)`, result];
+    const lines = [`Ordo: ${R.cat.q} (${R.n} items)`, result];
     const c = R.challenge;
     if (c) {
       if (solved && c.eff != null) lines.push(eff < c.eff ? `Beat your ${c.eff.toFixed(1)}s. Your move:` : `Couldn't beat your ${c.eff.toFixed(1)}s. Rematch:`);
@@ -1481,6 +1541,7 @@ h1 {
     readout();
     reveal();
     requestAnimationFrame(() => el.stack.classList.add('solved'));
+    sortLogo(document.querySelector('#mark .logo'), 250);
     // Each round is out of 100: 50 for moves (fewest possible gets all 50), 50 for speed against a par time.
     const extraMoves = Math.max(0, R.moves - R.min);
     R.par = R.n * R.n + 3;
@@ -1650,7 +1711,7 @@ h1 {
     buildRound(d.ci, d.correct, d.order.slice(), null);
     el.lives.parentElement.classList.add('quiet');
     el.eyebrow.hidden = false;
-    el.eyebrow.textContent = `QuickRank #${S.no} · Round ${S.di + 1} of ${S.dRounds.length}` + (S.di === S.dRounds.length - 1 ? ' · the tricky one' : '');
+    el.eyebrow.textContent = `Ordo #${S.no} · Round ${S.di + 1} of ${S.dRounds.length}` + (S.di === S.dRounds.length - 1 ? ' · the tricky one' : '');
   }
   function dailyNextLabel() {
     return S.di < S.dRounds.length - 1 ? `Next · round ${S.di + 2} of ${S.dRounds.length}` : 'See results';
@@ -1660,7 +1721,7 @@ h1 {
     const total = res.reduce((a, r) => a + r.pts, 0), last = res[res.length - 1];
     const hook = res.every(r => r.r === 3) ? 'Clean sweep. Your turn.'
       : (last && last.r <= 1) ? 'The last one got me. Bet it gets you too.' : 'Can you beat me?';
-    return [`QuickRank #${no} · ${total}/${res.length * 100}`, res.map(r => SQUARE[r.r]).join(''), hook, `${BASE}#daily`].join('\n');
+    return [`Ordo #${no} · ${total}/${res.length * 100}`, res.map(r => SQUARE[r.r]).join(''), hook, `${BASE}#daily`].join('\n');
   }
   function finishDaily() {
     prog.daily = prog.daily || {};
@@ -1674,7 +1735,7 @@ h1 {
     play.hidden = true; $('picker').hidden = true; $('boards').hidden = true; $('dailyDone').hidden = false;
     el.app.classList.remove('sheet-open');
     el.lives.parentElement.classList.add('quiet');
-    $('dTitle').textContent = `QuickRank #${no}`;
+    $('dTitle').textContent = `Ordo #${no}`;
     countUp($('dScore'), fresh ? 0 : total, total);
     $('dMax').textContent = `/${res.length * 100}`;
     $('dGrid').innerHTML = res.map((r, i) => `<i data-r="${r.r}" style="animation-delay:${i * 90}ms"></i>`).join('');
@@ -1847,6 +1908,7 @@ h1 {
   });
 
   function boot(data) {
+    splash();
     const c = parseChallenge();
     if (c) { hud(); return startChallenge(c); }
     if (/^#daily$/.test(location.hash || '')) { hud(); return startDaily(); }

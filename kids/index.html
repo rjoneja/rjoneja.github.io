@@ -4,12 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="A picture-first ordering game for 6 to 8 year olds. No ads, no sign-up.">
+<meta property="og:title" content="Ordo Kids">
+<meta property="og:description" content="A picture-first ordering game for 6 to 8 year olds. No ads, no sign-up.">
+<meta property="og:image" content="https://ordogame.com/og.png">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#E6FAF2">
-<title>Line Up!</title>
+<meta name="apple-mobile-web-app-title" content="Ordo Kids">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>Ordo Kids</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Andika:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Fredoka:wght@600&family=Andika:wght@400;700&display=swap">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}</style>
 </head>
 <body>
@@ -48,11 +54,14 @@ button { font: inherit; color: inherit; }
 /* Header */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .logo { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 800; font-size: 26px; letter-spacing: -0.01em; background: none; border: 0; padding: 0; cursor: pointer; }
-.logo-mark { display: grid; gap: 3px; }
-.logo-mark i { display: block; height: 6px; border-radius: 3px; border: 2px solid var(--ink); }
-.logo-mark i:nth-child(1) { width: 14px; background: var(--coral); }
-.logo-mark i:nth-child(2) { width: 20px; background: var(--sun); }
-.logo-mark i:nth-child(3) { width: 26px; background: var(--aqua); }
+.logo-svg { width: 38px; height: 38px; flex: none; overflow: visible; }
+.logo-svg polygon, .logo-svg rect { stroke: #1A1033; stroke-linejoin: round; }
+.logo-svg polygon { stroke-width: 5; }
+.logo-svg rect { stroke-width: 4; fill: #FFC82E; transform-box: fill-box; transform-origin: center; }
+.logo-svg .lg-up { fill: #F2353B; }
+.logo-svg .lg-dn { fill: #3FB6E0; }
+.logo-word { font-family: "Fredoka", var(--font-display); font-weight: 600; font-size: 28px; letter-spacing: -0.02em; color: #1A1033; }
+.logo-kids { font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff; background: var(--coral); border: 2px solid var(--ink); border-radius: 999px; padding: 1px 9px 0; transform: rotate(-4deg) translateY(-2px); }
 .top-btns { display: flex; gap: 8px; }
 .icon-btn {
   width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--surface);
@@ -164,7 +173,7 @@ button { font: inherit; color: inherit; }
 
 <main class="app">
   <header class="top">
-    <button class="logo" id="homeBtn" type="button" aria-label="Line Up! home"><span class="logo-mark" aria-hidden="true"><i></i><i></i><i></i></span>Line Up!</button>
+    <button class="logo" id="homeBtn" type="button" aria-label="Ordo Kids home"><svg class="logo-svg" viewBox="0 0 120 120" aria-hidden="true"><polygon class="lg-up" points="60,6 86,28 34,28"/><rect class="lg-b" x="20" y="38" width="80" height="13" rx="6.5"/><rect class="lg-b" x="28" y="55" width="64" height="13" rx="6.5"/><rect class="lg-b" x="36" y="72" width="48" height="13" rx="6.5"/><polygon class="lg-dn" points="34,92 86,92 60,114"/></svg><span class="logo-word" aria-hidden="true">ordo</span><span class="logo-kids" aria-hidden="true">kids</span></button>
     <div class="top-btns">
       <button class="icon-btn" id="soundBtn" type="button" aria-pressed="false" aria-label="Read aloud">🔈</button>
       <button class="icon-btn sticker-count" id="bookBtn" type="button" aria-label="Sticker book">⭐<b id="stickerN">0</b></button>
@@ -786,8 +795,30 @@ button { font: inherit; color: inherit; }
   }
 
   const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg>';
+  function sortLogo(svg, delay = 0) {
+    if (!svg || calm() || !svg.animate) return 0;
+    const [b1, b2, b3] = svg.querySelectorAll('.lg-b');
+    svg.getAnimations?.({ subtree: true }).forEach(a => a.cancel());
+    const ease = 'cubic-bezier(.3,.7,.3,1)', T = 620, opt = { duration: T, delay, easing: ease, fill: 'backwards' };
+    b1.animate([
+      { transform: 'translate(0px, 34px)', fill: '#FFC82E' },
+      { transform: 'translate(14px, 26px) rotate(-6deg)', fill: '#F2353B', offset: .25 },
+      { transform: 'translate(16px, 8px) rotate(-8deg)', fill: '#F2353B', offset: .62 },
+      { transform: 'translate(0px, 0px) rotate(0deg)', fill: '#FFC82E' }
+    ], opt);
+    [b2, b3].forEach(b => b.animate([
+      { transform: 'translateY(-17px)' }, { transform: 'translateY(-17px)', offset: .3 }, { transform: 'translateY(0px)' }
+    ], opt));
+    [b1, b2, b3].forEach((b, i) => b.animate([
+      { fill: '#FFC82E' }, { fill: '#3ED62C', offset: .25 }, { fill: '#3ED62C', offset: .7 }, { fill: '#FFC82E' }
+    ], { duration: 640, delay: delay + T + i * 50, easing: 'ease-out' }));
+    return delay + T + 740;
+  }
+  sortLogo(document.querySelector('#homeBtn .logo-svg'), 300);
+
   function solved() {
     R.done = true;
+    sortLogo(document.querySelector('#homeBtn .logo-svg'), 200);
     R.order.forEach(it => { it.el.querySelector('.val').textContent = it.s || ''; });
     const stars = R.moves <= R.min ? 3 : R.moves <= R.min + 2 ? 2 : 1;
     G.stars += stars;

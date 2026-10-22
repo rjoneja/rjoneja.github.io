@@ -1,4 +1,4 @@
-# QuickRank
+# Ordo
 
 A daily ranking puzzle: put things in the right order before the clock runs out. Live at https://ordogame.com
 
