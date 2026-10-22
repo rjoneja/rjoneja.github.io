@@ -1,6 +1,6 @@
 # QuickRank
 
-A daily ranking puzzle: put things in the right order before the clock runs out. Live at https://rjoneja.github.io
+A daily ranking puzzle: put things in the right order before the clock runs out. Live at https://ordogame.com
 
 The whole game is `index.html`. `og.png` is the link-preview image.
 
