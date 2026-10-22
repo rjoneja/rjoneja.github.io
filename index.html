@@ -348,6 +348,13 @@ h1 {
 .d-actions { grid-template-columns: minmax(0, 1fr) auto; }
 .d-actions .btn { text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 .d-next { margin: 0; color: var(--muted); font-size: 14px; }
+.d-rank { margin: 0; font-weight: 700; font-size: 15px; }
+.dc-players { font-size: 13px; opacity: .85; }
+.about { display: flex; flex-direction: column; gap: 12px; }
+.about p { margin: 0; }
+.about .sub-h { margin-top: 6px; }
+.about .credit { font-size: 12px; }
+.about-kids { color: var(--accent); font-weight: 700; }
 .note { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--surface-2); font-size: 14px; font-weight: 700; }
 :root[data-skin="pop"] .daily-card { border: 2px solid var(--edge); border-radius: 20px; box-shadow: 3px 4px 0 var(--edge); }
 :root[data-skin="pop"] .daily-card:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge); }
@@ -530,7 +537,7 @@ h1 {
       </select>
     </div>
     <button type="button" class="toggle" id="catsBtn">Categories and practice</button>
-    <p class="credit">Football data: <a href="https://github.com/jfjelstul/englishfootball" target="_blank" rel="noopener">Fjelstul English Football Database</a> and <a href="https://github.com/jfjelstul/worldcup" target="_blank" rel="noopener">World Cup Database</a>, © 2023–24 Joshua C. Fjelstul, Ph.D., <a href="https://creativecommons.org/licenses/by-sa/4.0/legalcode" target="_blank" rel="noopener">CC BY-SA 4.0</a>. Other data via <a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener">TidyTuesday</a> (Nobel Prize, Billboard Hot 100, Eurovision, Olympics, Tour de France, Himalayan Database, Smithsonian volcanoes, PLDB, The Numbers), <a href="https://github.com/mledoze/countries" target="_blank" rel="noopener">mledoze/countries</a> and <a href="https://github.com/Bowserinator/Periodic-Table-JSON" target="_blank" rel="noopener">Periodic-Table-JSON</a>. All reshaped into questions.</p>
+    <button type="button" class="toggle" id="aboutBtn">About Ordo</button>
   </section>
 
   <section class="picker" id="picker">
@@ -539,6 +546,7 @@ h1 {
       <span class="dc-eyebrow">Today's Ordo</span>
       <span class="dc-title" id="dcTitle">#1</span>
       <span class="dc-status" id="dcStatus">4 rounds · about 90 seconds · same puzzle for everyone</span>
+      <span class="dc-players" id="dcPlayers" hidden></span>
     </button>
     <div class="picker-head"><h2 class="sub-h">Or practise a category</h2><button type="button" class="toggle" id="boardsBtn">Top scores</button></div>
     <div class="cats" id="cats"></div>
@@ -551,7 +559,20 @@ h1 {
       <button type="button" id="tabAll" aria-pressed="false">All time</button>
     </div>
     <ol class="board" id="boardList"></ol>
-    <p class="board-note">Daily puzzle scores played on this device.</p>
+    <p class="board-note" id="boardNote">Daily puzzle scores played on this device.</p>
+  </section>
+
+  <section class="about" id="about" hidden>
+    <div class="picker-head"><h1>About Ordo</h1><button type="button" class="toggle" id="aboutBack">Back</button></div>
+    <p>Put things in the right order, fast. A new puzzle every day, the same for everyone, plus practice categories whenever you like.</p>
+    <p>Made in London. No ads, no sign-up.</p>
+    <p><a class="about-kids" id="kidsLink" href="https://ordogame.com/kids/" target="_blank" rel="noopener">Ordo Kids</a>: a picture-first version for ages 6 to 8.</p>
+    <h2 class="sub-h">Your data</h2>
+    <p>Your streak and scores are kept on this device. To count players and run the shared top scores, the game sends your daily score with a random ID that isn't linked to you. If you add your name to a board, everyone can see it. No cookies.</p>
+    <h2 class="sub-h">Contact</h2>
+    <p>Email address coming soon.</p>
+    <h2 class="sub-h">Credits</h2>
+    <p class="credit">Football data: <a href="https://github.com/jfjelstul/englishfootball" target="_blank" rel="noopener">Fjelstul English Football Database</a> and <a href="https://github.com/jfjelstul/worldcup" target="_blank" rel="noopener">World Cup Database</a>, © 2023–24 Joshua C. Fjelstul, Ph.D., <a href="https://creativecommons.org/licenses/by-sa/4.0/legalcode" target="_blank" rel="noopener">CC BY-SA 4.0</a>. Other data via <a href="https://github.com/rfordatascience/tidytuesday" target="_blank" rel="noopener">TidyTuesday</a> (Nobel Prize, Billboard Hot 100, Eurovision, Olympics, Tour de France, Himalayan Database, Smithsonian volcanoes, PLDB, The Numbers), <a href="https://github.com/mledoze/countries" target="_blank" rel="noopener">mledoze/countries</a> and <a href="https://github.com/Bowserinator/Periodic-Table-JSON" target="_blank" rel="noopener">Periodic-Table-JSON</a>. All reshaped into questions.</p>
   </section>
 
   <section class="daily" id="dailyDone" hidden>
@@ -572,6 +593,7 @@ h1 {
         <button class="btn-alt" type="submit">Save</button>
       </div>
     </form>
+    <p class="d-rank" id="dRank" hidden></p>
     <ol class="board" id="pBoard" hidden></ol>
     <p class="d-next" id="dNext"></p>
     <button class="btn-alt" id="dPractice" type="button">Practise a category</button>
@@ -974,6 +996,24 @@ h1 {
   let prog = { streak: { count: 0, last: '' }, best100: {}, fastest: {}, tut: false, board: [], name: '' };
   try { prog = Object.assign(prog, JSON.parse(localStorage.getItem(PROG_KEY) || '{}')); } catch {}
   const saveProg = () => { try { localStorage.setItem(PROG_KEY, JSON.stringify(prog)); } catch {} };
+  // Shared scores live on a small Cloudflare Worker. The ID is random and only marks "this device" on the boards.
+  const API = 'https://api.ordogame.com';
+  if (!prog.pid) {
+    let id = '';
+    try { id = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => (b % 36).toString(36)).join(''); } catch {}
+    prog.pid = id.length === 12 ? 'o' + id + Date.now().toString(36) : 'o' + Math.random().toString(36).slice(2, 14).padEnd(12, '0') + Date.now().toString(36);
+    saveProg();
+  }
+  async function api(path, body) {
+    const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    const t = setTimeout(() => ctl && ctl.abort(), 5000);
+    try {
+      const r = await fetch(API + path, body
+        ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl && ctl.signal }
+        : { cache: 'no-store', signal: ctl && ctl.signal });
+      return r.ok ? await r.json() : null;
+    } catch { return null; } finally { clearTimeout(t); }
+  }
   const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
   const liveStreak = () => (prog.streak.last === dayKey() || prog.streak.last === yesterday()) ? prog.streak.count : 0;
@@ -1607,8 +1647,30 @@ h1 {
       : '<li class="empty">No scores yet. Finish a run to get on the board.</li>';
     [...node.querySelectorAll('.who b')].forEach((b, i) => { b.textContent = list[i].name; });
   }
+  // Shared lists come back as [{ score, name, day, me }].
+  function renderShared(node, list, all) {
+    node.innerHTML = list.length ? list.map((e, i) =>
+      `<li class="${e.me ? 'me' : ''}"><span class="rk">${i + 1}</span><span class="who"><b></b><span>${all ? 'Daily #' + e.day : e.me ? 'You' : ''}</span></span><span class="sc">${n0(e.score)}</span></li>`).join('')
+      : '<li class="empty">No scores yet. Be the first.</li>';
+    [...node.querySelectorAll('.who b')].forEach((b, i) => { b.textContent = list[i].name; });
+  }
   let pendingRun = null;
-  function offerBoard() {
+  async function offerBoard() {
+    const no = S.no, score = S.score;
+    const res = await api('/api/score', { day: no, pid: prog.pid, score });
+    if (res && res.board) {
+      const players = Math.max(res.board.players || 0, res.rankDay);
+      const rk = $('dRank');
+      rk.textContent = `You're ${ordinal(res.rankDay)} of ${n0(players)} today.`;
+      rk.hidden = false;
+      const inAll = res.rankAll <= 5, inDay = res.rankDay <= 5;
+      if ((!inDay && !inAll) || !res.score) return;
+      pendingRun = { shared: true, all: inAll, no, score: res.score, played: S.played, group: 'daily', kind: 'daily', day: dayKey(), ts: Date.now() };
+      $('namerLabel').textContent = inAll ? `You're ${ordinal(res.rankAll)} of all time! Add your name:` : `You're in today's top 5! Add your name:`;
+      $('nameIn').value = prog.name || '';
+      $('namer').hidden = false;
+      return;
+    }
     const day = topDay(), all = topAll();
     const inDay = wouldPlace(day, S.score), inAll = wouldPlace(all, S.score);
     if (!inDay && !inAll) return;
@@ -1617,23 +1679,26 @@ h1 {
     $('nameIn').value = prog.name || '';
     $('namer').hidden = false;
   }
-  $('namer').addEventListener('submit', e => {
+  $('namer').addEventListener('submit', async e => {
     e.preventDefault();
     if (!pendingRun) return;
+    const run = pendingRun;
     const name = $('nameIn').value.trim().slice(0, 16) || 'Player';
     prog.name = name;
-    const entry = Object.assign({ name }, pendingRun);
-    delete entry.all;
+    const entry = Object.assign({ name }, run);
+    delete entry.all; delete entry.shared;
     prog.board.push(entry);
     prog.board = rankList(prog.board).slice(0, 200);
     saveProg();
     $('namer').hidden = true;
     const pb = $('pBoard');
-    renderBoard(pb, pendingRun.all ? topAll() : topDay(), entry.ts);
+    const res = run.shared ? await api('/api/name', { day: run.no, pid: prog.pid, name }) : null;
+    if (res && res.board) renderShared(pb, run.all ? res.board.all : res.board.today, run.all);
+    else renderBoard(pb, run.all ? topAll() : topDay(), entry.ts);
     pb.hidden = false;
-    toast(pendingRun.all ? 'On the all-time board!' : "On today's board!");
+    toast(run.all ? 'On the all-time board!' : "On today's board!");
     confetti(70, innerHeight * 0.25);
-    pendingRun = null;
+    if (pendingRun === run) pendingRun = null;
     $('nameIn').blur();
   });
   // Boards screen, reached from the category picker.
@@ -1642,12 +1707,36 @@ h1 {
     $('picker').hidden = true; $('boards').hidden = false;
     $('tabDay').setAttribute('aria-pressed', String(boardTab === 'day'));
     $('tabAll').setAttribute('aria-pressed', String(boardTab === 'all'));
-    renderBoard($('boardList'), boardTab === 'day' ? topDay() : topAll());
+    const tab = boardTab, list = $('boardList'), note = $('boardNote');
+    renderBoard(list, tab === 'day' ? topDay() : topAll());
+    note.textContent = 'Daily puzzle scores played on this device.';
+    api(`/api/board?day=${dailyNo()}&pid=${prog.pid}`).then(b => {
+      if (!b || boardTab !== tab || $('boards').hidden) return;
+      renderShared(list, tab === 'day' ? b.today : b.all, tab === 'all');
+      note.textContent = tab === 'day'
+        ? `Everyone's scores for today's puzzle. ${n0(b.players)} ${b.players === 1 ? 'person has' : 'people have'} played.`
+        : `Best daily scores ever, from ${n0(b.playersEver)} ${b.playersEver === 1 ? 'player' : 'players'}.`;
+    });
   }
   $('boardsBtn').addEventListener('click', showBoards);
+  // About: hides whatever is showing and puts it back on Back.
+  let aboutPrev = null;
+  $('aboutBtn').addEventListener('click', () => {
+    $('tools').hidden = true; $('setBtn').setAttribute('aria-expanded', 'false');
+    const secs = ['picker', 'boards', 'dailyDone', 'play'].map(id => $(id));
+    aboutPrev = secs.filter(x => !x.hidden);
+    secs.forEach(x => { x.hidden = true; });
+    $('about').hidden = false;
+    try { scrollTo(0, 0); } catch {}
+  });
+  $('aboutBack').addEventListener('click', () => {
+    $('about').hidden = true;
+    (aboutPrev && aboutPrev.length ? aboutPrev : [$('picker')]).forEach(x => { x.hidden = false; });
+    aboutPrev = null;
+  });
   $('tabDay').addEventListener('click', () => { boardTab = 'day'; showBoards(); });
   $('tabAll').addEventListener('click', () => { boardTab = 'all'; showBoards(); });
-  $('boardsBack').addEventListener('click', () => { $('boards').hidden = true; $('picker').hidden = false; });
+  $('boardsBack').addEventListener('click', () => { $('boards').hidden = true; $('about').hidden = true; $('picker').hidden = false; });
 
   // ---------- Daily puzzle ----------
   const DAILY_START = Date.UTC(2026, 9, 21);
@@ -1703,7 +1792,8 @@ h1 {
       S.dRes = run.res.slice(); S.score = run.score; S.played = S.dRes.length; S.di = S.dRes.length; shownScore = S.score;
       if (S.di >= S.dRounds.length) return finishDaily();
     }
-    $('picker').hidden = true; $('boards').hidden = true; $('dailyDone').hidden = true; play.hidden = false;
+    $('picker').hidden = true; $('boards').hidden = true; $('about').hidden = true; $('dailyDone').hidden = true; play.hidden = false;
+    api('/api/play', { day: no, pid: prog.pid });
     playDailyRound();
   }
   function playDailyRound() {
@@ -1732,7 +1822,7 @@ h1 {
   let nextTimer = 0;
   function showDailyDone(no, fresh) {
     const rec = prog.daily[no], res = rec.res, total = rec.score;
-    play.hidden = true; $('picker').hidden = true; $('boards').hidden = true; $('dailyDone').hidden = false;
+    play.hidden = true; $('picker').hidden = true; $('boards').hidden = true; $('about').hidden = true; $('dailyDone').hidden = false;
     el.app.classList.remove('sheet-open');
     el.lives.parentElement.classList.add('quiet');
     $('dTitle').textContent = `Ordo #${no}`;
@@ -1744,7 +1834,7 @@ h1 {
     const text = dailyShare(no, res);
     $('dShareText').value = text; $('dShareText').hidden = true;
     $('dWa').href = 'https://wa.me/?text=' + encodeURIComponent(text);
-    $('namer').hidden = true; $('pBoard').hidden = true;
+    $('namer').hidden = true; $('pBoard').hidden = true; $('dRank').hidden = true;
     if (fresh) {
       if (total >= 400) confetti(150, innerHeight * 0.25);
       S.score = total; S.no = no; S.played = res.length;
@@ -1854,6 +1944,12 @@ h1 {
     const run = prog.dailyRun && prog.dailyRun.no === no ? prog.dailyRun : null;
     $('dcStatus').textContent = rec ? `Done · ${rec.score}/${rec.res.length * 100} · tap to see your result`
       : run ? `In progress · round ${run.res.length + 1} of 4 · tap to carry on` : '4 rounds · about 90 seconds · same puzzle for everyone';
+    api(`/api/board?day=${no}`).then(b => {
+      const n = b && b.players, el2 = $('dcPlayers');
+      if (!n || dailyNo() !== no) return;
+      el2.textContent = n === 1 ? '1 person has played today' : `${n0(n)} people have played today`;
+      el2.hidden = false;
+    });
     const n = liveStreak(), done = prog.streak.last === dayKey(), box = $('streak');
     box.hidden = false;
     box.className = 'streak' + (n ? ' lit' : '') + (done ? ' done' : '');
@@ -1871,7 +1967,7 @@ h1 {
     if (R) R.status = 'idle';
     play.hidden = true;
     picker.hidden = false;
-    $('boards').hidden = true;
+    $('boards').hidden = true; $('about').hidden = true;
     $('dailyDone').hidden = true;
     el.eyebrow.hidden = true;
     renderPicker();
