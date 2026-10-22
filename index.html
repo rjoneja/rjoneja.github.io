@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Put things in order before the clock runs out. A new puzzle every day, the same for everyone.">
+<meta name="description" content="Put things in the right order before the clock runs out. A new puzzle every day, the same for everyone.">
 <meta property="og:title" content="QuickRank">
-<meta property="og:description" content="Put things in order before the clock runs out. A new puzzle every day, the same for everyone.">
+<meta property="og:description" content="Put things in the right order before the clock runs out. A new puzzle every day, the same for everyone.">
 <meta property="og:image" content="https://ordogame.com/og.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -930,7 +930,7 @@ h1 {
     challenge: $('challenge'), pTrail: $('pTrail'), pWa: $('pWa'), pCopy: $('pCopy'), pShareText: $('pShareText') };
 
   // Public link to this game. A challenge rides on the end as #qr-<category>-<start order>-<time in tenths or x>-<moves>.
-  const BASE = location.origin + location.pathname.replace(/index\.html$/, '');
+  const BASE = 'https://ordogame.com/';
   const SQ = { warm: '🟩', same: '🟨', cold: '🟥' };
 
   const store = {
@@ -1850,6 +1850,11 @@ h1 {
     const c = parseChallenge();
     if (c) { hud(); return startChallenge(c); }
     if (/^#daily$/.test(location.hash || '')) { hud(); return startDaily(); }
+    // Category links, e.g. ordogame.com/football or #football, open straight into practice for that category.
+    const CAT_LINKS = { football: 'sport', sport: 'games', olympics: 'games', pop: 'pop', 'pop-culture': 'pop', people: 'people', places: 'places',
+      history: 'history', science: 'science', film: 'film', music: 'music', mix: 'mix' };
+    const want = CAT_LINKS[(location.hash || '').replace(/^#/, '').toLowerCase()];
+    if (want) { hud(); return startLadder(want); }
     if (data && data.S && typeof data.S.round === 'number' && data.S.group && data.S.mode !== 'daily') { S = Object.assign(S, data.S); return newRound(); }
     hud();
     if (!(prog.daily && prog.daily[dailyNo()])) return startDaily();
