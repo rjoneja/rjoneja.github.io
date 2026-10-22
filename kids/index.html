@@ -283,25 +283,87 @@ button { font: inherit; color: inherit; }
     ['🪁', 'Kite'], ['🍋', 'Lemon'], ['🌙', 'Moon'], ['🦉', 'Owl'], ['🐷', 'Pig'], ['🐰', 'Rabbit'], ['☀️', 'Sun'], ['🌳', 'Tree'], ['☂️', 'Umbrella'],
     ['🚐', 'Van'], ['🐳', 'Whale'], ['🦓', 'Zebra']].map(([e, t]) => E(e, t, t.charCodeAt(0), t[0]));
   const SEQS = [
-    { q: 'How does a butterfly grow?', fact: 'Inside the chrysalis, a caterpillar turns into a butterfly!',
+    { q: 'How does a butterfly grow?', facts: ['Inside the chrysalis, a caterpillar turns into a butterfly!', 'Butterflies taste with their feet!'],
       items: [E('🥚', 'Egg'), E('🐛', 'Caterpillar'), { kind: 'svg', svg: COCOON, t: 'Chrysalis' }, E('🦋', 'Butterfly')] },
-    { q: 'How does a chicken grow?', fact: 'A chick hatches about 3 weeks after the egg is laid.',
+    { q: 'How does a chicken grow?', facts: ['A chick hatches about 3 weeks after the egg is laid.', 'Birds like chickens are related to dinosaurs!'],
       items: [E('🥚', 'Egg'), E('🐣', 'Hatching'), E('🐥', 'Chick'), E('🐔', 'Hen')] },
-    { q: 'How does a sunflower grow?', fact: 'Sunflowers turn to face the Sun while they are growing.',
+    { q: 'How does a sunflower grow?', facts: ['Young sunflowers turn to follow the Sun across the sky!', 'Some sunflowers grow taller than a grown-up, over 3 metres high!'],
       items: [E('🌰', 'Seed'), E('🌱', 'Sprout'), E('🌿', 'Plant'), E('🌻', 'Flower')] },
-    { q: 'How do people grow up?', fact: 'Babies have more bones than grown-ups. Some join together as we grow!',
+    { q: 'How do people grow up?', facts: ['Babies have more bones than grown-ups. Some join together as we grow!', 'Your heart beats about 100,000 times every day!'],
       items: [E('👶', 'Baby'), E('🧒', 'Child'), E('🧑', 'Grown-up'), E('🧓', 'Grandparent')] },
-    { q: 'Put the day in order.', fact: 'Children need about 10 hours of sleep every night.',
+    { q: 'Put the day in order.', facts: ['Children need lots of sleep, about 10 hours every night.', 'Breakfast means breaking your fast, because you have not eaten all night!'],
       items: [E('⏰', 'Wake up'), E('🥣', 'Breakfast'), E('🥪', 'Lunch'), E('🍝', 'Dinner'), E('🛏️', 'Bedtime')] },
-    { q: 'Put the seasons in order, starting with spring.', fact: 'The seasons happen because the Earth is tilted as it goes round the Sun.',
+    { q: 'Put the seasons in order, starting with spring.', facts: ['The seasons happen because the Earth is tilted as it goes round the Sun.', 'When it is summer in Britain, it is winter in Australia!'],
       items: [E('🌷', 'Spring'), E('☀️', 'Summer'), E('🍂', 'Autumn'), E('⛄', 'Winter')] },
-    { q: 'Put the days in order, starting with Monday.', fact: 'Saturday is named after the planet Saturn!',
+    { q: 'Put the days in order, starting with Monday.', facts: ['Saturday is named after the planet Saturn!', 'Sunday is named after the Sun, and Monday after the Moon!'],
       items: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(t => E('📅', t)) },
-    { q: 'Which month comes first in the year?', fact: 'August is named after a Roman emperor called Augustus.',
+    { q: 'Which month comes first in the year?', facts: ['August is named after a Roman emperor called Augustus.', 'February is the shortest month of the year!'],
       items: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(t => E('🗓️', t)) }
   ].map(sq => { sq.items.forEach((it, i) => { it.v = i; it.s = it.s || ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'][i]; }); return sq; });
 
-  // Pick n items whose values are clearly apart, keeping any order subset (for sequences, any subset still has one right order).
+  // Facts about particular things. When one of these is in the round, its fact can be chosen.
+  const ITEM_FACTS = {
+    'Blue whale': ['A blue whale is the heaviest animal that has ever lived, heavier than any dinosaur!'],
+    'Elephant': ["An elephant's trunk has no bones, but it has tens of thousands of muscles!", 'Elephants are the biggest animals that live on land!'],
+    'Hippo': ['Hippos cannot really swim. They walk or run along the bottom of rivers!'],
+    'Horse': ['Horses can sleep standing up!'],
+    'Dog': ["A dog's nose print is special to that dog, just like your fingerprint!", 'Dogs sweat through their paws!'],
+    'Cat': ['Cats spend about two thirds of their lives asleep!'],
+    'Rabbit': ["A rabbit's teeth never stop growing!"],
+    'Mouse': ['A mouse can squeeze through a gap as small as a pencil!'],
+    'Cheetah': ['A cheetah can run as fast as a car on a motorway!'],
+    'Tortoise': ['Some tortoises live for more than 150 years!'],
+    'Snail': ['A snail has thousands of tiny teeth on its tongue!'],
+    'Chicken': ['Birds like chickens are related to dinosaurs!'],
+    'Fast runner': ['The fastest person ever ran 100 metres in less than 10 seconds!'],
+    'Crab': ['Crabs have ten legs, and two of them are claws!'],
+    'Spider': ['Spiders have 8 legs, so they are not insects. Insects like ants have 6.'],
+    'Ant': ['Ants can carry things much heavier than their own bodies!'],
+    'Snake': ['Snakes smell with their tongues!'],
+    'Giraffe': ['A giraffe is taller than a double-decker bus!', "A giraffe's tongue is dark blue and about as long as your arm!"],
+    'The Shard': ['The Shard in London is as tall as 70 double-decker buses stacked up!'],
+    'Big Ben': ['Big Ben is really the name of the giant bell, not the tower!'],
+    "The Sun's surface": ['The surface of the Sun is about 5,500 degrees. That is hotter than any oven on Earth!'],
+    'Lava': ['Lava is rock that is so hot it has melted!'],
+    'Inside the fridge': ['A fridge keeps food cold so that germs grow more slowly.'],
+    'Freezer': ['Water turns into ice at 0 degrees.'],
+    '£2': ['A £2 coin is worth the same as two hundred 1p coins!'],
+    '50p': ['The 50p coin has 7 sides!'],
+    '20p': ['The 20p coin has 7 sides too!'],
+    '£1': ['The £1 coin has 12 sides!'],
+    'Octagon': ['A stop sign is an octagon. It has 8 sides!'],
+    'Hexagon': ['Bees build their honeycomb out of hexagons!'],
+    'Triangle': ['Bridges often use lots of triangles because they are such a strong shape!'],
+    'Mercury': ['Mercury is only a little bigger than our Moon!'],
+    'Venus': ['A day on Venus is longer than a whole year on Venus!'],
+    'Mars': ['Mars is called the Red Planet because of its rusty red dust!'],
+    'Jupiter': ['More than 1,000 Earths could fit inside Jupiter!'],
+    'Saturn': ['Saturn is so light for its size that it would float in a giant bath!'],
+    'Neptune': ['Neptune is so far away that it takes 165 years to go round the Sun once!'],
+    'The Sun': ['About a million Earths could fit inside the Sun!', 'Light from the Sun takes about 8 minutes to reach us!'],
+    'The Moon': ['The Moon is slowly moving away from the Earth, about 4 centimetres every year!']
+  };
+  const TYPE_FACTS = {
+    weight: ['A blue whale is the heaviest animal that has ever lived, heavier than any dinosaur!'],
+    speed: ['A cheetah can run as fast as a car on a motorway!'],
+    legs: ['Insects always have 6 legs. Spiders have 8, so they are not insects!'],
+    tallAnimals: ['A giraffe is taller than a double-decker bus!'],
+    tallThings: ['The Shard in London is as tall as 70 double-decker buses stacked up!'],
+    hot: ['The surface of the Sun is about 5,500 degrees. That is hotter than any oven on Earth!', 'Water boils at 100 degrees.'],
+    coins: ['A £2 coin is worth the same as two hundred 1p coins!', 'The 50p coin has 7 sides!'],
+    shapes: ['A shape with lots of sides starts to look like a circle!'],
+    abc: ['There are 26 letters in the alphabet.', 'The letter E is used more than any other letter in English!'],
+    planetOrder: ['Mercury is closest to the Sun, but Venus is the hottest planet!', 'There are 8 planets going round our Sun.'],
+    planetSize: ['More than 1,000 Earths could fit inside Jupiter!'],
+    sunMoon: ['About a million Earths could fit inside the Sun!'],
+    words: ['Reading number words is a super skill!', 'Twelve is also called a dozen, like a box of eggs!'],
+    tens: ['The tens matter most. 4 tens is more than 39 ones!', 'Ten tens make a hundred!'],
+    numbers: ['A hundred is ten tens!', 'A thousand is ten hundreds!', 'Zero means none at all!'],
+    sums: ['Doubling a number is the same as adding it to itself!', 'Times tables are quick adding: 3 times 4 is 4 plus 4 plus 4!',
+      'Taking away is the opposite of adding!', 'Any whole number times 10 ends in a zero!', 'The 5 times table always ends in a 5 or a 0!']
+  };
+
+  // Pick n items whose values are clearly apart.
   function choose(pool, n, gap = 0) {
     for (let t = 0; t < 60; t++) {
       const got = [];
@@ -314,7 +376,14 @@ button { font: inherit; color: inherit; }
   }
   const NUMWORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen',
     'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
-  const numItem = (v, t) => ({ kind: 'num', t: t != null ? t : String(v), v, s: t != null ? String(v) : '' });
+  // Spoken pieces for a number: 0-99 and the hundreds are recorded; anything else is joined from them.
+  function numParts(n) {
+    if (n === 1000) return ['1000'];
+    if (n < 100) return [String(n)];
+    const h = Math.floor(n / 100), r = n % 100;
+    return r ? [`${h} hundred and`, String(r)] : [`${h} hundred`];
+  }
+  const numItem = (v, t, parts) => ({ kind: 'num', t: t != null ? t : String(v), v, s: t != null ? String(v) : '', parts: parts || numParts(v) });
   function distinctNums(n, lo, hi, minGap = 1) {
     const out = new Set();
     let guard = 0;
@@ -325,107 +394,197 @@ button { font: inherit; color: inherit; }
     return [...out];
   }
   // Sums by age, following the UK curriculum: Year 1 within 20, Year 2 within 100 and the 2, 5 and 10 times tables, Year 3 the 3, 4 and 8 tables.
+  const plus = (a, b) => [`${a} + ${b}`, a + b, [...numParts(a), 'plus', ...numParts(b)]];
+  const minus = (a, b) => [`${a} − ${b}`, a - b, [...numParts(a), 'minus', ...numParts(b)]];
+  const times = (k, t) => [`${k} × ${t}`, k * t, [...numParts(k), 'times', ...numParts(t)]];
+  const dbl = a => [`double ${a}`, a * 2, ['double', ...numParts(a)]];
   function makeSum(age) {
     const r = Math.random();
     if (age <= 6) {
-      if (r < 0.6) { const a = 1 + rnd(9), b = 1 + rnd(10 - a); return [`${a} + ${b}`, a + b]; }
-      const a = 3 + rnd(8), b = 1 + rnd(a - 1); return [`${a} − ${b}`, a - b];
+      if (r < 0.6) { const a = 1 + rnd(9); return plus(a, 1 + rnd(10 - a)); }
+      const a = 3 + rnd(8); return minus(a, 1 + rnd(a - 1));
     }
     if (age === 7) {
-      if (r < 0.35) { const a = 2 + rnd(15), b = 1 + rnd(20 - a); return [`${a} + ${b}`, a + b]; }
-      if (r < 0.6) { const a = 6 + rnd(15), b = 1 + rnd(a - 1); return [`${a} − ${b}`, a - b]; }
-      if (r < 0.8) { const a = 2 + rnd(9); return [`double ${a}`, a * 2]; }
-      const t = pick([2, 5, 10]), k = 1 + rnd(10); return [`${k} × ${t}`, k * t];
+      if (r < 0.35) { const a = 2 + rnd(15); return plus(a, 1 + rnd(20 - a)); }
+      if (r < 0.6) { const a = 6 + rnd(15); return minus(a, 1 + rnd(a - 1)); }
+      if (r < 0.8) return dbl(2 + rnd(9));
+      return times(1 + rnd(10), pick([2, 5, 10]));
     }
-    if (r < 0.3) { const a = 10 + rnd(60), b = 5 + rnd(30); return [`${a} + ${b}`, a + b]; }
-    if (r < 0.55) { const a = 30 + rnd(60), b = 5 + rnd(25); return [`${a} − ${b}`, a - b]; }
-    const t = pick([2, 3, 4, 5, 8, 10]), k = 2 + rnd(11); return [`${k} × ${t}`, k * t];
+    if (r < 0.3) return plus(10 + rnd(60), 5 + rnd(30));
+    if (r < 0.55) { const a = 30 + rnd(60); return minus(a, 5 + rnd(25)); }
+    return times(2 + rnd(11), pick([2, 3, 4, 5, 8, 10]));
   }
+  const tensLabel = v => { const t = Math.floor(v / 10), o = v % 10; return `${t} ten${t === 1 ? '' : 's'} and ${o} one${o === 1 ? '' : 's'}`; };
+  const tensParts = v => { const t = Math.floor(v / 10), o = v % 10; return [String(t), t === 1 ? 'ten and' : 'tens and', String(o), o === 1 ? 'one' : 'ones']; };
 
+  // Each topic has several question types. A game works through them before repeating one.
   const TOPICS = [
-    { id: 'animals', em: '🐾', name: 'Animals', sub: 'Big, fast, legs', make: n => pick([
-      () => ({ q: 'Which animal is heaviest?', top: 'Heaviest', bottom: 'Lightest', asc: false, items: choose(ANIMAL_WEIGHT, n, 1e-9), fact: 'A blue whale is the heaviest animal that has ever lived. It weighs as much as 25 elephants!' }),
-      () => ({ q: 'Which animal is fastest?', top: 'Fastest', bottom: 'Slowest', asc: false, items: choose(ANIMAL_SPEED, n, 1e-9), fact: 'A cheetah can run as fast as a car on a motorway!' }),
-      () => ({ q: 'Which has the most legs?', top: 'Most legs', bottom: 'Fewest legs', asc: false, items: choose(LEGS, n), fact: 'Spiders have 8 legs, so they are not insects. Insects like ants have 6.' }),
-      () => ({ q: 'Which animal is tallest?', top: 'Tallest', bottom: 'Shortest', asc: false, items: choose(TALL_ANIMALS, n, 1e-9), fact: 'A giraffe is taller than a double-decker bus!' })
-    ])() },
-    { id: 'numbers', em: '🔢', name: 'Numbers', sub: 'Biggest and smallest', make: (n, age) => {
-      const hi = age <= 6 ? 20 : age === 7 ? 100 : 1000;
-      const kind = Math.random();
-      if (age <= 7 && kind < 0.3) {
+    { id: 'animals', em: '🐾', name: 'Animals', sub: 'Big, fast, legs', kinds: [
+      n => ({ q: 'Which animal is heaviest?', top: 'Heaviest', bottom: 'Lightest', asc: false, items: choose(ANIMAL_WEIGHT, n, 1e-9), facts: TYPE_FACTS.weight }),
+      n => ({ q: 'Which animal is fastest?', top: 'Fastest', bottom: 'Slowest', asc: false, items: choose(ANIMAL_SPEED, n, 1e-9), facts: TYPE_FACTS.speed }),
+      n => ({ q: 'Which has the most legs?', top: 'Most legs', bottom: 'Fewest legs', asc: false, items: choose(LEGS, n), facts: TYPE_FACTS.legs }),
+      n => ({ q: 'Which animal is tallest?', top: 'Tallest', bottom: 'Shortest', asc: false, items: choose(TALL_ANIMALS, n, 1e-9), facts: TYPE_FACTS.tallAnimals })
+    ] },
+    { id: 'numbers', em: '🔢', name: 'Numbers', sub: 'Biggest and smallest', kinds: [
+      (n, age) => {
         const vs = distinctNums(n, 0, 20);
-        return { q: 'Which number is smallest?', top: 'Smallest', bottom: 'Biggest', asc: true, items: vs.map(v => numItem(v, NUMWORDS[v])), fact: 'Reading number words is a super skill!' };
-      }
-      if (age >= 7 && kind < 0.55) {
+        return { q: 'Which number is smallest?', top: 'Smallest', bottom: 'Biggest', asc: true, items: vs.map(v => numItem(v, NUMWORDS[v])), facts: TYPE_FACTS.words };
+      },
+      (n, age) => {
+        if (age <= 6) return null;
         const vs = distinctNums(n, 11, 99);
-        return { q: 'Which is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false,
-          items: vs.map(v => numItem(v, `${Math.floor(v / 10)} tens and ${v % 10} ones`)), fact: 'The tens matter most. 4 tens is more than 39 ones put together!' };
+        return { q: 'Which is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false, items: vs.map(v => numItem(v, tensLabel(v), tensParts(v))), facts: TYPE_FACTS.tens };
+      },
+      (n, age) => {
+        const hi = age <= 6 ? 20 : age === 7 ? 100 : 1000;
+        const vs = distinctNums(n, 0, hi, age >= 8 ? 5 : 1);
+        return { q: 'Which number is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false, items: vs.map(v => numItem(v)), facts: TYPE_FACTS.numbers, huge: true };
+      },
+      (n, age) => {
+        const hi = age <= 6 ? 20 : age === 7 ? 100 : 1000;
+        const vs = distinctNums(n, 0, hi, age >= 8 ? 5 : 1);
+        return { q: 'Which number is smallest?', top: 'Smallest', bottom: 'Biggest', asc: true, items: vs.map(v => numItem(v)), facts: TYPE_FACTS.numbers, huge: true };
       }
-      const big = Math.random() < 0.5;
-      const vs = distinctNums(n, 0, hi, age >= 8 ? 5 : 1);
-      return { q: big ? 'Which number is biggest?' : 'Which number is smallest?', top: big ? 'Biggest' : 'Smallest', bottom: big ? 'Smallest' : 'Biggest', asc: !big,
-        items: vs.map(v => numItem(v)), fact: `The biggest number here is ${n0(Math.max(...vs))}.`, huge: true };
-    } },
-    { id: 'sums', em: '➕', name: 'Sums', sub: 'Add, take away, times', make: (n, age) => {
+    ] },
+    { id: 'sums', em: '➕', name: 'Sums', sub: 'Add, take away, times', kinds: [true, false].map(big => (n, age) => {
       const seen = new Set(), items = [];
       let guard = 0;
       while (items.length < n && guard++ < 200) {
-        const [t, v] = makeSum(age);
+        const [t, v, parts] = makeSum(age);
         if (seen.has(v)) continue;
-        seen.add(v); items.push({ kind: 'num', t, v, s: `= ${v}` });
+        seen.add(v); items.push({ kind: 'num', t, v, s: `= ${v}`, parts });
       }
-      const big = Math.random() < 0.6;
       return { q: big ? 'Which answer is biggest?' : 'Which answer is smallest?', top: big ? 'Biggest answer' : 'Smallest answer', bottom: big ? 'Smallest answer' : 'Biggest answer',
-        asc: !big, items, fact: 'Work out each answer first, then put them in order.', huge: true };
-    } },
-    { id: 'grow', em: '🦋', name: 'What comes next', sub: 'Life cycles, days, seasons', make: n => {
-      const sq = pick(SEQS);
+        asc: !big, items, facts: TYPE_FACTS.sums, huge: true };
+    }) },
+    { id: 'grow', em: '🦋', name: 'What comes next', sub: 'Life cycles, days, seasons', kinds: SEQS.map(sq => n => {
       const k = Math.min(n, sq.items.length);
-      // Keep the order: pick k items, then they get shuffled on screen.
       const idx = shuffle(sq.items.map((_, i) => i)).slice(0, k).sort((a, b) => a - b);
-      const items = idx.map(i => Object.assign({}, sq.items[i]));
-      return { q: sq.q, top: 'First', bottom: 'Last', asc: true, items, fact: sq.fact };
-    } },
-    { id: 'space', em: '🪐', name: 'Space', sub: 'Planets and the Sun', make: n => pick([
-      () => ({ q: 'Which planet is closest to the Sun?', top: 'Closest', bottom: 'Furthest', asc: true,
+      return { q: sq.q, top: 'First', bottom: 'Last', asc: true, items: idx.map(i => Object.assign({}, sq.items[i])), facts: sq.facts };
+    }) },
+    { id: 'space', em: '🪐', name: 'Space', sub: 'Planets and the Sun', kinds: [
+      n => ({ q: 'Which planet is closest to the Sun?', top: 'Closest', bottom: 'Furthest', asc: true,
         items: choose(PLANETS.map(p => Object.assign({}, p, { v: p.order, s: `${['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'][p.order - 1]} from the Sun` })), n),
-        fact: 'Mercury is closest to the Sun, but Venus is the hottest planet!' }),
-      () => ({ q: 'Which planet is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false,
-        items: choose(PLANETS.map(p => Object.assign({}, p, { v: p.size, s: `${n0(p.size)} km wide` })), n, 1e-9),
-        fact: 'More than 1,000 Earths could fit inside Jupiter!' }),
+        facts: TYPE_FACTS.planetOrder }),
+      n => ({ q: 'Which planet is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false,
+        items: choose(PLANETS.map(p => Object.assign({}, p, { v: p.size, s: `${n0(p.size)} km wide` })), n, 1e-9), facts: TYPE_FACTS.planetSize }),
       () => ({ q: 'Which is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false,
-        items: [E('☀️', 'The Sun', 1392700, '1,392,700 km wide'), E('🌍', 'The Earth', 12742, '12,742 km wide'), E('🌕', 'The Moon', 3474, '3,474 km wide')].slice(0, 3),
-        fact: 'About a million Earths could fit inside the Sun!' })
-    ])() },
-    { id: 'world', em: '🌍', name: 'Our world', sub: 'Coins, hot and cold, shapes, ABC', make: n => pick([
-      () => ({ q: 'Which coin is worth the most?', top: 'Most money', bottom: 'Least money', asc: false, items: choose(COINS, n), fact: 'A £2 coin is worth the same as two hundred 1p coins!' }),
-      () => ({ q: 'Which is hottest?', top: 'Hottest', bottom: 'Coldest', asc: false, items: choose(HOT, n), fact: 'The surface of the Sun is about 5,500 °C. That is hotter than any oven on Earth!' }),
-      () => ({ q: 'Which shape has the most sides?', top: 'Most sides', bottom: 'Fewest sides', asc: false, items: choose(SHAPES, n), fact: 'A stop sign is an octagon. It has 8 sides!' }),
-      () => ({ q: 'Put them in ABC order.', top: 'A', bottom: 'Z', asc: true, items: choose(ABC, n), fact: 'There are 26 letters in the alphabet.' }),
-      () => ({ q: 'Which is tallest?', top: 'Tallest', bottom: 'Shortest', asc: false, items: choose(TALL_THINGS, n, 1e-9), fact: 'The Shard in London is as tall as 70 double-decker buses stacked up!' })
-    ])() }
+        items: [E('☀️', 'The Sun', 1392700, '1,392,700 km wide'), E('🌍', 'The Earth', 12742, '12,742 km wide'), E('🌕', 'The Moon', 3474, '3,474 km wide')],
+        facts: TYPE_FACTS.sunMoon })
+    ] },
+    { id: 'world', em: '🌍', name: 'Our world', sub: 'Coins, hot and cold, shapes, ABC', kinds: [
+      n => ({ q: 'Which coin is worth the most?', top: 'Most money', bottom: 'Least money', asc: false, items: choose(COINS, n), facts: TYPE_FACTS.coins }),
+      n => ({ q: 'Which is hottest?', top: 'Hottest', bottom: 'Coldest', asc: false, items: choose(HOT, n), facts: TYPE_FACTS.hot }),
+      n => ({ q: 'Which shape has the most sides?', top: 'Most sides', bottom: 'Fewest sides', asc: false, items: choose(SHAPES, n), facts: TYPE_FACTS.shapes }),
+      n => ({ q: 'Put them in ABC order.', top: 'A', bottom: 'Z', asc: true, items: choose(ABC, n), facts: TYPE_FACTS.abc }),
+      n => ({ q: 'Which is tallest?', top: 'Tallest', bottom: 'Shortest', asc: false, items: choose(TALL_THINGS, n, 1e-9), facts: TYPE_FACTS.tallThings })
+    ] }
   ];
+  // Spoken pieces for each item: coins are said the way children say them.
+  const COIN_SAY = { '1p': 'one p', '2p': 'two p', '5p': 'five p', '10p': 'ten p', '20p': 'twenty p', '50p': 'fifty p', '£1': 'one pound', '£2': 'two pounds' };
+  const itemParts = it => it.parts || [it.t];
 
-  // ---------- Read aloud ----------
-  let voice = null;
+  // Facts: never the same one twice in a game, and avoid the last 40 seen on this device.
+  P.recent = P.recent || [];
+  function chooseFact(r) {
+    const byItem = r.items.slice().sort((a, b) => r.asc ? a.v - b.v : b.v - a.v).flatMap(it => ITEM_FACTS[it.t] || []);
+    const all = [...new Set(shuffle(byItem).concat(shuffle(r.facts.slice())))];
+    const used = G.facts;
+    const f = all.find(x => !used.has(x) && !P.recent.includes(x)) || all.find(x => !used.has(x))
+      || shuffle(Object.values(TYPE_FACTS).flat().concat(Object.values(ITEM_FACTS).flat())).find(x => !used.has(x)) || all[0];
+    used.add(f);
+    P.recent = [f].concat(P.recent.filter(x => x !== f)).slice(0, 40);
+    save();
+    return f;
+  }
+
+  // ---------- Read aloud: recorded voice, with the device voice as a back-up ----------
+  const lineKey = t => String(t).toLowerCase().replace(/[‘’]/g, "'").replace(/[–—−]/g, '-').replace(/\s+/g, ' ').trim();
+  const VOICE_URL = 'voice/emma';
+  const A = { ctx: null, buf: null, map: null, loading: null, srcs: [] };
+  function audioCtx() {
+    try {
+      if (!A.ctx) A.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (A.ctx.state === 'suspended') A.ctx.resume();
+    } catch {}
+    return A.ctx;
+  }
+  function loadVoice() {
+    if (A.loading) return A.loading;
+    A.loading = Promise.all([fetch(VOICE_URL + '.json').then(r => r.json()), fetch(VOICE_URL + '.mp3').then(r => r.arrayBuffer())])
+      .then(([map, ab]) => { A.map = map; const ctx = audioCtx(); return new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)); })
+      .then(buf => { A.buf = buf; })
+      .catch(() => { A.failed = true; });
+    return A.loading;
+  }
+  function stopSpeech() {
+    A.srcs.forEach(s => { try { s.stop(); } catch {} });
+    A.srcs = [];
+    try { speechSynthesis.cancel(); } catch {}
+  }
+  let fallbackVoice = null;
   function pickVoice() {
-    try { const vs = speechSynthesis.getVoices(); voice = vs.find(v => /en-GB/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null; } catch {}
+    try { const vs = speechSynthesis.getVoices(); fallbackVoice = vs.find(v => /en-GB/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null; } catch {}
   }
   try { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; } catch {}
-  function say(text) {
-    if (!P.sound) return;
+  function deviceSay(parts) {
     try {
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text.replace(/−/g, ' minus ').replace(/×/g, ' times ').replace(/\+/g, ' plus '));
-      if (voice) u.voice = voice;
+      const u = new SpeechSynthesisUtterance(parts.map(p => COIN_SAY[p] || p).join(' ').replace(/−/g, ' minus ').replace(/×/g, ' times ').replace(/\+/g, ' plus '));
+      if (fallbackVoice) u.voice = fallbackVoice;
       u.rate = 0.92; u.pitch = 1.05;
       speechSynthesis.speak(u);
     } catch {}
   }
+  // parts: an array of recorded lines, said one after another.
+  function say(parts) {
+    if (!P.sound) return;
+    if (typeof parts === 'string') parts = [parts];
+    stopSpeech();
+    const ctx = audioCtx();
+    if (A.buf && A.map && ctx && parts.every(p => A.map[lineKey(p)])) {
+      let t = ctx.currentTime + 0.03;
+      for (const p of parts) {
+        const [st, du] = A.map[lineKey(p)];
+        const src = ctx.createBufferSource();
+        src.buffer = A.buf; src.connect(ctx.destination);
+        src.start(t, st, du);
+        A.srcs.push(src);
+        t += du + (/[.!?]$/.test(p) ? 0.3 : 0.06);
+      }
+      return;
+    }
+    if (A.map) (window.__lineupMissing = window.__lineupMissing || []).push(...parts.filter(p => !A.map[lineKey(p)]));
+    if (!A.loading) loadVoice();
+    deviceSay(parts);
+  }
+  // Everything the game can say, for recording. Each entry is [key, words for the recording].
+  window.__lineupVoiceReady = () => !!(A.buf && A.map);
+  window.__lineupLines = () => {
+    const out = new Map();
+    const add = (k, words) => { if (k != null && k !== '') out.set(lineKey(k), words || String(k)); };
+    for (let i = 0; i < 100; i++) add(String(i));
+    for (let h = 1; h <= 9; h++) { add(`${h} hundred`); add(`${h} hundred and`); }
+    add('1000', 'one thousand');
+    ['plus', 'minus', 'times', 'double', 'ten and', 'tens and', 'ones', 'one'].forEach(w => add(w));
+    const pools = [ANIMAL_WEIGHT, ANIMAL_SPEED, LEGS, TALL_ANIMALS, TALL_THINGS, HOT, COINS, SHAPES, PLANETS, ABC, ...SEQS.map(s => s.items)];
+    pools.flat().forEach(it => add(it.t, COIN_SAY[it.t]));
+    ['The Sun', 'The Earth', 'The Moon'].forEach(t => add(t));
+    SEQS.forEach(s => { add(s.q); s.facts.forEach(f => add(f)); });
+    TOPICS.forEach(tp => tp.kinds.forEach(k => { for (const age of [6, 7, 8]) { const r = k(3, age); if (r) add(r.q); } }));
+    Object.values(TYPE_FACTS).flat().concat(Object.values(ITEM_FACTS).flat()).forEach(f => add(f));
+    PRAISE.flat().forEach(p => add(p));
+    ['You won a sticker!', 'Sticker book full!', 'You got', 'stars!', 'star!', 'Read aloud is on.'].forEach(w => add(w));
+    return [...out.entries()];
+  };
+
   const soundBtn = $('soundBtn');
   const paintSound = () => { soundBtn.setAttribute('aria-pressed', String(P.sound)); soundBtn.textContent = P.sound ? '🔊' : '🔈'; };
-  soundBtn.addEventListener('click', () => { P.sound = !P.sound; save(); paintSound(); if (P.sound) say('Read aloud is on.'); else try { speechSynthesis.cancel(); } catch {} });
+  soundBtn.addEventListener('click', () => {
+    P.sound = !P.sound; save(); paintSound();
+    if (P.sound) { audioCtx(); loadVoice().then(() => say('Read aloud is on.')); } else stopSpeech();
+  });
   paintSound();
+  if (P.sound) loadVoice();
 
   // ---------- Confetti ----------
   const fx = $('fx'), fxc = fx.getContext && fx.getContext('2d');
@@ -469,10 +628,11 @@ button { font: inherit; color: inherit; }
   paintCount();
 
   // ---------- A game: 5 rounds ----------
+  const PRAISE = [['Amazing!', 'Perfect!', 'Superstar!'], ['Brilliant!', 'Great job!', 'Well done!'], ['You did it!', 'Nice work!', 'Hooray!']];
   const ROUNDS = 5;
   let G = null, R = null;
   function startGame(topicId) {
-    G = { topic: topicId, i: 0, stars: 0, order: [] };
+    G = { topic: topicId, i: 0, stars: 0, order: [], usedKinds: {}, facts: new Set() };
     // Mixed play rotates topics and always includes some maths.
     if (!topicId) {
       const others = shuffle(['animals', 'grow', 'space', 'world']);
@@ -485,7 +645,15 @@ button { font: inherit; color: inherit; }
   function nextRound() {
     const topic = TOPICS.find(t => t.id === (G.topic || G.order[G.i]));
     const n = sizeFor(G.i);
-    const r = topic.make(n, P.age);
+    let r = null;
+    const used = G.usedKinds[topic.id] = G.usedKinds[topic.id] || [];
+    for (let t = 0; t < 12 && !r; t++) {
+      let fresh = topic.kinds.map((_, i) => i).filter(i => !used.includes(i));
+      if (!fresh.length) { used.length = 0; fresh = topic.kinds.map((_, i) => i); }
+      const ki = pick(fresh);
+      used.push(ki);
+      r = topic.kinds[ki](n, P.age);
+    }
     const correct = r.items.slice().sort((a, b) => r.asc ? a.v - b.v : b.v - a.v);
     let order;
     do { order = shuffle(correct.slice()); } while (order.every((it, k) => it === correct[k]));
@@ -497,6 +665,7 @@ button { font: inherit; color: inherit; }
     $('botEnd').textContent = '⬇ ' + r.bottom;
     $('cheer').hidden = true;
     build();
+    R.fact = chooseFact(R);
     if (P.sound && P.autoRead) say(r.q);
   }
   function minMoves(order, correct) {
@@ -569,7 +738,7 @@ button { font: inherit; color: inherit; }
   function clearPick() { if (R.picked) R.picked.el.classList.remove('picked'); R.picked = null; }
   function tap(it) {
     if (R.done) return;
-    if (P.sound) say(it.t);
+    if (P.sound) { audioCtx(); say(itemParts(it)); }
     if (!R.picked) { R.picked = it; it.el.classList.add('picked'); buzz(5); return; }
     if (R.picked === it) return clearPick();
     const a = R.picked; clearPick(); swapItems(a, it);
@@ -622,7 +791,7 @@ button { font: inherit; color: inherit; }
     R.order.forEach(it => { it.el.querySelector('.val').textContent = it.s || ''; });
     const stars = R.moves <= R.min ? 3 : R.moves <= R.min + 2 ? 2 : 1;
     G.stars += stars;
-    $('cheerT').textContent = pick(stars === 3 ? ['Amazing!', 'Perfect!', 'Superstar!'] : stars === 2 ? ['Brilliant!', 'Great job!', 'Well done!'] : ['You did it!', 'Nice work!', 'Hooray!']);
+    $('cheerT').textContent = pick(PRAISE[3 - stars]);
     $('stars').innerHTML = STAR.repeat(3);
     [...$('stars').children].forEach((s, i) => { if (i < stars) setTimeout(() => { s.classList.add('on'); buzz(12); }, 250 + i * 250); });
     $('fact').innerHTML = '<b>Fun fact:</b> ';
@@ -630,7 +799,7 @@ button { font: inherit; color: inherit; }
     $('nextBtn').textContent = G.i < ROUNDS - 1 ? 'Next ▶' : 'Finish ▶';
     $('cheer').hidden = false;
     confetti(stars === 3 ? 90 : 50);
-    say(`${$('cheerT').textContent} ${R.fact}`);
+    say([$('cheerT').textContent, R.fact]);
     setTimeout(() => $('cheer').scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'nearest' }), 150);
   }
   $('nextBtn').addEventListener('click', () => {
@@ -650,7 +819,7 @@ button { font: inherit; color: inherit; }
     show('reward');
     confetti(160);
     buzz([30, 60, 30, 60, 90]);
-    say(`${$('rewardT').textContent} You got ${G.stars} stars!`);
+    say([$('rewardT').textContent, 'You got', ...numParts(G.stars), G.stars === 1 ? 'star!' : 'stars!']);
   }
   function showBook() {
     $('book').innerHTML = STICKERS.map(s => P.stickers.includes(s) ? `<i>${s}</i>` : '<i class="no">?</i>').join('');
@@ -664,10 +833,12 @@ button { font: inherit; color: inherit; }
   $('toBook').addEventListener('click', showBook);
   $('bookBtn').addEventListener('click', showBook);
   $('bookHome').addEventListener('click', () => show('home'));
-  $('homeBtn').addEventListener('click', () => { try { speechSynthesis.cancel(); } catch {} show('home'); });
+  $('homeBtn').addEventListener('click', () => { stopSpeech(); show('home'); });
   $('sayBtn').addEventListener('click', () => {
+    audioCtx();
     if (!P.sound) { P.sound = true; save(); paintSound(); }
-    say(R ? `${R.q} ${R.order.map(it => it.t).join(', ')}` : '');
+    loadVoice();
+    if (R) say([R.q, ...R.order.flatMap(itemParts)]);
   });
 
   // Grown-ups: hold for 2 seconds so a quick tap from a child does nothing.
