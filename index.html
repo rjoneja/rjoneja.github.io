@@ -374,6 +374,13 @@ h1 {
   font-family: var(--font-body);
 }
 .cat-mix { grid-column: 1 / -1; }
+/* Ordo Kids: its own bright look so grown-ups spot it. Same colours in both themes and in dark mode. */
+.cat.cat-kids { grid-column: 1 / -1; text-decoration: none; background: linear-gradient(120deg, #E6FAF2 0%, #FFF3BF 100%); color: #0B2E4F;
+  border: 2px solid #0B2E4F; --coin: #FF6B5B; }
+.cat-kids .cat-sub { color: #3B5670; }
+.cat-kids .kids-tag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #FF6B5B; color: #fff;
+  border: 2px solid #0B2E4F; font-size: 12px; font-weight: 800; letter-spacing: 0; vertical-align: 3px; transform: rotate(-4deg); }
+.cat-kids:hover { border-color: #FF6B5B; }
 .cat-name { font-family: var(--font-display); font-weight: var(--dw); font-size: 20px; letter-spacing: -0.02em; }
 .cat-sub { font-size: 13px; color: var(--muted); }
 
@@ -464,6 +471,8 @@ h1 {
 }
 :root[data-skin="pop"] .cat-mix::before { background: conic-gradient(var(--c0), var(--c2), var(--c3), var(--c4), var(--c6), var(--c0)); }
 :root[data-skin="pop"] .cat-mix { border-color: var(--edge); }
+:root[data-skin="pop"] .cat.cat-kids { border-color: #0B2E4F; box-shadow: 2px 3px 0 #0B2E4F; }
+:root[data-skin="pop"] .cat-kids::before { border-color: #0B2E4F; }
 :root[data-skin="pop"] .cat[data-c="0"] { --coin: var(--c0); }
 :root[data-skin="pop"] .cat[data-c="1"] { --coin: var(--c1); }
 :root[data-skin="pop"] .cat[data-c="2"] { --coin: var(--c2); }
@@ -754,15 +763,15 @@ h1 {
 
   const GROUPS = [
     { id: 'mix', name: 'Mix', sub: 'A bit of everything' },
-    { id: 'pop', name: 'Pop culture', sub: 'Celebs, TV, songs, apps' },
-    { id: 'people', name: 'People', sub: 'Birthdays, Nobel winners, astronauts' },
-    { id: 'places', name: 'Places', sub: 'Countries, peaks, volcanoes' },
-    { id: 'history', name: 'History', sub: 'Firsts and timelines' },
-    { id: 'science', name: 'Science', sub: 'Elements, space, code' },
+    { id: 'pop', name: 'Pop culture', sub: 'Celebs, TV, games, brands' },
+    { id: 'people', name: 'People', sub: 'Birthdays, Oscars, astronauts' },
+    { id: 'places', name: 'Places', sub: 'Countries, cities, islands, landmarks' },
+    { id: 'history', name: 'History', sub: 'Kings, PMs, wars, firsts' },
+    { id: 'science', name: 'Science', sub: 'Inventions, planets, animals' },
     { id: 'sport', name: 'Football', sub: 'Legends, league tables, World Cups' },
-    { id: 'games', name: 'Sport', sub: 'Olympics, Tour de France' },
-    { id: 'film', name: 'Film', sub: 'Release years, budgets' },
-    { id: 'music', name: 'Music', sub: 'US charts, Eurovision' }
+    { id: 'games', name: 'Sport', sub: 'Olympics, tennis, F1' },
+    { id: 'film', name: 'Film', sub: 'Pixar, Bond, Oscars' },
+    { id: 'music', name: 'Music', sub: 'No. 1s, albums, bands' }
   ];
   const GROUP_OF = ['people', 'places', 'places', 'places', 'history', 'places', 'science', 'sport', 'film', 'science',
     'sport', 'sport', 'sport', 'sport', 'sport', 'sport', 'sport'];
@@ -1986,7 +1995,8 @@ h1 {
       return `<button type="button" class="cat${g.id === 'mix' ? ' cat-mix' : ''}" data-g="${g.id}" data-c="${(i + 6) % 7}">` +
         `<span class="cat-name">${g.name}</span><span class="cat-sub">${g.sub}</span>` +
         (b && b.score ? `<span class="cat-best">Best ${n0(b.score)}</span>` : '') + `</button>`;
-    }).join('');
+    }).join('') + `<a class="cat cat-kids" href="https://ordogame.com/kids/" target="_blank" rel="noopener">` +
+      `<span class="cat-name">Ordo<span class="kids-tag">kids</span></span><span class="cat-sub">For ages 4 to 9: pictures, counting, sums and read aloud</span></a>`;
     const no = dailyNo(), rec = prog.daily && prog.daily[no];
     $('dcTitle').textContent = `#${no}`;
     const run = prog.dailyRun && prog.dailyRun.no === no ? prog.dailyRun : null;
@@ -2007,7 +2017,7 @@ h1 {
   renderPicker();
   catsEl.addEventListener('click', e => {
     const b = e.target.closest('.cat');
-    if (!b) return;
+    if (!b || b.classList.contains('cat-kids')) return;
     startLadder(b.dataset.g);
   });
   function showPicker() {
