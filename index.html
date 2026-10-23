@@ -651,7 +651,8 @@ h1 {
 (() => {
   const PENALTY = 3;
   const SWIPE = 64;
-  const SIZES = [3, 3, 4, 4, 5, 5, 6, 6, 7];
+  // Never more than 5 items: beyond that it's hard to tell which ones are out of place. Later rounds get harder through the questions instead.
+  const SIZES = [3, 3, 4, 4, 5];
   const LEVELS = [1, 1, 2, 2, 2, 3, 3, 4, 4];
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const day = s => Math.round(Date.parse(s + 'T00:00:00Z') / 864e5);
