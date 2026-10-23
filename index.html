@@ -238,6 +238,7 @@ h1 {
 .trail i[data-h="cold"] { background: var(--miss); }
 .actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: stretch; }
 .actions .btn { padding: 12px 14px; }
+.actions.solo { grid-template-columns: 1fr; }
 .btn-alt {
   appearance: none; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer;
   border: 1px solid var(--edge); background: var(--surface-2); color: var(--fg);
@@ -1600,6 +1601,11 @@ h1 {
     el.pWa.href = 'https://wa.me/?text=' + encodeURIComponent(text);
     el.pWa.textContent = R.challenge ? 'Reply' : 'Challenge';
     el.pCopy.textContent = 'Copy';
+    // In the daily, sharing waits for the results screen: one grid for the whole puzzle, with the #daily link.
+    const inDaily = S.mode === 'daily' && !R.challenge;
+    el.pWa.hidden = el.pCopy.hidden = inDaily;
+    if (inDaily) el.pShareText.hidden = true;
+    el.pBtn.parentElement.classList.toggle('solo', inDaily);
     fitSheet();
   }
   function fitSheet() {
@@ -1865,7 +1871,7 @@ h1 {
     el.eyebrow.textContent = `Ordo #${S.no} · Round ${S.di + 1} of ${S.dRounds.length}` + (S.di === S.dRounds.length - 1 ? ' · the tricky one' : '');
   }
   function dailyNextLabel() {
-    return S.di < S.dRounds.length - 1 ? `Next · round ${S.di + 2} of ${S.dRounds.length}` : 'See results';
+    return S.di < S.dRounds.length - 1 ? `Next · round ${S.di + 2} of ${S.dRounds.length}` : 'See your score and share';
   }
   const SQUARE = { 3: '🟩', 2: '🟨', 1: '🟧', 0: '🟥' };
   function dailyShare(no, res) {
