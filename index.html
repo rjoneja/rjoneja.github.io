@@ -377,6 +377,8 @@ h1 {
 .d-next { margin: 0; color: var(--muted); font-size: 14px; }
 .d-rank { margin: 0; font-weight: 700; font-size: 15px; }
 .cd-rank { margin: 0; font-weight: 700; font-size: 14px; }
+.link-btn { appearance: none; background: none; border: 0; padding: 2px 0; justify-self: start; align-self: flex-start; cursor: pointer;
+  font: inherit; font-weight: 800; font-size: 15px; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 .dc-players { font-size: 13px; opacity: .85; }
 .about { display: flex; flex-direction: column; gap: 12px; }
 .about p { margin: 0; }
@@ -574,6 +576,7 @@ h1 {
       </select>
     </div>
     <button type="button" class="toggle" id="catsBtn">Categories and practice</button>
+    <button type="button" class="toggle" id="topBtn">Top scores</button>
     <button type="button" class="toggle" id="aboutBtn">About Ordo</button>
   </section>
 
@@ -639,6 +642,7 @@ h1 {
       </div>
     </form>
     <p class="d-rank" id="dRank" hidden></p>
+    <button type="button" class="link-btn" id="dBoardLink" hidden>See the leaderboard →</button>
     <ol class="board" id="pBoard" hidden></ol>
     <p class="d-next" id="dNext"></p>
     <button class="btn-alt" id="dPractice" type="button">Practise a category</button>
@@ -670,6 +674,7 @@ h1 {
     <p class="note" id="pNote" hidden></p>
     <p class="basis" id="pBasis" hidden></p>
     <p class="cd-rank" id="cdRank" hidden></p>
+    <button type="button" class="link-btn" id="cdBoardLink" hidden>See the leaderboard →</button>
     <form class="namer" id="cdNamer" hidden>
       <label class="namer-label" for="cdNameIn" id="cdNamerLabel">You made the top 5. Add your name:</label>
       <div class="namer-row">
@@ -1643,7 +1648,7 @@ h1 {
   function setPanel(title, pts, ptsMiss, detail, btn, extra = {}) {
     el.pTitle.textContent = title;
     if (extra.count != null) countUp(el.pPts, 0, extra.count, '', '/100'); else { el.pPts._cu = null; el.pPts.textContent = pts; }
-    $('namer').hidden = true; $('pBoard').hidden = true; $('cdNamer').hidden = true; $('cdRank').hidden = true;
+    $('namer').hidden = true; $('pBoard').hidden = true; $('cdNamer').hidden = true; $('cdRank').hidden = true; $('cdBoardLink').hidden = true;
     const stars = el.pStars || (el.pStars = $('pStars'));
     stars.innerHTML = extra.stars ? STAR.repeat(3) : '';
     if (extra.stars) [...stars.children].forEach((sv, i) => {
@@ -1792,7 +1797,7 @@ h1 {
       : '<li class="empty">No scores yet. Be the first.</li>';
     [...node.querySelectorAll('.who b')].forEach((b, i) => { b.textContent = list[i].name; });
   }
-  let pendingRun = null;
+  let pendingRun = null, pendingBoardTab = null, cdBoardTab = null;
   async function offerBoard() {
     const no = S.no, score = S.score;
     const res = await api('/api/score', { day: no, pid: prog.pid, score });
@@ -1801,6 +1806,8 @@ h1 {
       const rk = $('dRank');
       rk.textContent = players >= SHOW_COUNT ? `You're ${ordinal(res.rankDay)} of ${n0(players)} today.` : `You're ${ordinal(res.rankDay)} today.`;
       rk.hidden = false;
+      pendingBoardTab = res.rankAll <= 5 ? 'all' : 'day';
+      $('dBoardLink').hidden = false;
       const inAll = res.rankAll <= 5, inDay = res.rankDay <= 5;
       if ((!inDay && !inAll) || !res.score) return;
       pendingRun = { shared: true, all: inAll, no, score: res.score, played: S.played, group: 'daily', kind: 'daily', day: dayKey(), ts: Date.now() };
@@ -1842,6 +1849,17 @@ h1 {
   // Boards screen, reached from the category picker.
   let boardTab = 'day';
   let boardGame = 'daily';
+  function openBoards(game, tab) {
+    if (game) boardGame = game;
+    if (tab) boardTab = tab;
+    releasePointer();
+    if (R && R.status === 'play') R.status = 'idle';
+    ['play', 'dailyDone', 'about'].forEach(id => { $(id).hidden = true; });
+    el.app.classList.remove('sheet-open');
+    $('tools').hidden = true; $('setBtn').setAttribute('aria-expanded', 'false');
+    showBoards();
+    try { scrollTo(0, 0); } catch {}
+  }
   function showBoards() {
     $('picker').hidden = true; $('boards').hidden = false;
     $('tabDay').setAttribute('aria-pressed', String(boardTab === 'day'));
@@ -1870,7 +1888,10 @@ h1 {
         : `Best daily scores ever` + (b.playersEver >= SHOW_COUNT ? `, from ${n0(b.playersEver)} players.` : '.');
     });
   }
-  $('boardsBtn').addEventListener('click', showBoards);
+  $('boardsBtn').addEventListener('click', () => openBoards());
+  $('topBtn').addEventListener('click', () => openBoards());
+  $('dBoardLink').addEventListener('click', () => openBoards('daily', pendingBoardTab || 'day'));
+  $('cdBoardLink').addEventListener('click', () => openBoards('cd', cdBoardTab || 'day'));
   // About: hides whatever is showing and puts it back on Back.
   let aboutPrev = null;
   $('aboutBtn').addEventListener('click', () => {
@@ -1993,7 +2014,7 @@ h1 {
     const text = dailyShare(no, res);
     $('dShareText').value = text; $('dShareText').hidden = true;
     $('dWa').href = 'https://wa.me/?text=' + encodeURIComponent(text);
-    $('namer').hidden = true; $('pBoard').hidden = true; $('dRank').hidden = true;
+    $('namer').hidden = true; $('pBoard').hidden = true; $('dRank').hidden = true; $('dBoardLink').hidden = true;
     if (fresh) {
       if (total >= 400) confetti(150, innerHeight * 0.25);
       S.score = total; S.no = no; S.played = res.length;
@@ -2167,6 +2188,8 @@ h1 {
     const rk = $('cdRank');
     rk.textContent = res.rankDay === 1 ? 'Best run anyone has had today!' : `${ordinal(res.rankDay)} best run today.` + (res.rankAll <= 5 ? ` ${ordinal(res.rankAll)} of all time!` : '');
     rk.hidden = false;
+    cdBoardTab = res.rankAll <= 5 ? 'all' : 'day';
+    $('cdBoardLink').hidden = false;
     if ((res.rankDay <= 5 || res.rankAll <= 5) && !res.named) {
       $('cdNamerLabel').textContent = res.rankAll <= 5 ? `You're ${ordinal(res.rankAll)} of all time! Add your name:` : "You're in today's top 5! Add your name:";
       $('cdNameIn').value = prog.name || '';

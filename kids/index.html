@@ -116,6 +116,20 @@ button { font: inherit; color: inherit; }
 .end { display: flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 800; font-size: 18px; color: var(--blue); }
 .end.low { color: var(--soft); }
 .stack { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+/* Moves left: a column of balloons beside the list; one pops with every move. */
+.play-area { display: grid; grid-template-columns: minmax(0, 1fr) 52px; gap: 8px; align-items: stretch; }
+.play-area.nolimit { grid-template-columns: minmax(0, 1fr); }
+.play-area.nolimit .moves { display: none; }
+.moves { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; border: 2.5px solid var(--ink); border-radius: 26px;
+  background: var(--surface); box-shadow: 0 4px 0 var(--ink); }
+.moves b { font-family: var(--font-display); font-weight: 800; font-size: 26px; line-height: 1; color: var(--ink); }
+.moves.low b { color: var(--coral); }
+.moves-l { font-size: 11px; font-weight: 800; color: var(--ink); opacity: .7; }
+.balloons { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; justify-content: flex-start; }
+.balloons i { font-style: normal; font-size: 24px; line-height: 1.1; transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), opacity .3s; }
+.balloons i.pop { transform: scale(.4); opacity: .18; filter: grayscale(1); }
+.balloons i.popping { animation: popb .35s ease-out forwards; }
+@keyframes popb { 0% { transform: scale(1); } 40% { transform: scale(1.5); opacity: 1; } 100% { transform: scale(.4); opacity: .18; filter: grayscale(1); } }
 .row { position: relative; height: 76px; touch-action: none; user-select: none; -webkit-user-select: none; transition: transform .25s cubic-bezier(.2, .8, .2, 1); outline: none; cursor: grab; }
 .row.dragging { z-index: 5; transition: none; cursor: grabbing; }
 .card {
@@ -211,6 +225,7 @@ button { font: inherit; color: inherit; }
         <p class="lvl-note">Maths follows the English national curriculum. After that, each topic moves up or down by itself as your child plays. They never see a level.</p>
       </div>
       <div class="switch">Read questions aloud when a round starts<button class="toggle" id="autoRead" type="button" aria-pressed="false">Off</button></div>
+      <div class="switch">Limit the number of moves (balloons pop with each move)<button class="toggle" id="moveLimit" type="button" aria-pressed="true">On</button></div>
       <div class="switch">Clear the sticker book<button class="toggle" id="resetBtn" type="button">Clear</button></div>
       <p>No ads and no sign-up. Progress is saved only on this device. Facts use rounded, typical figures, for example an average adult elephant's weight.</p>
     </div>
@@ -221,7 +236,10 @@ button { font: inherit; color: inherit; }
     <div class="dots" id="dots" aria-hidden="true"></div>
     <div class="ask"><h1 id="q">Which is heaviest?</h1><button class="icon-btn" id="sayBtn" type="button" aria-label="Read the question">🔊</button></div>
     <div class="end" id="topEnd">⬆ Heaviest</div>
-    <ol class="stack" id="stack"></ol>
+    <div class="play-area" id="playArea">
+      <ol class="stack" id="stack"></ol>
+      <div class="moves" id="moves" aria-live="polite"><b id="movesN">3</b><div class="balloons" id="balloons"></div><span class="moves-l">moves</span></div>
+    </div>
     <div class="end low" id="botEnd">⬇ Lightest</div>
     <div class="cheer" id="cheer" hidden aria-live="polite">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h2 id="cheerT">Brilliant!</h2><div class="stars" id="stars"></div></div>
@@ -255,7 +273,7 @@ button { font: inherit; color: inherit; }
 (() => {
   // ---------- Saved progress (this device only) ----------
   const KEY = 'lineup.kids';
-  let P = { age: 7, stickers: [], sound: false, autoRead: false, games: 0 };
+  let P = { age: 7, stickers: [], sound: false, autoRead: false, games: 0, moveLimit: true };
   try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
   // Levels: 0 Reception, 1 Year 1, 2 Year 2, 3 Year 3, 4 Year 4. Older saves stored an age of 6, 7 or 8.
   if (typeof P.start !== 'number') P.start = Math.max(0, Math.min(4, (P.age || 7) - 5));
@@ -768,7 +786,7 @@ button { font: inherit; color: inherit; }
     TOPICS.forEach(tp => tp.kinds.forEach(k => { for (const age of [5, 6, 7, 8, 9]) { const r = k(3, age); if (r) add(r.q); } }));
     Object.values(TYPE_FACTS).flat().concat(Object.values(ITEM_FACTS).flat()).forEach(f => add(f));
     PRAISE.flat().forEach(p => add(p));
-    ['You won a sticker!', 'Sticker book full!', 'You got', 'stars!', 'star!', 'Read aloud is on.'].forEach(w => add(w));
+    ['You won a sticker!', 'Sticker book full!', 'You got', 'stars!', 'star!', 'Read aloud is on.', 'Out of moves!', "Here's the right order."].forEach(w => add(w));
     return [...out.entries()];
   };
 
@@ -862,6 +880,9 @@ button { font: inherit; color: inherit; }
     do { order = shuffle(correct.slice()); } while (order.every((it, k) => it === correct[k]));
     R = Object.assign(r, { correct, order, moves: 0, done: false, picked: null });
     R.min = Math.min(minMoves(order, correct), minSwaps(order, correct));
+    R.limit = P.moveLimit !== false;
+    R.budget = R.min + (lv <= 0 ? 3 : 2);
+    paintMoves(false);
     $('dots').innerHTML = Array.from({ length: ROUNDS }, (_, k) => `<i class="${k < G.i ? 'done' : k === G.i ? 'now' : ''}"></i>`).join('');
     $('q').textContent = r.q;
     $('topEnd').textContent = '⬆ ' + r.top;
@@ -922,12 +943,47 @@ button { font: inherit; color: inherit; }
     requestAnimationFrame(() => rows.forEach(r => { r.style.transition = ''; r.style.transform = ''; }));
   }
   function apply() { R.order.forEach(it => stack.appendChild(it.el)); paint(); }
+  function paintMoves(popLast) {
+    $('playArea').classList.toggle('nolimit', !R.limit);
+    if (!R.limit) return;
+    const left = Math.max(0, R.budget - R.moves);
+    $('movesN').textContent = left;
+    $('moves').classList.toggle('low', left <= 1);
+    $('moves').setAttribute('aria-label', `${left} moves left`);
+    const box = $('balloons');
+    if (box.children.length !== R.budget || !popLast) box.innerHTML = '<i>🎈</i>'.repeat(R.budget);
+    [...box.children].forEach((b, i) => {
+      const gone = i >= left;
+      if (gone && popLast && i === left && !calm()) { b.classList.add('popping'); }
+      else b.classList.toggle('pop', gone);
+    });
+  }
   function after() {
     R.moves++;
+    paintMoves(true);
     const okNow = R.order.filter((it, i) => R.correct[i] === it).length;
     buzz(okNow > (R.lastOk || 0) ? 15 : 6);
     R.lastOk = okNow;
-    if (okNow === R.order.length) solved();
+    if (okNow === R.order.length) return solved();
+    if (R.limit && R.moves >= R.budget) outOfMoves();
+  }
+  // Out of balloons: show the right order kindly and move on.
+  function outOfMoves() {
+    R.done = true;
+    clearPick();
+    learn(R.topicId, 1);
+    setTimeout(() => {
+      flip(() => { R.order = R.correct.slice(); apply(); });
+      R.order.forEach(it => { it.el.querySelector('.val').textContent = it.s || ''; });
+      $('cheerT').textContent = 'Out of moves!';
+      $('stars').innerHTML = STAR.repeat(3);
+      $('fact').innerHTML = "<b>Here's the right order.</b> ";
+      $('fact').append(R.fact);
+      $('nextBtn').textContent = G.i < ROUNDS - 1 ? 'Next ▶' : 'Finish ▶';
+      $('cheer').hidden = false;
+      say(['Out of moves!', "Here's the right order.", R.fact]);
+      setTimeout(() => $('cheer').scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'nearest' }), 150);
+    }, 450);
   }
   function swapItems(a, b) {
     const i = R.order.indexOf(a), j = R.order.indexOf(b);
@@ -1025,7 +1081,7 @@ button { font: inherit; color: inherit; }
     R.done = true;
     sortLogo(document.querySelector('#homeBtn .logo-svg'), 200);
     R.order.forEach(it => { it.el.querySelector('.val').textContent = it.s || ''; });
-    const stars = R.moves <= R.min ? 3 : R.moves <= R.min + 2 ? 2 : 1;
+    const stars = R.moves <= R.min ? 3 : R.moves <= R.min + 1 ? 2 : 1;
     learn(R.topicId, stars);
     G.stars += stars;
     $('cheerT').textContent = pick(PRAISE[3 - stars]);
@@ -1087,6 +1143,10 @@ button { font: inherit; color: inherit; }
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => gb.addEventListener(t, stopHold));
   gb.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) startHold(e); });
   gb.addEventListener('keyup', stopHold);
+  const ml = $('moveLimit');
+  const paintML = () => { ml.setAttribute('aria-pressed', String(P.moveLimit !== false)); ml.textContent = P.moveLimit !== false ? 'On' : 'Off'; };
+  ml.addEventListener('click', () => { P.moveLimit = P.moveLimit === false; save(); paintML(); });
+  paintML();
   const ar = $('autoRead');
   const paintAR = () => { ar.setAttribute('aria-pressed', String(P.autoRead)); ar.textContent = P.autoRead ? 'On' : 'Off'; };
   ar.addEventListener('click', () => { P.autoRead = !P.autoRead; if (P.autoRead) P.sound = true; save(); paintAR(); paintSound(); });
