@@ -107,6 +107,8 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-body); f
 
 /* Header */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mark { appearance: none; background: none; border: 0; padding: 0; margin: 0; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 8px; }
 .mark { display: flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: var(--dw); font-size: 20px; letter-spacing: -0.03em; }
 /* Brand: mark B (ranked bars between an up and a down arrowhead) in fixed brand colours. */
 .logo { width: 34px; height: 34px; flex: none; overflow: visible; }
@@ -552,13 +554,13 @@ h1 {
 
 <main class="app">
   <header class="top">
-    <div class="mark" id="mark" role="img" aria-label="Ordo"><svg class="logo" viewBox="0 0 120 120" aria-hidden="true">
+    <button type="button" class="mark" id="mark" aria-label="Ordo: back to the start"><svg class="logo" viewBox="0 0 120 120" aria-hidden="true">
       <polygon class="lg-up" points="60,6 86,28 34,28"/>
       <rect class="lg-b" x="20" y="38" width="80" height="13" rx="6.5"/>
       <rect class="lg-b" x="28" y="55" width="64" height="13" rx="6.5"/>
       <rect class="lg-b" x="36" y="72" width="48" height="13" rx="6.5"/>
       <polygon class="lg-dn" points="34,92 86,92 60,114"/>
-    </svg><span class="wordmark" aria-hidden="true">ordo</span></div>
+    </svg><span class="wordmark" aria-hidden="true">ordo</span></button>
     <div class="hud">
       <div class="lives" id="lives" aria-label="Lives"><i></i><i></i><i></i></div>
       <span class="score-wrap" aria-label="Score"><b class="score" id="score">0</b><span class="score-max" id="scoreMax"></span></span>
@@ -2264,6 +2266,13 @@ h1 {
     newRound();
   }
   $('cdCard').addEventListener('click', startCountdown);
+  // The logo always goes back to the start screen. A daily in progress picks up where it left off.
+  $('mark').addEventListener('click', () => {
+    $('tools').hidden = true; $('setBtn').setAttribute('aria-expanded', 'false');
+    if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
+    showPicker();
+    try { scrollTo(0, 0); } catch {}
+  });
   el.pBtn.addEventListener('click', () => {
     if (S.mode === 'countdown') return startCountdown();
     if (S.mode === 'daily' && !R.challenge) {

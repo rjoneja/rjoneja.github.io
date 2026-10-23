@@ -175,6 +175,15 @@ button { font: inherit; color: inherit; }
 .btn-row { display: grid; gap: 10px; width: 100%; }
 .book { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .book i { aspect-ratio: 1; max-width: 100%; border-radius: 50%; border: 3px solid var(--ink); background: var(--surface); display: grid; place-items: center; font-style: normal; font-size: 40px; }
+.book i:not(.no) { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.book i.a-wiggle { animation: st-wiggle .7s ease-in-out; }
+.book i.a-bounce { animation: st-bounce .7s cubic-bezier(.3, 1.6, .5, 1); }
+.book i.a-spin { animation: st-spin .7s ease-in-out; }
+.book i.a-jump { animation: st-jump .7s ease-out; }
+@keyframes st-wiggle { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-18deg); } 40% { transform: rotate(16deg); } 60% { transform: rotate(-10deg); } 80% { transform: rotate(6deg); } }
+@keyframes st-bounce { 0% { transform: scale(1); } 30% { transform: scale(1.35, .8); } 55% { transform: scale(.85, 1.2); } 80% { transform: scale(1.08); } 100% { transform: scale(1); } }
+@keyframes st-spin { 0% { transform: rotate(0) scale(1); } 50% { transform: rotate(200deg) scale(1.25); } 100% { transform: rotate(360deg) scale(1); } }
+@keyframes st-jump { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-34px) rotate(-8deg); } 60% { transform: translateY(0) scale(1.1, .9); } 80% { transform: translateY(-8px); } }
 .book i.no { background: var(--line); color: var(--soft); font-family: var(--font-display); font-weight: 800; font-size: 26px; border-style: dashed; }
 
 /* Grown-ups */
@@ -786,6 +795,7 @@ button { font: inherit; color: inherit; }
     TOPICS.forEach(tp => tp.kinds.forEach(k => { for (const age of [5, 6, 7, 8, 9]) { const r = k(3, age); if (r) add(r.q); } }));
     Object.values(TYPE_FACTS).flat().concat(Object.values(ITEM_FACTS).flat()).forEach(f => add(f));
     PRAISE.flat().forEach(p => add(p));
+    STICKER_NAMES.forEach(n => add(n));
     ['You won a sticker!', 'Sticker book full!', 'You got', 'stars!', 'star!', 'Read aloud is on.', 'Out of moves!', "Here's the right order."].forEach(w => add(w));
     return [...out.entries()];
   };
@@ -837,6 +847,8 @@ button { font: inherit; color: inherit; }
   }));
   paintLvl();
   const STICKERS = ['🦊', '🐼', '🐨', '🐯', '🦁', '🐸', '🐵', '🦄', '🐙', '🦖', '🐢', '🦒', '🐧', '🦉', '🐳', '🦋', '🐝', '🐞', '🦜', '🦩', '🐬', '🦔', '🐿️', '🦥'];
+  const STICKER_NAMES = ['Fox', 'Panda', 'Koala', 'Tiger', 'Lion', 'Frog', 'Monkey', 'Unicorn', 'Octopus', 'Dinosaur', 'Turtle', 'Giraffe', 'Penguin', 'Owl',
+    'Whale', 'Butterfly', 'Bee', 'Ladybird', 'Parrot', 'Flamingo', 'Dolphin', 'Hedgehog', 'Squirrel', 'Sloth'];
   const paintCount = () => { $('stickerN').textContent = P.stickers.length; };
   paintCount();
 
@@ -1114,8 +1126,20 @@ button { font: inherit; color: inherit; }
     buzz([30, 60, 30, 60, 90]);
     say([$('rewardT').textContent, 'You got', ...numParts(G.stars), G.stars === 1 ? 'star!' : 'stars!']);
   }
+  // Tap a sticker: it wiggles, bounces, spins or jumps, and says its name if read aloud is on.
+  function playSticker(el) {
+    const k = Number(el.dataset.k);
+    const anims = ['a-wiggle', 'a-bounce', 'a-spin', 'a-jump'];
+    el.classList.remove(...anims); void el.offsetWidth;
+    if (!calm()) el.classList.add(pick(anims));
+    buzz(12);
+    if (P.sound) { audioCtx(); say(STICKER_NAMES[k]); }
+  }
+  $('book').addEventListener('click', e => { const el = e.target.closest('i[data-k]'); if (el) playSticker(el); });
+  $('book').addEventListener('keydown', e => { const el = e.target.closest('i[data-k]'); if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); playSticker(el); } });
+  $('book').addEventListener('animationend', e => e.target.classList.remove('a-wiggle', 'a-bounce', 'a-spin', 'a-jump'));
   function showBook() {
-    $('book').innerHTML = STICKERS.map(s => P.stickers.includes(s) ? `<i>${s}</i>` : '<i class="no">?</i>').join('');
+    $('book').innerHTML = STICKERS.map((s, k) => P.stickers.includes(s) ? `<i role="button" tabindex="0" data-k="${k}" aria-label="${STICKER_NAMES[k]}">${s}</i>` : '<i class="no">?</i>').join('');
     $('bookT').textContent = `My stickers: ${P.stickers.length} of ${STICKERS.length}`;
     show('bookView');
   }
