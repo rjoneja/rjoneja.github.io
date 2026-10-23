@@ -376,6 +376,7 @@ h1 {
 .d-actions .btn { text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 .d-next { margin: 0; color: var(--muted); font-size: 14px; }
 .d-rank { margin: 0; font-weight: 700; font-size: 15px; }
+.cd-rank { margin: 0; font-weight: 700; font-size: 14px; }
 .dc-players { font-size: 13px; opacity: .85; }
 .about { display: flex; flex-direction: column; gap: 12px; }
 .about p { margin: 0; }
@@ -594,6 +595,10 @@ h1 {
 
   <section class="boards" id="boards" hidden>
     <div class="picker-head"><h1>Top scores</h1><button type="button" class="toggle" id="boardsBack">Back</button></div>
+    <div class="seg" role="group" aria-label="Game">
+      <button type="button" id="gameDaily" aria-pressed="true">Daily puzzle</button>
+      <button type="button" id="gameCd" aria-pressed="false">Countdown</button>
+    </div>
     <div class="seg" role="group" aria-label="Period">
       <button type="button" id="tabDay" aria-pressed="true">Today</button>
       <button type="button" id="tabAll" aria-pressed="false">All time</button>
@@ -664,6 +669,14 @@ h1 {
     <div class="stat"><div class="trail" id="pTrail" aria-hidden="true"></div><p class="detail" id="pDetail"></p></div>
     <p class="note" id="pNote" hidden></p>
     <p class="basis" id="pBasis" hidden></p>
+    <p class="cd-rank" id="cdRank" hidden></p>
+    <form class="namer" id="cdNamer" hidden>
+      <label class="namer-label" for="cdNameIn" id="cdNamerLabel">You made the top 5. Add your name:</label>
+      <div class="namer-row">
+        <input class="namer-in" id="cdNameIn" maxlength="16" autocomplete="nickname" placeholder="Your name" required>
+        <button class="btn-alt" type="submit">Save</button>
+      </div>
+    </form>
     <textarea class="sharebox" id="pShareText" rows="4" readonly hidden aria-label="Challenge message"></textarea>
     <div class="actions">
       <button class="btn" id="pBtn" type="button">Next round</button>
@@ -1630,7 +1643,7 @@ h1 {
   function setPanel(title, pts, ptsMiss, detail, btn, extra = {}) {
     el.pTitle.textContent = title;
     if (extra.count != null) countUp(el.pPts, 0, extra.count, '', '/100'); else { el.pPts._cu = null; el.pPts.textContent = pts; }
-    $('namer').hidden = true; $('pBoard').hidden = true;
+    $('namer').hidden = true; $('pBoard').hidden = true; $('cdNamer').hidden = true; $('cdRank').hidden = true;
     const stars = el.pStars || (el.pStars = $('pStars'));
     stars.innerHTML = extra.stars ? STAR.repeat(3) : '';
     if (extra.stars) [...stars.children].forEach((sv, i) => {
@@ -1773,9 +1786,9 @@ h1 {
     [...node.querySelectorAll('.who b')].forEach((b, i) => { b.textContent = list[i].name; });
   }
   // Shared lists come back as [{ score, name, day, me }].
-  function renderShared(node, list, all) {
+  function renderShared(node, list, all, cd) {
     node.innerHTML = list.length ? list.map((e, i) =>
-      `<li class="${e.me ? 'me' : ''}"><span class="rk">${i + 1}</span><span class="who"><b></b><span>${all ? 'Daily #' + e.day : e.me ? 'You' : ''}</span></span><span class="sc">${n0(e.score)}</span></li>`).join('')
+      `<li class="${e.me ? 'me' : ''}"><span class="rk">${i + 1}</span><span class="who"><b></b><span>${all && !cd ? 'Daily #' + e.day : e.me ? 'You' : ''}</span></span><span class="sc">${n0(e.score)}${cd ? ' in a row' : ''}</span></li>`).join('')
       : '<li class="empty">No scores yet. Be the first.</li>';
     [...node.querySelectorAll('.who b')].forEach((b, i) => { b.textContent = list[i].name; });
   }
@@ -1828,11 +1841,25 @@ h1 {
   });
   // Boards screen, reached from the category picker.
   let boardTab = 'day';
+  let boardGame = 'daily';
   function showBoards() {
     $('picker').hidden = true; $('boards').hidden = false;
     $('tabDay').setAttribute('aria-pressed', String(boardTab === 'day'));
     $('tabAll').setAttribute('aria-pressed', String(boardTab === 'all'));
+    $('gameDaily').setAttribute('aria-pressed', String(boardGame === 'daily'));
+    $('gameCd').setAttribute('aria-pressed', String(boardGame === 'cd'));
     const tab = boardTab, list = $('boardList'), note = $('boardNote');
+    if (boardGame === 'cd') {
+      list.innerHTML = '<li class="empty">Loading…</li>';
+      note.textContent = prog.cdBest ? `Your best: ${prog.cdBest} in a row.` : 'Play Countdown to get on the board.';
+      api(`/api/cdboard?day=${dailyNo()}&pid=${prog.pid}`).then(b => {
+        if (boardGame !== 'cd' || boardTab !== tab || $('boards').hidden) return;
+        if (!b) { list.innerHTML = '<li class="empty">Couldn’t reach the board just now.</li>'; return; }
+        renderShared(list, tab === 'day' ? b.today : b.all, tab === 'all', true);
+        note.textContent = (tab === 'day' ? 'Best Countdown runs today.' : 'Best Countdown runs ever, one per player.') + (prog.cdBest ? ` Your best: ${prog.cdBest} in a row.` : '');
+      });
+      return;
+    }
     renderBoard(list, tab === 'day' ? topDay() : topAll());
     note.textContent = 'Daily puzzle scores played on this device.';
     api(`/api/board?day=${dailyNo()}&pid=${prog.pid}`).then(b => {
@@ -1860,6 +1887,8 @@ h1 {
     aboutPrev = null;
   });
   $('tabDay').addEventListener('click', () => { boardTab = 'day'; showBoards(); });
+  $('gameDaily').addEventListener('click', () => { boardGame = 'daily'; showBoards(); });
+  $('gameCd').addEventListener('click', () => { boardGame = 'cd'; showBoards(); });
   $('tabAll').addEventListener('click', () => { boardTab = 'all'; showBoards(); });
   $('boardsBack').addEventListener('click', () => { $('boards').hidden = true; $('about').hidden = true; $('picker').hidden = false; });
 
@@ -2014,6 +2043,7 @@ h1 {
     if (grew) toast(grew === 1 ? 'Streak started. Come back tomorrow' : `${grew}-day streak!`, true);
     if (S.mode === 'countdown') {
       const best = prog.cdBest || 0, got = S.cleared;
+      if (got > 0) sendCountdown(got);
       if (got > best) { prog.cdBest = got; saveProg(); }
       const title = got > best && best > 0 ? 'New best!' : "Time's up";
       if (got > best && best > 0) confetti(80, innerHeight * 0.25);
@@ -2130,6 +2160,29 @@ h1 {
     showPicker();
   });
 
+  async function sendCountdown(got) {
+    const run = S;
+    const res = await api('/api/cd', { day: dailyNo(), pid: prog.pid, score: got });
+    if (!res || S !== run || el.panel.hidden) return;
+    const rk = $('cdRank');
+    rk.textContent = res.rankDay === 1 ? 'Best run anyone has had today!' : `${ordinal(res.rankDay)} best run today.` + (res.rankAll <= 5 ? ` ${ordinal(res.rankAll)} of all time!` : '');
+    rk.hidden = false;
+    if ((res.rankDay <= 5 || res.rankAll <= 5) && !res.named) {
+      $('cdNamerLabel').textContent = res.rankAll <= 5 ? `You're ${ordinal(res.rankAll)} of all time! Add your name:` : "You're in today's top 5! Add your name:";
+      $('cdNameIn').value = prog.name || '';
+      $('cdNamer').hidden = false;
+    }
+    fitSheet();
+  }
+  $('cdNamer').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = $('cdNameIn').value.trim().slice(0, 16) || 'Player';
+    prog.name = name; saveProg();
+    $('cdNamer').hidden = true; fitSheet();
+    const res = await api('/api/cdname', { day: dailyNo(), pid: prog.pid, name });
+    toast(res ? 'On the Countdown board!' : "Couldn't reach the board. Try again later.");
+    $('cdNameIn').blur();
+  });
   function startCountdown() {
     S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'countdown' };
     shownScore = 0;
