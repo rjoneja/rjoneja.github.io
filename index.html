@@ -16,6 +16,17 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <title>Ordo</title>
+<script>
+  // Runs before the page is drawn, so it never shows the wrong theme first.
+  (function () {
+    var d = document.documentElement, skin = 'pop';
+    try { if (localStorage.getItem('quickrank.skin') === 'moss') skin = 'moss'; } catch (e) {}
+    d.setAttribute('data-skin', skin);
+    try {
+      if (sessionStorage.getItem('ordo.splash') !== '1' && !matchMedia('(prefers-reduced-motion: reduce)').matches) d.setAttribute('data-splash', '1');
+    } catch (e) {}
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Atkinson+Hyperlegible:wght@400;700&family=Martian+Mono:wght@400;600&family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap">
@@ -106,7 +117,9 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-body); f
 .logo .lg-dn { fill: #3FB6E0; }
 .wordmark { font-family: "Fredoka", "Arial Rounded MT Bold", ui-rounded, system-ui, sans-serif; font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
 .mark .wordmark { font-size: 25px; transform: translateY(-1px); }
-.splash { position: fixed; inset: 0; z-index: 50; background: var(--bg); color: var(--fg); display: grid; place-content: center; justify-items: center; gap: 14px;
+.splash { display: none; }
+:root[data-splash="1"] .splash { display: grid; }
+.splash { position: fixed; inset: 0; z-index: 50; background: var(--bg); color: var(--fg); place-content: center; justify-items: center; gap: 14px;
   transition: opacity .35s ease; cursor: pointer; }
 .splash.out { opacity: 0; pointer-events: none; }
 .splash .logo { width: 150px; height: 150px; }
@@ -510,7 +523,7 @@ h1 {
 }
 </style>
 
-<div class="splash" id="splash" hidden aria-hidden="true">
+<div class="splash" id="splash" aria-hidden="true">
   <svg class="logo" viewBox="0 0 120 120" aria-hidden="true">
       <polygon class="lg-up" points="60,6 86,28 34,28"/>
       <rect class="lg-b" x="20" y="38" width="80" height="13" rx="6.5"/>
@@ -573,7 +586,7 @@ h1 {
     </button>
     <button type="button" class="cd-card" id="cdCard">
       <span class="cd-icon" aria-hidden="true">⏱</span>
-      <span class="cd-text"><span class="cd-title">Countdown</span><span class="cd-sub" id="cdSub">Beat the clock. It gets shorter every round.</span></span>
+      <span class="cd-text"><span class="cd-title">Countdown</span><span class="cd-sub" id="cdSub">Beat the clock. It gets quicker every time.</span></span>
     </button>
     <div class="picker-head"><h2 class="sub-h">Or practise a category</h2><button type="button" class="toggle" id="boardsBtn">Top scores</button></div>
     <div class="cats" id="cats"></div>
@@ -1114,9 +1127,10 @@ h1 {
     const sp = $('splash');
     let seen = false;
     try { seen = sessionStorage.getItem('ordo.splash') === '1'; sessionStorage.setItem('ordo.splash', '1'); } catch {}
-    if (!sp || seen || reduceMotion()) return;
-    sp.hidden = false;
-    const done = () => { sp.classList.add('out'); setTimeout(() => { sp.hidden = true; }, 380); };
+    const root = document.documentElement;
+    if (!sp || seen || reduceMotion()) { root.removeAttribute('data-splash'); return; }
+    root.setAttribute('data-splash', '1');
+    const done = () => { sp.classList.add('out'); setTimeout(() => { root.removeAttribute('data-splash'); }, 380); };
     const ms = sortLogo(sp.querySelector('.logo'), 280);
     const t = setTimeout(done, Math.max(ms, 900) + 150);
     sp.addEventListener('click', () => { clearTimeout(t); done(); }, { once: true });
@@ -1276,8 +1290,8 @@ h1 {
     if (h) { void el.heat.offsetWidth; el.heat.classList.add('ping'); }
   }
 
-  // Countdown: seconds allowed in each round. After the last entry it stays at 3 seconds.
-  const CD_TIMES = [20, 15, 12, 10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3];
+  // Countdown: seconds for each turn, one second less each time down to 3, then the questions get harder instead.
+  const CD_TIMES = [10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3];
   const cdLimit = r => CD_TIMES[Math.min(r, CD_TIMES.length - 1)];
   function newRound() {
     const cd = S.mode === 'countdown';
@@ -1286,8 +1300,9 @@ h1 {
     const groupIds = GROUPS.map(g => g.id).filter(g => g !== 'mix');
     const rnd = a => a[Math.floor(Math.random() * a.length)];
     // Level climbs with the round: famous names first, obscure seasons and players later.
-    // Countdown keeps to well-known sets (level 1 to 3): the challenge is the clock.
-    const lv = cd ? Math.min(3, 1 + Math.floor(S.round / 5)) : LEVELS[Math.min(S.round, LEVELS.length - 1)];
+    // Countdown: famous sets while the clock is shrinking; once it hits 3 seconds, harder sets every few turns.
+    const cdHard = Math.max(0, S.round - (CD_TIMES.length - 1));
+    const lv = cd ? Math.min(4, (S.round < 4 ? 1 : 2) + Math.floor(cdHard / 4)) : LEVELS[Math.min(S.round, LEVELS.length - 1)];
     S.types = S.types || {};
     const all = (S.group === 'mix' ? groupIds.flatMap(g => BY_GROUP[g] || []) : (BY_GROUP[S.group] || []))
       .filter(i => CATS[i].maxN >= n && i !== S.lastCat);
@@ -1311,7 +1326,7 @@ h1 {
       const fam = rnd([...new Set(pool.map(i => CATS[i].fam))]);
       tried.add(fam);
       ci = rnd(pool.filter(i => CATS[i].fam === fam));
-      set = pickSet(CATS[ci], n, tightness(S.round));
+      set = pickSet(CATS[ci], n, cd ? Math.min(1, 0.1 + cdHard * 0.08) : tightness(S.round));
     }
     if (!set) { ci = 0; set = pickSet(CATS[0], n, 0.5); }
     S.lastCat = ci;
@@ -1325,7 +1340,7 @@ h1 {
       // The clock starts as soon as the round appears, and moves cost nothing but time.
       R.countdown = true; R.ceiling = cdLimit(S.round);
       el.eyebrow.hidden = false;
-      el.eyebrow.textContent = `Countdown · round ${S.round + 1} · ${R.ceiling} seconds`;
+      el.eyebrow.textContent = `Countdown · ${R.ceiling} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
       startClock();
       readout();
     }
@@ -1657,7 +1672,7 @@ h1 {
   // The message never names the answers: just the question, the move trail and the time.
   function shareText() {
     if (S.mode === 'countdown') {
-      return [`⏱ Ordo Countdown: ${plural(S.cleared, 'round', 'rounds')}`, `Beaten by the ${R.ceiling}-second clock.`, 'How far can you get?', `${BASE}#countdown`].join('\n');
+      return [`⏱ Ordo Countdown: ${S.cleared} in a row`, `Beaten by the ${R.ceiling}-second clock.`, 'How far can you get?', `${BASE}#countdown`].join('\n');
     }
     const solved = R.status === 'solved';
     const eff = effOf();
@@ -1706,10 +1721,8 @@ h1 {
     }
     if (S.mode === 'countdown') {
       S.cleared++; S.score = S.cleared; hud();
-      const next = cdLimit(S.round + 1);
-      toast(`${plural(S.cleared, 'round', 'rounds')} · next one: ${next} seconds`);
       const run = S;
-      setTimeout(() => { if (S === run && R.status === 'solved') { S.round++; newRound(); } }, 1100);
+      setTimeout(() => { if (S === run && R.status === 'solved') { S.round++; newRound(); } }, 650);
       return;
     }
     if (S.mode === 'daily') {
@@ -2004,7 +2017,7 @@ h1 {
       if (got > best) { prog.cdBest = got; saveProg(); }
       const title = got > best && best > 0 ? 'New best!' : "Time's up";
       if (got > best && best > 0) confetti(80, innerHeight * 0.25);
-      return setPanel(title, plural(got, 'round', 'rounds'), false,
+      return setPanel(title, `${got} in a row`, false,
         `The ${R.ceiling}-second clock got you. ` + (got > best ? (best ? `Your old best was ${best}.` : 'That’s your first best.') : `Your best is ${best}.`), 'Play again');
     }
     if (S.mode === 'daily') {
@@ -2066,7 +2079,7 @@ h1 {
     }).join('') + `<a class="cat cat-kids" href="https://ordogame.com/kids/" target="_blank" rel="noopener">` +
       `<span class="cat-name">Ordo<span class="kids-tag">kids</span></span><span class="cat-sub">For ages 4 to 9: pictures, counting, sums and read aloud</span></a>`;
     const no = dailyNo(), rec = prog.daily && prog.daily[no];
-    $('cdSub').textContent = prog.cdBest ? `Beat the clock. Your best: ${plural(prog.cdBest, 'round', 'rounds')}.` : 'Beat the clock. It gets shorter every round.';
+    $('cdSub').textContent = prog.cdBest ? `Beat the clock. Your best: ${prog.cdBest} in a row.` : 'Beat the clock. It gets quicker every time.';
     $('dcTitle').textContent = `#${no}`;
     const run = prog.dailyRun && prog.dailyRun.no === no ? prog.dailyRun : null;
     $('dcStatus').textContent = rec ? `Done · ${rec.score}/${rec.res.length * 100} · tap to see your result`
