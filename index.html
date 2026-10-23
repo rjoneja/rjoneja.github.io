@@ -328,6 +328,19 @@ h1 {
   background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent); font-family: var(--font-body); }
 .daily-card:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 .daily-card:active { transform: translateY(1px); }
+.cd-card { appearance: none; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px;
+  background: var(--surface); color: var(--fg); border: 1px solid var(--edge); font-family: var(--font-body); }
+.cd-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cd-card:active { transform: translateY(1px); }
+.cd-icon { font-size: 26px; line-height: 1; }
+.cd-text { display: grid; gap: 1px; min-width: 0; }
+.cd-title { font-family: var(--font-display); font-weight: var(--dw); font-size: 20px; letter-spacing: -0.02em; }
+.cd-sub { font-size: 13px; color: var(--muted); }
+:root[data-skin="pop"] .cd-card { border: 2px solid var(--edge); border-radius: 16px; box-shadow: 2px 3px 0 var(--edge); background: #FFF1C9; color: #1A1033; }
+:root[data-skin="pop"] .cd-card .cd-sub { color: #5D5880; }
+:root[data-skin="pop"] .cd-card:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge); }
+.clock.cd b { font-size: 18px; }
+.clock.cd.low b { color: var(--miss); }
 .dc-eyebrow { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; opacity: .85; }
 .dc-title { font-family: var(--font-display); font-weight: var(--dw); font-size: 32px; line-height: 1.05; letter-spacing: -0.02em; }
 .dc-status { font-size: 14px; opacity: .9; }
@@ -557,6 +570,10 @@ h1 {
       <span class="dc-title" id="dcTitle">#1</span>
       <span class="dc-status" id="dcStatus">4 rounds · about 90 seconds · same puzzle for everyone</span>
       <span class="dc-players" id="dcPlayers" hidden></span>
+    </button>
+    <button type="button" class="cd-card" id="cdCard">
+      <span class="cd-icon" aria-hidden="true">⏱</span>
+      <span class="cd-text"><span class="cd-title">Countdown</span><span class="cd-sub" id="cdSub">Beat the clock. It gets shorter every round.</span></span>
     </button>
     <div class="picker-head"><h2 class="sub-h">Or practise a category</h2><button type="button" class="toggle" id="boardsBtn">Top scores</button></div>
     <div class="cats" id="cats"></div>
@@ -1259,13 +1276,18 @@ h1 {
     if (h) { void el.heat.offsetWidth; el.heat.classList.add('ping'); }
   }
 
+  // Countdown: seconds allowed in each round. After the last entry it stays at 3 seconds.
+  const CD_TIMES = [20, 15, 12, 10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3];
+  const cdLimit = r => CD_TIMES[Math.min(r, CD_TIMES.length - 1)];
   function newRound() {
-    const n = SIZES[Math.min(S.round, SIZES.length - 1)];
+    const cd = S.mode === 'countdown';
+    const n = cd ? 3 : SIZES[Math.min(S.round, SIZES.length - 1)];
     let ci, set = null;
     const groupIds = GROUPS.map(g => g.id).filter(g => g !== 'mix');
     const rnd = a => a[Math.floor(Math.random() * a.length)];
     // Level climbs with the round: famous names first, obscure seasons and players later.
-    const lv = LEVELS[Math.min(S.round, LEVELS.length - 1)];
+    // Countdown keeps to well-known sets (level 1 to 3): the challenge is the clock.
+    const lv = cd ? Math.min(3, 1 + Math.floor(S.round / 5)) : LEVELS[Math.min(S.round, LEVELS.length - 1)];
     S.types = S.types || {};
     const all = (S.group === 'mix' ? groupIds.flatMap(g => BY_GROUP[g] || []) : (BY_GROUP[S.group] || []))
       .filter(i => CATS[i].maxN >= n && i !== S.lastCat);
@@ -1299,6 +1321,14 @@ h1 {
     const items = set.map(arr => ({ name: arr[0], v: arr[1], idx: cat.items.indexOf(arr) }));
     const correct = sortItems(cat, items);
     buildRound(ci, correct, scramble(correct), null);
+    if (cd) {
+      // The clock starts as soon as the round appears, and moves cost nothing but time.
+      R.countdown = true; R.ceiling = cdLimit(S.round);
+      el.eyebrow.hidden = false;
+      el.eyebrow.textContent = `Countdown · round ${S.round + 1} · ${R.ceiling} seconds`;
+      startClock();
+      readout();
+    }
   }
 
   const sortItems = (cat, items) => items.slice().sort((a, b) => cat.asc ? a.v - b.v : b.v - a.v);
@@ -1395,9 +1425,17 @@ h1 {
     $('scoreMax').textContent = S.played ? `/${n0(S.played * 100)}` : '';
   }
 
+  const penalty = () => R.countdown ? 0 : R.moves * PENALTY;
   function readout() {
-    el.time.textContent = (R.elapsed + R.moves * PENALTY).toFixed(1) + 's';
-    const f = Math.min(1, (R.elapsed + R.moves * PENALTY) / R.ceiling);
+    const used = R.elapsed + penalty();
+    const clock = el.time.parentElement;
+    clock.classList.toggle('cd', !!R.countdown);
+    if (R.countdown) {
+      const left = Math.max(0, R.ceiling - used);
+      el.time.textContent = left.toFixed(1) + 's';
+      clock.classList.toggle('low', left < 2);
+    } else { el.time.textContent = used.toFixed(1) + 's'; clock.classList.remove('low'); }
+    const f = Math.min(1, used / R.ceiling);
     el.fill.style.width = (f * 100).toFixed(1) + '%';
     el.fill.classList.toggle('warn', f > 0.75);
   }
@@ -1424,7 +1462,7 @@ h1 {
     if (R.status !== 'play') return;
     R.elapsed = (performance.now() - R.t0) / 1000;
     readout();
-    if (R.elapsed + R.moves * PENALTY >= R.ceiling) return fail();
+    if (R.elapsed + penalty() >= R.ceiling) return fail();
     requestAnimationFrame(tick);
   }
 
@@ -1453,7 +1491,7 @@ h1 {
     R.moves++;
     clearPick();
     if (!prog.tut) { prog.tut = true; saveProg(); $('coach').hidden = true; }
-    flashPen();
+    if (!R.countdown) flashPen();
     readout();
     const after = inversions(R.order, R.correct);
     const h = after < before ? 'warm' : after > before ? 'cold' : 'same';
@@ -1600,7 +1638,7 @@ h1 {
     const text = shareText();
     el.pShareText.value = text;
     el.pWa.href = 'https://wa.me/?text=' + encodeURIComponent(text);
-    el.pWa.textContent = R.challenge ? 'Reply' : 'Challenge';
+    el.pWa.textContent = R.challenge ? 'Reply' : S.mode === 'countdown' ? 'Share' : 'Challenge';
     el.pCopy.textContent = 'Copy';
     // In the daily, sharing waits for the results screen: one grid for the whole puzzle, with the #daily link.
     const inDaily = S.mode === 'daily' && !R.challenge;
@@ -1618,6 +1656,9 @@ h1 {
 
   // The message never names the answers: just the question, the move trail and the time.
   function shareText() {
+    if (S.mode === 'countdown') {
+      return [`⏱ Ordo Countdown: ${plural(S.cleared, 'round', 'rounds')}`, `Beaten by the ${R.ceiling}-second clock.`, 'How far can you get?', `${BASE}#countdown`].join('\n');
+    }
     const solved = R.status === 'solved';
     const eff = effOf();
     const link = `${BASE}#qr-${R.ci}-${R.start.join('.')}-${solved ? Math.round(eff * 10) : 'x'}-${R.moves}`;
@@ -1662,6 +1703,14 @@ h1 {
     const prevFast = prog.fastest[R.n];
     if (prevFast == null || eff < prevFast) {
       prog.fastest[R.n] = Math.round(eff * 10) / 10; saveProg();
+    }
+    if (S.mode === 'countdown') {
+      S.cleared++; S.score = S.cleared; hud();
+      const next = cdLimit(S.round + 1);
+      toast(`${plural(S.cleared, 'round', 'rounds')} · next one: ${next} seconds`);
+      const run = S;
+      setTimeout(() => { if (S === run && R.status === 'solved') { S.round++; newRound(); } }, 1100);
+      return;
     }
     if (S.mode === 'daily') {
       S.score += R.pts; S.played++;
@@ -1950,6 +1999,14 @@ h1 {
     const close = off <= 2 ? `So close: only ${off} out of place.` : `Here's the right order.`;
     const grew = tickStreak();
     if (grew) toast(grew === 1 ? 'Streak started. Come back tomorrow' : `${grew}-day streak!`, true);
+    if (S.mode === 'countdown') {
+      const best = prog.cdBest || 0, got = S.cleared;
+      if (got > best) { prog.cdBest = got; saveProg(); }
+      const title = got > best && best > 0 ? 'New best!' : "Time's up";
+      if (got > best && best > 0) confetti(80, innerHeight * 0.25);
+      return setPanel(title, plural(got, 'round', 'rounds'), false,
+        `The ${R.ceiling}-second clock got you. ` + (got > best ? (best ? `Your old best was ${best}.` : 'That’s your first best.') : `Your best is ${best}.`), 'Play again');
+    }
     if (S.mode === 'daily') {
       S.played++;
       S.dRes.push({ pts: 0, r: 0, q: R.cat.q });
@@ -2009,6 +2066,7 @@ h1 {
     }).join('') + `<a class="cat cat-kids" href="https://ordogame.com/kids/" target="_blank" rel="noopener">` +
       `<span class="cat-name">Ordo<span class="kids-tag">kids</span></span><span class="cat-sub">For ages 4 to 9: pictures, counting, sums and read aloud</span></a>`;
     const no = dailyNo(), rec = prog.daily && prog.daily[no];
+    $('cdSub').textContent = prog.cdBest ? `Beat the clock. Your best: ${plural(prog.cdBest, 'round', 'rounds')}.` : 'Beat the clock. It gets shorter every round.';
     $('dcTitle').textContent = `#${no}`;
     const run = prog.dailyRun && prog.dailyRun.no === no ? prog.dailyRun : null;
     $('dcStatus').textContent = rec ? `Done · ${rec.score}/${rec.res.length * 100} · tap to see your result`
@@ -2059,7 +2117,19 @@ h1 {
     showPicker();
   });
 
+  function startCountdown() {
+    S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'countdown' };
+    shownScore = 0;
+    if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
+    picker.hidden = true; $('boards').hidden = true; $('about').hidden = true; $('dailyDone').hidden = true;
+    play.hidden = false;
+    el.lives.parentElement.classList.add('quiet');
+    hud();
+    newRound();
+  }
+  $('cdCard').addEventListener('click', startCountdown);
   el.pBtn.addEventListener('click', () => {
+    if (S.mode === 'countdown') return startCountdown();
     if (S.mode === 'daily' && !R.challenge) {
       if (S.di < S.dRounds.length - 1) { S.di++; return playDailyRound(); }
       return finishDaily();
@@ -2077,6 +2147,7 @@ h1 {
     const c = parseChallenge();
     if (c) { hud(); return startChallenge(c); }
     if (/^#daily$/.test(location.hash || '')) { hud(); return startDaily(); }
+    if (/^#countdown$/i.test(location.hash || '')) return startCountdown();
     // Category links, e.g. ordogame.com/football or #football, open straight into practice for that category.
     const CAT_LINKS = { football: 'sport', sport: 'games', olympics: 'games', pop: 'pop', 'pop-culture': 'pop', people: 'people', places: 'places',
       history: 'history', science: 'science', film: 'film', music: 'music', mix: 'mix' };
@@ -2087,7 +2158,7 @@ h1 {
     if (!(prog.daily && prog.daily[dailyNo()])) return startDaily();
     showPicker();
   }
-  try { window.claude?.hot?.snapshot?.(() => ({ S: S.mode === 'daily' ? {} : { ...S } })); } catch {}
+  try { window.claude?.hot?.snapshot?.(() => ({ S: S.mode === 'daily' || S.mode === 'countdown' ? {} : { ...S } })); } catch {}
   window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
 })();
 </script>
