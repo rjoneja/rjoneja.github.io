@@ -1015,7 +1015,10 @@ h1 {
   try { prog = Object.assign(prog, JSON.parse(localStorage.getItem(PROG_KEY) || '{}')); } catch {}
   const saveProg = () => { try { localStorage.setItem(PROG_KEY, JSON.stringify(prog)); } catch {} };
   // Shared scores live on a small Cloudflare Worker. The ID is random and only marks "this device" on the boards.
-  const API = 'https://api.ordogame.com';
+  // Two addresses for the same Worker: the custom one first, then Cloudflare's own as a fallback
+  // (useful while new DNS spreads, or if a network blocks the custom name).
+  const APIS = ['https://api.ordogame.com', 'https://ordo-api.raj-joneja.workers.dev'];
+  let apiAt = 0;
   // Player counts only show once they look healthy; "3 people played" puts people off.
   const SHOW_COUNT = 50;
   if (!prog.pid) {
@@ -1025,14 +1028,19 @@ h1 {
     saveProg();
   }
   async function api(path, body) {
-    const ctl = typeof AbortController === 'function' ? new AbortController() : null;
-    const t = setTimeout(() => ctl && ctl.abort(), 5000);
-    try {
-      const r = await fetch(API + path, body
-        ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl && ctl.signal }
-        : { cache: 'no-store', signal: ctl && ctl.signal });
-      return r.ok ? await r.json() : null;
-    } catch { return null; } finally { clearTimeout(t); }
+    for (let k = 0; k < APIS.length; k++) {
+      const i = (apiAt + k) % APIS.length;
+      const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+      const t = setTimeout(() => ctl && ctl.abort(), 5000);
+      try {
+        const r = await fetch(APIS[i] + path, body
+          ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl && ctl.signal }
+          : { cache: 'no-store', signal: ctl && ctl.signal });
+        apiAt = i;
+        return r.ok ? await r.json() : null;
+      } catch { /* unreachable: try the other address */ } finally { clearTimeout(t); }
+    }
+    return null;
   }
   const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); };
