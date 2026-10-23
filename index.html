@@ -149,6 +149,19 @@ h1 {
 @keyframes ping { 0% { transform: scale(.85); opacity: .3; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: none; } }
 
 .stack { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+/* Category games: a move allowance shown as balloons beside the list. */
+.stack-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.stack-wrap.limited { grid-template-columns: minmax(0, 1fr) 44px; }
+.moves { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; border: 1px solid var(--edge); border-radius: 22px; background: var(--surface); }
+:root[data-skin="pop"] .moves { border: 2px solid var(--edge); box-shadow: 2px 3px 0 var(--edge); }
+.moves b { font-family: var(--font-display); font-weight: var(--dw); font-size: 20px; line-height: 1; }
+.moves.low b { color: var(--miss); }
+.moves-l { font-size: 10px; font-weight: 700; color: var(--muted); }
+.balloons { display: flex; flex-direction: column; align-items: center; gap: 1px; flex: 1; }
+.balloons i { font-style: normal; font-size: 19px; line-height: 1.1; transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), opacity .3s; }
+.balloons i.pop { transform: scale(.4); opacity: .18; filter: grayscale(1); }
+.balloons i.popping { animation: popb .35s ease-out forwards; }
+@keyframes popb { 0% { transform: scale(1); } 40% { transform: scale(1.5); opacity: 1; } 100% { transform: scale(.4); opacity: .18; filter: grayscale(1); } }
 .row { position: relative; height: 52px; border-radius: 8px; transition: transform .22s cubic-bezier(.2, .8, .2, 1); user-select: none; -webkit-user-select: none; outline: none; }
 .stack.live .row { touch-action: none; cursor: grab; }
 .row.dragging { z-index: 5; transition: none; cursor: grabbing; }
@@ -658,7 +671,10 @@ h1 {
   <section class="board" aria-label="Ranking stack">
     <p class="coach" id="coach" hidden>Drag to reorder, or tap one then another. Swipe right to send to the top, left for the bottom.</p>
     <div class="end hi" id="topLabel">↑ Born first</div>
-    <ol class="stack" id="stack"></ol>
+    <div class="stack-wrap" id="stackWrap">
+      <ol class="stack" id="stack"></ol>
+      <div class="moves" id="moves" hidden><b id="movesN">3</b><div class="balloons" id="balloons"></div><span class="moves-l">moves</span></div>
+    </div>
     <div class="end"><span id="bottomLabel">↓ Born last</span><span class="heat" id="heat" aria-live="polite"></span></div>
   </section>
 
@@ -1391,6 +1407,9 @@ h1 {
       started: false, t0: 0, elapsed: 0, moves: 0, status: 'play', trail: [], challenge, picked: null,
       min: minMoves(order, correct) };
     $('coach').hidden = !!prog.tut;
+    R.limit = S.mode === 'ladder' && !challenge;
+    R.budget = R.min + 2;
+    paintMoves(false);
     order.forEach(it => { it.mv = 0; });
 
     el.eyebrow.hidden = !challenge;
@@ -1458,7 +1477,23 @@ h1 {
     $('scoreMax').textContent = S.played ? `/${n0(S.played * 100)}` : '';
   }
 
-  const penalty = () => R.countdown ? 0 : R.moves * PENALTY;
+  const penalty = () => R.countdown || R.limit ? 0 : R.moves * PENALTY;
+  function paintMoves(popLast) {
+    $('stackWrap').classList.toggle('limited', !!R.limit);
+    $('moves').hidden = !R.limit;
+    if (!R.limit) return;
+    const left = Math.max(0, R.budget - R.moves);
+    $('movesN').textContent = left;
+    $('moves').classList.toggle('low', left <= 1);
+    $('moves').setAttribute('aria-label', `${left} moves left`);
+    const box = $('balloons');
+    if (box.children.length !== R.budget || !popLast) box.innerHTML = '<i>🎈</i>'.repeat(R.budget);
+    [...box.children].forEach((b, i) => {
+      const gone = i >= left;
+      if (gone && popLast && i === left && !reduceMotion()) b.classList.add('popping');
+      else b.classList.toggle('pop', gone);
+    });
+  }
   function readout() {
     const used = R.elapsed + penalty();
     const clock = el.time.parentElement;
@@ -1524,12 +1559,14 @@ h1 {
     R.moves++;
     clearPick();
     if (!prog.tut) { prog.tut = true; saveProg(); $('coach').hidden = true; }
-    if (!R.countdown) flashPen();
+    if (!R.countdown && !R.limit) flashPen();
+    paintMoves(true);
     readout();
     const after = inversions(R.order, R.correct);
     const h = after < before ? 'warm' : after > before ? 'cold' : 'same';
     R.trail.push(h);
     if (after === 0) return solve();
+    if (R.limit && R.moves >= R.budget) return fail('moves');
     if (hints) {
       showHeat(h);
       const moved = R.order[to].el;
@@ -1696,7 +1733,7 @@ h1 {
     const eff = effOf();
     const link = `${BASE}#qr-${R.ci}-${R.start.join('.')}-${solved ? Math.round(eff * 10) : 'x'}-${R.moves}`;
     const trail = R.trail.map(h => SQ[h]).join('');
-    const result = solved ? `${trail} ${'⭐'.repeat(R.stars || 1)} ${R.pts}/100 in ${R.elapsed.toFixed(1)}s` : `${trail} ⏰ ran out of time`;
+    const result = solved ? `${trail} ${'⭐'.repeat(R.stars || 1)} ${R.pts}/100 in ${R.elapsed.toFixed(1)}s` : R.why === 'moves' ? `${trail} 🎈 ran out of moves` : `${trail} ⏰ ran out of time`;
     const lines = [`Ordo: ${R.cat.q} (${R.n} items)`, result];
     const c = R.challenge;
     if (c) {
@@ -2046,8 +2083,9 @@ h1 {
     return 'Next round';
   }
 
-  function fail() {
+  function fail(why) {
     R.status = 'failed';
+    R.why = why;
     releasePointer();
     R.order.forEach((it, i) => {
       if (R.correct[i] !== it) {
@@ -2085,8 +2123,9 @@ h1 {
     S.lives--;
     S.played = (S.played || 0) + 1;
     hud();
+    const outT = why === 'moves' ? 'Out of moves' : "Time's up";
     if (S.lives > 0) {
-      setPanel("Time's up", '−1 life', true, `${close} ${plural(S.lives, 'life', 'lives')} left.`, 'Next round');
+      setPanel(outT, '−1 life', true, `${close} ${plural(S.lives, 'life', 'lives')} left.`, 'Next round');
     } else {
       const b = bestFor(S.group);
       const outOf = `${n0(S.score)}/${n0(S.played * 100)}`;
