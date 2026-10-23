@@ -129,6 +129,7 @@ button { font: inherit; color: inherit; }
 .pic { width: 56px; height: 56px; border-radius: 50%; background: var(--bg); display: grid; place-items: center; font-size: 36px; line-height: 1; }
 .label { font-family: var(--font-display); font-weight: 700; font-size: 23px; line-height: 1.1; min-width: 0; overflow-wrap: anywhere; }
 .label.huge { font-size: 34px; font-weight: 800; }
+.label.count { font-size: 24px; letter-spacing: 1px; line-height: 1.25; }
 .right { display: flex; align-items: center; gap: 6px; }
 .tick { width: 30px; height: 30px; border-radius: 50%; background: var(--ok); color: #fff; display: grid; place-items: center; font-weight: 800; opacity: 0; transform: scale(.4); transition: opacity .2s, transform .3s cubic-bezier(.34, 1.56, .64, 1); }
 .row.ok .tick { opacity: 1; transform: none; }
@@ -290,13 +291,17 @@ button { font: inherit; color: inherit; }
   // Each builder returns { q, top, bottom, asc, items, fact, say? }. Values are typical, rounded figures; every pair shown is far apart.
   const ANIMAL_WEIGHT = [E('🐋', 'Blue whale', 150000, 'about 150,000 kg'), E('🐘', 'Elephant', 6000, 'about 6,000 kg'), E('🦛', 'Hippo', 1500, 'about 1,500 kg'),
     E('🐎', 'Horse', 500, 'about 500 kg'), E('🧍', 'Grown-up', 70, 'about 70 kg'), E('🐕', 'Dog', 30, 'about 30 kg'), E('🐈', 'Cat', 4, 'about 4 kg'),
-    E('🐇', 'Rabbit', 2, 'about 2 kg'), E('🐁', 'Mouse', 0.02, 'about 20 g')];
+    E('🐇', 'Rabbit', 2, 'about 2 kg'), E('🐁', 'Mouse', 0.02, 'about 20 g'), E('🦒', 'Giraffe', 1200, 'about 1,200 kg'), E('🐄', 'Cow', 700, 'about 700 kg'),
+    E('🐻‍❄️', 'Polar bear', 450, 'about 450 kg'), E('🦍', 'Gorilla', 160, 'about 160 kg'), E('🦔', 'Hedgehog', 0.8, 'about 800 g'), E('🐹', 'Hamster', 0.1, 'about 100 g')];
   const ANIMAL_SPEED = [E('🐆', 'Cheetah', 110, 'about 110 km/h'), E('🐎', 'Horse', 70, 'about 70 km/h'), E('🏃', 'Fast runner', 40, 'about 40 km/h'),
-    E('🐔', 'Chicken', 14, 'about 14 km/h'), E('🐢', 'Tortoise', 0.3, 'very slow!'), E('🐌', 'Snail', 0.05, 'super slow!')];
+    E('🐔', 'Chicken', 14, 'about 14 km/h'), E('🐢', 'Tortoise', 0.3, 'very slow!'), E('🐌', 'Snail', 0.05, 'super slow!'), E('🦁', 'Lion', 80, 'about 80 km/h'),
+    E('🐘', 'Elephant', 25, 'about 25 km/h'), E('🐿️', 'Squirrel', 20, 'about 20 km/h'), E('🦥', 'Sloth', 0.2, 'very, very slow!')];
   const LEGS = [E('🐍', 'Snake', 0, '0 legs'), E('🐔', 'Chicken', 2, '2 legs'), E('🐕', 'Dog', 4, '4 legs'), E('🐜', 'Ant', 6, '6 legs'),
-    E('🕷️', 'Spider', 8, '8 legs'), E('🦀', 'Crab', 10, '10 legs')];
+    E('🕷️', 'Spider', 8, '8 legs'), E('🦀', 'Crab', 10, '10 legs'), E('🐟', 'Fish', 0, '0 legs'), E('🦆', 'Duck', 2, '2 legs'), E('🐈', 'Cat', 4, '4 legs'),
+    E('🐝', 'Bee', 6, '6 legs'), E('🦂', 'Scorpion', 8, '8 legs'), E('🦞', 'Lobster', 10, '10 legs')];
   const TALL_ANIMALS = [E('🦒', 'Giraffe', 5.5, 'about 5.5 m'), E('🐘', 'Elephant', 3.3, 'about 3 m'), E('🧍', 'Grown-up', 1.7, 'about 1.7 m'),
-    E('🐕', 'Dog', 0.6, 'about 60 cm'), E('🐈', 'Cat', 0.25, 'about 25 cm'), E('🐁', 'Mouse', 0.05, 'about 5 cm')];
+    E('🐕', 'Dog', 0.6, 'about 60 cm'), E('🐈', 'Cat', 0.25, 'about 25 cm'), E('🐁', 'Mouse', 0.05, 'about 5 cm'),
+    E('🐎', 'Horse', 1.6, 'about 1.6 m'), E('🐧', 'Penguin', 1.1, 'about 1.1 m')];
   const TALL_THINGS = [E('🏙️', 'The Shard', 310, '310 m'), E('🕰️', 'Big Ben', 96, '96 m'), E('🏠', 'House', 8, 'about 8 m'), E('🦒', 'Giraffe', 5.5, 'about 5.5 m'),
     E('🚌', 'Double-decker bus', 4.4, 'about 4.4 m'), E('🧍', 'Grown-up', 1.7, 'about 1.7 m')];
   const HOT = [E('🌞', "The Sun's surface", 5500, 'about 5,500 °C'), E('🌋', 'Lava', 1100, 'about 1,100 °C'), E('🍕', 'Hot oven', 200, 'about 200 °C'),
@@ -308,6 +313,49 @@ button { font: inherit; color: inherit; }
   const PLANETS = [['Mercury', '#B9B3AA', 4879], ['Venus', '#E8C27A', 12104], ['Earth', '#3B8EEA', 12756], ['Mars', '#E0663A', 6792],
     ['Jupiter', '#D9A06B', 142984], ['Saturn', '#E9D08F', 120536], ['Uranus', '#8FE3E8', 51118], ['Neptune', '#4F6BEF', 49528]]
     .map(([t, c, d], i) => ({ kind: 'planet', t, c, ring: t === 'Saturn', order: i + 1, size: d }));
+  const LONG_ANIMALS = [E('🐋', 'Blue whale', 30, 'about 30 m'), E('🦈', 'Whale shark', 12, 'about 12 m'), E('🐊', 'Crocodile', 5, 'about 5 m'),
+    E('🐎', 'Horse', 2.4, 'about 2.4 m'), E('🐕', 'Dog', 1, 'about 1 m'), E('🐈', 'Cat', 0.5, 'about 50 cm'), E('🐁', 'Mouse', 0.1, 'about 10 cm'),
+    E('🐜', 'Ant', 0.005, 'about half a centimetre')];
+  const LIVES = [E('🐢', 'Giant tortoise', 150, 'more than 100 years'), E('🐘', 'Elephant', 70, 'about 70 years'), E('🐎', 'Horse', 30, 'about 30 years'),
+    E('🐈', 'Cat', 15, 'about 15 years'), E('🐇', 'Rabbit', 9, 'about 9 years'), E('🐹', 'Hamster', 2, 'about 2 years')];
+  const HEAVY_THINGS = [E('🪶', 'Feather', 0.001, 'less than 1 g'), E('🍎', 'Apple', 0.15, 'about 150 g'), E('📕', 'Book', 0.6, 'about 600 g'),
+    E('🚲', 'Bike', 12, 'about 12 kg'), E('🧍', 'Grown-up', 70, 'about 70 kg'), E('🚗', 'Car', 1500, 'about 1,500 kg'), E('🚌', 'Bus', 12000, 'about 12,000 kg'),
+    E('✈️', 'Jumbo jet', 400000, 'about 400,000 kg')];
+  const HOLDS = [E('🥄', 'Teaspoon', 5, 'about 5 ml'), E('☕', 'Mug', 300, 'about 300 ml'), E('🥛', 'Big bottle of milk', 2000, 'about 2 litres'),
+    E('🪣', 'Bucket', 10000, 'about 10 litres'), E('🛁', 'Bath', 80000, 'about 80 litres'), E('🏊', 'Olympic swimming pool', 2500000000, 'about 2.5 million litres')];
+  const LONG_THINGS = [E('✏️', 'Pencil', 18, 'about 18 cm'), E('📏', 'Ruler', 30, '30 cm'), E('🛏️', 'Bed', 200, 'about 2 m'), E('🚗', 'Car', 400, 'about 4 m'),
+    E('🚌', 'Bus', 1100, 'about 11 m'), E('⚽', 'Football pitch', 10500, 'about 105 m'), E('🚆', 'Train', 20000, 'about 200 m')];
+  const DURATIONS = [E('👁️', 'A blink', 0.005, 'less than a second'), E('🪥', 'Brushing your teeth', 2, '2 minutes'), E('⚽', 'A football match', 90, '90 minutes'),
+    E('🛌', "A night's sleep", 600, 'about 10 hours'), E('📅', 'A week', 10080, '7 days'), E('🏖️', 'The summer holidays', 60480, 'about 6 weeks'),
+    E('🎂', 'A year', 525600, '365 days')];
+  const FAR = [E('✈️', 'A plane in the sky', 10, 'about 10 km up'), E('🛰️', 'The Space Station', 400, 'about 400 km up'),
+    E('🌕', 'The Moon', 384400, 'about 384,000 km away'), E('☀️', 'The Sun', 150e6, 'about 150 million km away'), E('🔵', 'Neptune', 4.5e9, 'about 4.5 billion km away'),
+    E('⭐', 'The nearest star', 4e13, 'about 40 trillion km away')];
+  const SPACE_FIRSTS = [E('🐕', 'Laika the dog goes to space', 1957, '1957'), E('👨‍🚀', 'Yuri Gagarin goes to space', 1961, '1961'),
+    E('🌕', 'People walk on the Moon', 1969, '1969'), E('🔭', 'The Hubble telescope is launched', 1990, '1990'), E('🛰️', 'People start living on the Space Station', 2000, '2000'),
+    E('🇬🇧', 'Tim Peake goes to space', 2015, '2015')];
+  const PLANET_HOT = { Mercury: 167, Venus: 464, Earth: 15, Mars: -65, Jupiter: -110, Saturn: -140, Uranus: -195, Neptune: -200 };
+  // Fractions and clock faces are drawn, not emoji.
+  const pie = f => {
+    const a = 2 * Math.PI * Math.min(f, 0.9999), x = 50 + 40 * Math.sin(a), y = 50 - 40 * Math.cos(a);
+    const wedge = f >= 1 ? '<circle cx="50" cy="50" r="40" fill="#FFD23F"/>' : `<path d="M50 50 L50 10 A40 40 0 ${f > 0.5 ? 1 : 0} 1 ${x.toFixed(1)} ${y.toFixed(1)} Z" fill="#FFD23F"/>`;
+    return `<svg viewBox="0 0 100 100" width="44" height="44" aria-hidden="true"><circle cx="50" cy="50" r="40" fill="#fff"/>${wedge}<circle cx="50" cy="50" r="40" fill="none" stroke="#0B2E4F" stroke-width="7"/></svg>`;
+  };
+  const FRACTIONS = [['½', 'a half', 0.5, 2], ['¼', 'a quarter', 0.25, 2], ['¾', 'three quarters', 0.75, 2], ['⅓', 'a third', 1 / 3, 3],
+    ['1', 'one whole', 1, 2], ['⅔', 'two thirds', 2 / 3, 3], ['⅛', 'an eighth', 0.125, 3], ['⅒', 'a tenth', 0.1, 4]]
+    .map(([t, say, v, lv]) => ({ kind: 'svg', svg: pie(v), t, v, s: say, parts: [say], lv }));
+  const clockSvg = (h, m) => {
+    const ha = ((h % 12) + m / 60) * 30 * Math.PI / 180, ma = m * 6 * Math.PI / 180;
+    const hx = 50 + 22 * Math.sin(ha), hy = 50 - 22 * Math.cos(ha), mx = 50 + 32 * Math.sin(ma), my = 50 - 32 * Math.cos(ma);
+    return `<svg viewBox="0 0 100 100" width="44" height="44" aria-hidden="true"><circle cx="50" cy="50" r="42" fill="#fff" stroke="#0B2E4F" stroke-width="7"/>` +
+      `<line x1="50" y1="50" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="#0B2E4F" stroke-width="5" stroke-linecap="round"/>` +
+      `<line x1="50" y1="50" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#FF6B5B" stroke-width="7" stroke-linecap="round"/></svg>`;
+  };
+  function clockItem(h, m) {
+    const t = m === 0 ? `${h} o'clock` : m === 30 ? `half past ${h}` : m === 15 ? `quarter past ${h}` : `quarter to ${h + 1}`;
+    const parts = m === 0 ? [String(h), "o'clock"] : m === 30 ? ['half past', String(h)] : m === 15 ? ['quarter past', String(h)] : ['quarter to', String(h + 1)];
+    return { kind: 'svg', svg: clockSvg(h, m), t, v: h * 60 + m, s: '', parts };
+  }
   const ABC = [['🍎', 'Apple'], ['⚽', 'Ball'], ['🐱', 'Cat'], ['🐶', 'Dog'], ['🥚', 'Egg'], ['🐟', 'Fish'], ['🍇', 'Grapes'], ['🎩', 'Hat'], ['🍦', 'Ice cream'],
     ['🪁', 'Kite'], ['🍋', 'Lemon'], ['🌙', 'Moon'], ['🦉', 'Owl'], ['🐷', 'Pig'], ['🐰', 'Rabbit'], ['☀️', 'Sun'], ['🌳', 'Tree'], ['☂️', 'Umbrella'],
     ['🚐', 'Van'], ['🐳', 'Whale'], ['🦓', 'Zebra']].map(([e, t]) => E(e, t, t.charCodeAt(0), t[0]));
@@ -388,10 +436,37 @@ button { font: inherit; color: inherit; }
     words: ['Reading number words is a super skill!', 'Twelve is also called a dozen, like a box of eggs!'],
     tens: ['The tens matter most. 4 tens is more than 39 ones!', 'Ten tens make a hundred!'],
     numbers: ['A hundred is ten tens!', 'A thousand is ten hundreds!', 'Zero means none at all!'],
+    long: ['A blue whale is longer than two buses parked end to end!'],
+    lives: ['Some giant tortoises live for more than 150 years!', 'Hamsters only live for about 2 or 3 years.'],
+    heavy: ['A jumbo jet can weigh as much as 30 buses when it takes off!', 'A feather is so light that the wind can carry it away.'],
+    holds: ['An Olympic swimming pool holds about 2.5 million litres of water!', 'A bath holds about 80 litres of water.'],
+    longThings: ['A football pitch is about as long as 10 buses in a line!'],
+    durations: ['You blink about 15 times every minute!', 'Dentists say to brush your teeth for 2 minutes, twice a day!'],
+    far: ['The Space Station goes all the way round the Earth in about an hour and a half!', 'Light from the nearest star takes more than 4 years to reach us!'],
+    spaceFirsts: ['Laika the dog was the first animal to go round the Earth.', 'Tim Peake ran a whole marathon on a treadmill on the Space Station!'],
+    planetHot: ['Venus is the hottest planet, even though Mercury is closer to the Sun!'],
+    count: ['Counting in twos is quicker than counting in ones!'],
+    fractions: ['Two halves make a whole!', 'A quarter is half of a half!'],
+    clocks: ['The short hand shows the hour and the long hand shows the minutes.', 'Half past means the long hand points down to the 6.'],
+    missing: ['Adding and taking away are opposites, so you can check one with the other!'],
+    halves: ['Halving is sharing into two equal groups!'],
+    money: ['There are 100 pennies in one pound.'],
     sums: ['Doubling a number is the same as adding it to itself!', 'Times tables are quick adding: 3 times 4 is 4 plus 4 plus 4!',
       'Taking away is the opposite of adding!', 'Any whole number times 10 ends in a zero!', 'The 5 times table always ends in a 5 or a 0!']
   };
 
+  // Pick n items whose values differ by at least a factor (or an absolute gap for values near zero).
+  function chooseFar(pool, n, ratio = 1.6, abs = 0) {
+    for (let t = 0; t < 80; t++) {
+      const got = [];
+      for (const it of shuffle(pool.slice())) {
+        const ok = got.every(g => abs ? Math.abs(g.v - it.v) >= abs : Math.max(g.v, it.v) / Math.max(1e-9, Math.min(g.v, it.v)) >= ratio);
+        if (ok) got.push(it);
+        if (got.length === n) return got;
+      }
+    }
+    return choose(pool, n, 1e-9);
+  }
   // Pick n items whose values are clearly apart.
   function choose(pool, n, gap = 0) {
     for (let t = 0; t < 60; t++) {
@@ -463,35 +538,64 @@ button { font: inherit; color: inherit; }
   const tensParts = v => { const t = Math.floor(v / 10), o = v % 10; return [String(t), t === 1 ? 'ten and' : 'tens and', String(o), o === 1 ? 'one' : 'ones']; };
 
   // Each topic has several question types. A game works through them before repeating one.
+  const T = (t, f) => { f.t = t; return f; };
+  function coinsSum(age) {
+    const set = age <= 5 ? ['1p', '2p', '5p', '10p'] : age === 6 ? ['1p', '2p', '5p', '10p', '20p'] : age === 7 ? ['2p', '5p', '10p', '20p', '50p'] : ['5p', '10p', '20p', '50p', '£1', '£2'];
+    const val = c => c[0] === '£' ? 100 * Number(c.slice(1)) : Number(c.slice(0, -1));
+    const k = age >= 7 && Math.random() < 0.5 ? 3 : 2;
+    const cs = Array.from({ length: k }, () => pick(set)).sort((a, b) => val(b) - val(a));
+    const v = cs.reduce((a, c) => a + val(c), 0);
+    const parts = cs.flatMap((c, i) => i ? ['plus', c] : [c]);
+    return { kind: 'num', t: cs.join(' + '), v, s: v >= 100 ? `£${(v / 100).toFixed(2)}` : `${v}p`, parts };
+  }
+  function uniqueItems(n, make) {
+    const seen = new Set(), items = [];
+    for (let g = 0; items.length < n && g < 300; g++) { const it = make(); if (!seen.has(it.v)) { seen.add(it.v); items.push(it); } }
+    return items;
+  }
   const TOPICS = [
-    { id: 'animals', em: '🐾', name: 'Animals', sub: 'Big, fast, legs', kinds: [
-      n => ({ q: 'Which animal is heaviest?', top: 'Heaviest', bottom: 'Lightest', asc: false, items: choose(ANIMAL_WEIGHT, n, 1e-9), facts: TYPE_FACTS.weight }),
-      n => ({ q: 'Which animal is fastest?', top: 'Fastest', bottom: 'Slowest', asc: false, items: choose(ANIMAL_SPEED, n, 1e-9), facts: TYPE_FACTS.speed }),
-      n => ({ q: 'Which has the most legs?', top: 'Most legs', bottom: 'Fewest legs', asc: false, items: choose(LEGS, n), facts: TYPE_FACTS.legs }),
-      n => ({ q: 'Which animal is tallest?', top: 'Tallest', bottom: 'Shortest', asc: false, items: choose(TALL_ANIMALS, n, 1e-9), facts: TYPE_FACTS.tallAnimals })
+    { id: 'animals', em: '🐾', name: 'Animals', sub: 'Big, fast, long, legs', kinds: [
+      T('weight', n => ({ q: 'Which animal is heaviest?', top: 'Heaviest', bottom: 'Lightest', asc: false, items: chooseFar(ANIMAL_WEIGHT, n, 1.8), facts: TYPE_FACTS.weight })),
+      T('speed', n => ({ q: 'Which animal is fastest?', top: 'Fastest', bottom: 'Slowest', asc: false, items: chooseFar(ANIMAL_SPEED, n, 1.6), facts: TYPE_FACTS.speed })),
+      T('legs', n => ({ q: 'Which has the most legs?', top: 'Most legs', bottom: 'Fewest legs', asc: false, items: choose(LEGS, n), facts: TYPE_FACTS.legs })),
+      T('tall', n => ({ q: 'Which animal is tallest?', top: 'Tallest', bottom: 'Shortest', asc: false, items: chooseFar(TALL_ANIMALS, n, 1.4), facts: TYPE_FACTS.tallAnimals })),
+      T('long', n => ({ q: 'Which animal is longest?', top: 'Longest', bottom: 'Shortest', asc: false, items: chooseFar(LONG_ANIMALS, n, 1.8), facts: TYPE_FACTS.long })),
+      T('lives', n => ({ q: 'Which animal lives longest?', top: 'Longest life', bottom: 'Shortest life', asc: false, items: chooseFar(LIVES, n, 1.6), facts: TYPE_FACTS.lives }))
     ] },
-    { id: 'numbers', em: '🔢', name: 'Numbers', sub: 'Biggest and smallest', kinds: [
-      (n, age) => {
+    { id: 'numbers', em: '🔢', name: 'Numbers', sub: 'Counting, numbers, fractions', kinds: [
+      T('count', (n, age) => {
+        if (age > 6) return null;
+        // Rows of five, like a ten frame, so bigger amounts can be counted.
+        const e = pick(['🍎', '⭐', '🐟', '🎈', '🍓', '🦆']);
+        const vs = distinctNums(n, 1, age <= 5 ? 6 : 10, 1);
+        return { q: 'Which has the most?', top: 'Most', bottom: 'Fewest', asc: false, items: vs.map(v => ({ kind: 'count', t: Array.from({ length: Math.ceil(v / 5) }, (_, i) => e.repeat(Math.min(5, v - i * 5))).join(' '), v, s: String(v), parts: [String(v)] })), facts: TYPE_FACTS.count };
+      }),
+      T('fractions', (n, age) => {
+        if (age < 7) return null;
+        const pool = FRACTIONS.filter(f => f.lv <= age - 5);
+        return { q: 'Which is the biggest amount?', top: 'Biggest', bottom: 'Smallest', asc: false, items: choose(pool, Math.min(n, pool.length), 1e-9).map(f => Object.assign({}, f)), facts: TYPE_FACTS.fractions, huge: true };
+      }),
+      T('words', (n, age) => {
         const vs = distinctNums(n, 0, age <= 5 ? 10 : 20);
-        return { q: 'Which number is smallest?', top: 'Smallest', bottom: 'Biggest', asc: true, items: vs.map(v => numItem(v, NUMWORDS[v])), facts: TYPE_FACTS.words };
-      },
-      (n, age) => {
+        return { q: 'Which number word is smallest?', top: 'Smallest', bottom: 'Biggest', asc: true, items: vs.map(v => numItem(v, NUMWORDS[v])), facts: TYPE_FACTS.words };
+      }),
+      T('tens', (n, age) => {
         if (age <= 6) return null;
         const vs = distinctNums(n, 11, 99);
         return { q: 'Which is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false, items: vs.map(v => numItem(v, tensLabel(v), tensParts(v))), facts: TYPE_FACTS.tens };
-      },
-      (n, age) => {
+      }),
+      T('digits', (n, age) => {
         const hi = age <= 5 ? 10 : age === 6 ? 20 : age === 7 ? 100 : age === 8 ? 1000 : 9999;
         const vs = distinctNums(n, age >= 9 ? 1001 : 0, hi, age >= 9 ? 40 : age === 8 ? 5 : 1);
         return { q: 'Which number is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false, items: vs.map(v => numItem(v)), facts: TYPE_FACTS.numbers, huge: true };
-      },
-      (n, age) => {
+      }),
+      T('digits', (n, age) => {
         const hi = age <= 5 ? 10 : age === 6 ? 20 : age === 7 ? 100 : age === 8 ? 1000 : 9999;
         const vs = distinctNums(n, age >= 9 ? 1001 : 0, hi, age >= 9 ? 40 : age === 8 ? 5 : 1);
         return { q: 'Which number is smallest?', top: 'Smallest', bottom: 'Biggest', asc: true, items: vs.map(v => numItem(v)), facts: TYPE_FACTS.numbers, huge: true };
-      }
+      })
     ] },
-    { id: 'sums', em: '➕', name: 'Sums', sub: 'Add, take away, times', kinds: [true, false].map(big => (n, age) => {
+    { id: 'sums', em: '➕', name: 'Sums', sub: 'Add, take away, halves, money', kinds: [true, false].map(big => T('sums', (n, age) => {
       const seen = new Set(), items = [];
       let guard = 0;
       while (items.length < n && guard++ < 200) {
@@ -501,28 +605,68 @@ button { font: inherit; color: inherit; }
       }
       return { q: big ? 'Which answer is biggest?' : 'Which answer is smallest?', top: big ? 'Biggest answer' : 'Smallest answer', bottom: big ? 'Smallest answer' : 'Biggest answer',
         asc: !big, items, facts: TYPE_FACTS.sums, huge: true };
-    }) },
-    { id: 'grow', em: '🦋', name: 'What comes next', sub: 'Life cycles, days, seasons', kinds: SEQS.map(sq => n => {
+    })).concat([
+      T('missing', (n, age) => {
+        const top = age <= 5 ? 10 : age === 6 ? 20 : age === 7 ? 100 : age === 8 ? 100 : 1000;
+        const step = age === 7 ? 10 : age >= 9 ? 50 : 1;
+        const items = uniqueItems(n, () => {
+          const c = step * (2 + rnd(Math.floor(top / step) - 1)), a = step * (1 + rnd(Math.floor(c / step) - 1)), b = c - a;
+          if (Math.random() < 0.6 || age <= 5) return { kind: 'num', t: `${a} + ? = ${c}`, v: b, s: `? = ${b}`, parts: [...numParts(a), 'plus what makes', ...numParts(c)] };
+          return { kind: 'num', t: `${c} − ? = ${a}`, v: b, s: `? = ${b}`, parts: [...numParts(c), 'minus what makes', ...numParts(a)] };
+        });
+        return { q: 'Which missing number is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false, items, facts: TYPE_FACTS.missing, huge: true };
+      }),
+      T('halves', (n, age) => {
+        const top = age <= 5 ? 10 : age === 6 ? 20 : age === 7 ? 40 : age === 8 ? 100 : 400;
+        const items = uniqueItems(n, () => {
+          if (age >= 8 && Math.random() < 0.35) { const x = 4 * (1 + rnd(top / 4)); return { kind: 'num', t: `a quarter of ${x}`, v: x / 4, s: `= ${x / 4}`, parts: ['a quarter of', ...numParts(x)] }; }
+          const x = 2 * (1 + rnd(top / 2)); return { kind: 'num', t: `half of ${x}`, v: x / 2, s: `= ${x / 2}`, parts: ['half of', ...numParts(x)] };
+        });
+        return { q: 'Which answer is biggest?', top: 'Biggest answer', bottom: 'Smallest answer', asc: false, items, facts: TYPE_FACTS.halves, huge: true };
+      }),
+      T('money', (n, age) => ({ q: 'Which is worth the most?', top: 'Most money', bottom: 'Least money', asc: false, items: uniqueItems(n, () => coinsSum(age)), facts: TYPE_FACTS.money, huge: true })),
+      T('times', (n, age) => {
+        if (age < 7) return null;
+        const tables = age === 7 ? [2, 5, 10] : age === 8 ? [3, 4, 8] : [6, 7, 9, 11, 12];
+        const items = uniqueItems(n, () => { const [t, v, parts] = times(1 + rnd(age >= 9 ? 12 : 10), pick(tables)); return { kind: 'num', t, v, s: `= ${v}`, parts }; });
+        return { q: 'Which answer is biggest?', top: 'Biggest answer', bottom: 'Smallest answer', asc: false, items, facts: TYPE_FACTS.sums, huge: true };
+      })
+    ]) },
+    { id: 'grow', em: '🦋', name: 'Time and growing', sub: 'Life cycles, days, clocks', kinds: SEQS.map(sq => T(/grow/.test(sq.q) ? 'lifecycle' : 'calendar', n => {
       const k = Math.min(n, sq.items.length);
       const idx = shuffle(sq.items.map((_, i) => i)).slice(0, k).sort((a, b) => a - b);
       return { q: sq.q, top: 'First', bottom: 'Last', asc: true, items: idx.map(i => Object.assign({}, sq.items[i])), facts: sq.facts };
-    }) },
-    { id: 'space', em: '🪐', name: 'Space', sub: 'Planets and the Sun', kinds: [
-      n => ({ q: 'Which planet is closest to the Sun?', top: 'Closest', bottom: 'Furthest', asc: true,
+    })).concat([
+      T('clock', (n, age) => {
+        const mins = age <= 5 ? [0] : age === 6 ? [0, 30] : [0, 15, 30, 45];
+        const items = uniqueItems(n, () => clockItem(6 + rnd(6), pick(mins)));
+        return { q: 'Which time comes first in the morning?', top: 'Earliest', bottom: 'Latest', asc: true, items, facts: TYPE_FACTS.clocks };
+      }),
+      T('duration', n => ({ q: 'Which takes the longest?', top: 'Longest', bottom: 'Shortest', asc: false, items: chooseFar(DURATIONS, n, 2), facts: TYPE_FACTS.durations }))
+    ]) },
+    { id: 'space', em: '🪐', name: 'Space', sub: 'Planets, the Sun, rockets', kinds: [
+      T('planet-order', n => ({ q: 'Which planet is closest to the Sun?', top: 'Closest', bottom: 'Furthest', asc: true,
         items: choose(PLANETS.map(p => Object.assign({}, p, { v: p.order, s: `${['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'][p.order - 1]} from the Sun` })), n),
-        facts: TYPE_FACTS.planetOrder }),
-      n => ({ q: 'Which planet is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false,
-        items: choose(PLANETS.map(p => Object.assign({}, p, { v: p.size, s: `${n0(p.size)} km wide` })), n, 1e-9), facts: TYPE_FACTS.planetSize }),
-      () => ({ q: 'Which is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false,
+        facts: TYPE_FACTS.planetOrder })),
+      T('size', n => ({ q: 'Which planet is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false,
+        items: choose(PLANETS.map(p => Object.assign({}, p, { v: p.size, s: `${n0(p.size)} km wide` })), n, 1e-9), facts: TYPE_FACTS.planetSize })),
+      T('size', () => ({ q: 'Which is biggest?', top: 'Biggest', bottom: 'Smallest', asc: false,
         items: [E('☀️', 'The Sun', 1392700, '1,392,700 km wide'), E('🌍', 'The Earth', 12742, '12,742 km wide'), E('🌕', 'The Moon', 3474, '3,474 km wide')],
-        facts: TYPE_FACTS.sunMoon })
+        facts: TYPE_FACTS.sunMoon })),
+      T('temp', n => ({ q: 'Which planet is hottest?', top: 'Hottest', bottom: 'Coldest', asc: false,
+        items: chooseFar(PLANETS.map(p => Object.assign({}, p, { v: PLANET_HOT[p.t], s: `about ${PLANET_HOT[p.t]} °C`.replace('-', '−') })), n, 0, 40), facts: TYPE_FACTS.planetHot })),
+      T('far', n => ({ q: 'Which is furthest away from us?', top: 'Furthest', bottom: 'Closest', asc: false, items: chooseFar(FAR, n, 10), facts: TYPE_FACTS.far })),
+      T('space-firsts', (n, age) => age < 8 ? null : ({ q: 'Which happened first?', top: 'First', bottom: 'Last', asc: true, items: chooseFar(SPACE_FIRSTS, n, 0, 3), facts: TYPE_FACTS.spaceFirsts }))
     ] },
-    { id: 'world', em: '🌍', name: 'Our world', sub: 'Coins, hot and cold, shapes, ABC', kinds: [
-      n => ({ q: 'Which coin is worth the most?', top: 'Most money', bottom: 'Least money', asc: false, items: choose(COINS, n), facts: TYPE_FACTS.coins }),
-      n => ({ q: 'Which is hottest?', top: 'Hottest', bottom: 'Coldest', asc: false, items: choose(HOT, n), facts: TYPE_FACTS.hot }),
-      n => ({ q: 'Which shape has the most sides?', top: 'Most sides', bottom: 'Fewest sides', asc: false, items: choose(SHAPES, n), facts: TYPE_FACTS.shapes }),
-      n => ({ q: 'Put them in ABC order.', top: 'A', bottom: 'Z', asc: true, items: choose(ABC, n), facts: TYPE_FACTS.abc }),
-      n => ({ q: 'Which is tallest?', top: 'Tallest', bottom: 'Shortest', asc: false, items: choose(TALL_THINGS, n, 1e-9), facts: TYPE_FACTS.tallThings })
+    { id: 'world', em: '🌍', name: 'Our world', sub: 'Heavy, hot, long, coins, shapes', kinds: [
+      T('money', n => ({ q: 'Which coin is worth the most?', top: 'Most money', bottom: 'Least money', asc: false, items: choose(COINS, n), facts: TYPE_FACTS.coins })),
+      T('temp', n => ({ q: 'Which is hottest?', top: 'Hottest', bottom: 'Coldest', asc: false, items: choose(HOT, n), facts: TYPE_FACTS.hot })),
+      T('sides', n => ({ q: 'Which shape has the most sides?', top: 'Most sides', bottom: 'Fewest sides', asc: false, items: choose(SHAPES, n), facts: TYPE_FACTS.shapes })),
+      T('abc', n => ({ q: 'Put them in ABC order.', top: 'A', bottom: 'Z', asc: true, items: choose(ABC, n), facts: TYPE_FACTS.abc })),
+      T('tall', n => ({ q: 'Which is tallest?', top: 'Tallest', bottom: 'Shortest', asc: false, items: chooseFar(TALL_THINGS, n, 1.4), facts: TYPE_FACTS.tallThings })),
+      T('weight', n => ({ q: 'Which is heaviest?', top: 'Heaviest', bottom: 'Lightest', asc: false, items: chooseFar(HEAVY_THINGS, n, 3), facts: TYPE_FACTS.heavy })),
+      T('holds', n => ({ q: 'Which holds the most water?', top: 'Holds most', bottom: 'Holds least', asc: false, items: chooseFar(HOLDS, n, 3), facts: TYPE_FACTS.holds })),
+      T('long', n => ({ q: 'Which is longest?', top: 'Longest', bottom: 'Shortest', asc: false, items: chooseFar(LONG_THINGS, n, 1.6), facts: TYPE_FACTS.longThings }))
     ] }
   ];
   // Spoken pieces for each item: coins are said the way children say them.
@@ -603,6 +747,7 @@ button { font: inherit; color: inherit; }
     deviceSay(parts);
   }
   // Everything the game can say, for recording. Each entry is [key, words for the recording].
+  window.__lineupRound = () => R && { q: R.q, t: R.t };
   window.__lineupGen = (id, n, age) => TOPICS.find(t => t.id === id).kinds.map(k => k(n, age));
   window.__lineupVoiceReady = () => !!(A.buf && A.map);
   window.__lineupLines = () => {
@@ -613,7 +758,10 @@ button { font: inherit; color: inherit; }
     add('1000', 'one thousand');
     for (let k = 1; k <= 9; k++) { add(`${k} thousand`, `${NUMWORDS[k]} thousand`); add(`${k} thousand and`, `${NUMWORDS[k]} thousand and`); }
     ['plus', 'minus', 'times', 'double', 'ten and', 'tens and', 'ones', 'one'].forEach(w => add(w));
-    const pools = [ANIMAL_WEIGHT, ANIMAL_SPEED, LEGS, TALL_ANIMALS, TALL_THINGS, HOT, COINS, SHAPES, PLANETS, ABC, ...SEQS.map(s => s.items)];
+    const pools = [ANIMAL_WEIGHT, ANIMAL_SPEED, LEGS, TALL_ANIMALS, TALL_THINGS, HOT, COINS, SHAPES, PLANETS, ABC, ...SEQS.map(s => s.items),
+      LONG_ANIMALS, LIVES, HEAVY_THINGS, HOLDS, LONG_THINGS, DURATIONS, FAR, SPACE_FIRSTS];
+    FRACTIONS.forEach(f => add(f.s));
+    ['plus what makes', 'minus what makes', 'half of', 'a quarter of', "o'clock", 'half past', 'quarter past', 'quarter to'].forEach(w => add(w));
     pools.flat().forEach(it => add(it.t, COIN_SAY[it.t]));
     ['The Sun', 'The Earth', 'The Moon'].forEach(t => add(t));
     SEQS.forEach(s => { add(s.q); s.facts.forEach(f => add(f)); });
@@ -679,7 +827,7 @@ button { font: inherit; color: inherit; }
   const ROUNDS = 5;
   let G = null, R = null;
   function startGame(topicId) {
-    G = { topic: topicId, i: 0, stars: 0, order: [], usedKinds: {}, facts: new Set() };
+    G = { topic: topicId, i: 0, stars: 0, order: [], usedKinds: {}, facts: new Set(), types: new Set() };
     // Mixed play rotates topics and always includes some maths.
     if (!topicId) {
       const others = shuffle(['animals', 'grow', 'space', 'world']);
@@ -695,13 +843,19 @@ button { font: inherit; color: inherit; }
     const n = sizeFor(G.i, lv);
     let r = null;
     const used = G.usedKinds[topic.id] = G.usedKinds[topic.id] || [];
-    for (let t = 0; t < 12 && !r; t++) {
-      let fresh = topic.kinds.map((_, i) => i).filter(i => !used.includes(i));
-      if (!fresh.length) { used.length = 0; fresh = topic.kinds.map((_, i) => i); }
-      const ki = pick(fresh);
-      used.push(ki);
+    const tried = new Set();
+    for (let t = 0; t < 20 && !r; t++) {
+      let fresh = topic.kinds.map((_, i) => i).filter(i => !used.includes(i) && !tried.has(i));
+      if (!fresh.length) { used.length = 0; fresh = topic.kinds.map((_, i) => i).filter(i => !tried.has(i)); }
+      if (!fresh.length) { tried.clear(); fresh = topic.kinds.map((_, i) => i); }
+      // A question type this game hasn't asked yet, if the topic has one left.
+      const newType = fresh.filter(i => !G.types.has(topic.kinds[i].t));
+      const ki = pick(newType.length ? newType : fresh);
+      tried.add(ki);
       r = topic.kinds[ki](n, 5 + lv);
+      if (r) { used.push(ki); r.t = topic.kinds[ki].t; }
     }
+    G.types.add(r.t);
     r.topicId = topic.id;
     const correct = r.items.slice().sort((a, b) => r.asc ? a.v - b.v : b.v - a.v);
     let order;
@@ -740,6 +894,7 @@ button { font: inherit; color: inherit; }
       li.innerHTML = `<div class="card">${pic || '<span></span>'}<span class="label${R.huge || it.kind === 'num' ? ' huge' : ''}"></span><span class="right"><span class="val"></span><span class="tick" aria-hidden="true">✓</span></span></div>`;
       if (!pic) li.querySelector('.card').style.gridTemplateColumns = '0 minmax(0, 1fr) auto';
       li.querySelector('.label').textContent = it.t;
+      if (it.kind === 'count') { li.querySelector('.label').classList.remove('huge'); li.querySelector('.label').classList.add('count'); li.setAttribute('aria-label', `${it.v}`); }
       if (it.kind === 'num' && it.t.length > 9) li.querySelector('.label').classList.remove('huge');
       it.el = li;
       li.addEventListener('pointerdown', e => down(e, it));
