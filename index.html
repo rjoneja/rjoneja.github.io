@@ -1727,7 +1727,14 @@ h1 {
   // The message never names the answers: just the question, the move trail and the time.
   function shareText() {
     if (S.mode === 'countdown') {
-      return [`⏱ Ordo Countdown: ${S.cleared} in a row`, `Beaten by the ${R.ceiling}-second clock.`, 'How far can you get?', `${BASE}#countdown`].join('\n');
+      // One square per turn: green with time to spare, yellow cutting it fine, orange at the buzzer. Then the clock that won.
+      const sq = (S.cdRes || []).map(f => f < 0.5 ? '🟩' : f < 0.8 ? '🟨' : '🟧');
+      const rows = [];
+      for (let i = 0; i < sq.length; i += 10) rows.push(sq.slice(i, i + 10).join(''));
+      if (rows.length > 3) rows.splice(3, rows.length - 3, `…and ${sq.length - 30} more`);
+      const grid = (rows.length ? rows : ['']).map((r, i, a) => i === a.length - 1 ? r + '⏰' : r);
+      const fire = S.cleared >= 20 ? ' 🔥🔥🔥' : S.cleared >= 12 ? ' 🔥🔥' : S.cleared >= 8 ? ' 🔥' : '';
+      return [`⏱ Ordo Countdown: ${S.cleared} in a row${fire}`, ...grid, `Beaten by the ${R.ceiling}-second clock.`, 'How far can you get?', `${BASE}#countdown`].join('\n');
     }
     const solved = R.status === 'solved';
     const eff = effOf();
@@ -1776,6 +1783,7 @@ h1 {
     }
     if (S.mode === 'countdown') {
       S.cleared++; S.score = S.cleared; hud();
+      (S.cdRes = S.cdRes || []).push(R.elapsed / R.ceiling);
       const run = S;
       setTimeout(() => { if (S === run && R.status === 'solved') { S.round++; newRound(); } }, 650);
       return;
