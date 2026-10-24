@@ -30,6 +30,52 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Atkinson+Hyperlegible:wght@400;700&family=Martian+Mono:wght@400;600&family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script>window.ORDO_PAGE="home";
+// Anonymous usage counts for the Ordo dashboard. Runs on ordogame.com only.
+// A random visitor ID (this browser) and session ID (this tab) - no names, no cookies, no IP addresses kept.
+// ordogame.com/?notrack stops counting this browser; ?track turns it back on.
+(function () {
+  var URL_EV = 'https://ordo-api.raj-joneja.workers.dev/api/ev';
+  var ls = function (k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } };
+  var ss = function (k, v) { try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); } catch (e) { return null; } };
+  var q = location.search || '';
+  if (/[?&]notrack\b/.test(q)) ls('ordo.notrack', '1');
+  if (/[?&]track\b/.test(q)) ls('ordo.notrack', null);
+  // Where this visit came from: the tag on a shared link, else the referring site.
+  var m = q.match(/[?&]s=([a-z]{1,8})\b/), src = m ? m[1] : '';
+  if (m || /[?&](no)?track\b/.test(q)) {
+    var rest = q.replace(/^\?/, '').split('&').filter(function (p) { return p && !/^(s=|notrack$|track$)/.test(p); }).join('&');
+    try { history.replaceState(history.state, '', location.pathname + (rest ? '?' + rest : '') + location.hash); } catch (e) {}
+  }
+  if (!src) {
+    try { var h = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '') : ''; src = h && !/(^|\.)ordogame\.com$/.test(h) ? h.slice(0, 40) : 'direct'; } catch (e) { src = 'direct'; }
+  }
+  var on = ls('ordo.notrack') !== '1' && (/(^|\.)ordogame\.com$/.test(location.hostname) || ls('ordo.trackTest') === '1');
+  var rid = function () { var s = ''; try { s = Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(14)), function (b) { return (b % 36).toString(36); }).join(''); } catch (e) {} return s.length === 14 ? s : (Math.random().toString(36).slice(2) + Date.now().toString(36)).slice(0, 14); };
+  var vid = ls('ordo.vid'); if (!vid) { vid = rid(); ls('ordo.vid', vid); }
+  var sid = ss('ordo.sid'), fresh = !sid; if (!sid) { sid = rid(); ss('ordo.sid', sid); }
+  var page = window.ORDO_PAGE || 'home';
+  function send(t, v, n) {
+    if (!on) return;
+    var body = JSON.stringify({ vid: vid, sid: sid, pg: page, t: t, v: v == null ? '' : String(v).slice(0, 24), n: typeof n === 'number' && isFinite(n) ? Math.round(n) : null, src: src });
+    try { if (navigator.sendBeacon && navigator.sendBeacon(URL_EV, new Blob([body], { type: 'text/plain' }))) return; } catch (e) {}
+    try { fetch(URL_EV, { method: 'POST', body: body, keepalive: true, headers: { 'Content-Type': 'text/plain' } }).catch(function () {}); } catch (e) {}
+  }
+  window.ordoTrack = send;
+  if (fresh) send('visit', page);
+  // Time on site: only while the page is on screen, sent whenever it's hidden or closed.
+  var shown = document.visibilityState === 'visible' ? Date.now() : 0, acc = 0;
+  function flush() {
+    if (shown) { acc += Date.now() - shown; shown = 0; }
+    var s = Math.min(1800, Math.round(acc / 1000)); acc = 0;
+    if (s >= 1) send('time', '', s);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') flush(); else shown = Date.now();
+  });
+  window.addEventListener('pagehide', flush);
+})();
+</script>
 </head>
 <body>
 <style>
@@ -674,7 +720,7 @@ h1 {
     <p>Made in London. No ads, no sign-up.</p>
     <p><a class="about-kids" id="kidsLink" href="https://ordogame.com/kids/" target="_blank" rel="noopener">Ordo Kids</a>: a picture-first version for ages 4 to 9.</p>
     <h2 class="sub-h">Your data</h2>
-    <p>Your streak and scores are kept on this device. To count players and run the shared top scores, the game sends your daily score with a random ID that isn't linked to you. If you add your name to a board, everyone can see it. No cookies.</p>
+    <p>Your streak and scores are kept on this device. To count players and run the shared top scores, the game sends your daily score with a random ID that isn't linked to you. If you add your name to a board, everyone can see it. We also count anonymous visits, plays and shares to see how the game is doing. No cookies, no names, no ads.</p>
     <h2 class="sub-h">Contact</h2>
     <p>Ideas, mistakes or a puzzle you'd like to see: <a href="mailto:hello@ordogame.com">hello@ordogame.com</a></p>
     <h2 class="sub-h">Credits</h2>
@@ -1124,6 +1170,9 @@ h1 {
 
   // Public link to this game. A challenge rides on the end as #qr-<category>-<start order>-<time in tenths or x>-<moves>.
   const BASE = 'https://ordogame.com/';
+  // Anonymous usage counts (see track.js, added on the live site only). Shared links carry ?s=wa or ?s=cp so arrivals can be counted.
+  const track = (t, v, n) => { try { window.ordoTrack && window.ordoTrack(t, v, n); } catch {} };
+  const tagLink = (text, src) => text.split(BASE).join(BASE + '?s=' + src);
   const SQ = { warm: '🟩', same: '🟨', cold: '🟥' };
 
   const store = {
@@ -1751,8 +1800,8 @@ h1 {
     el.pBtn.textContent = btn;
     el.pTrail.innerHTML = R.trail.map(h => `<i data-h="${h}"></i>`).join('');
     const text = shareText();
-    el.pShareText.value = text;
-    el.pWa.href = 'https://wa.me/?text=' + encodeURIComponent(text);
+    el.pShareText.value = tagLink(text, 'cp');
+    el.pWa.href = 'https://wa.me/?text=' + encodeURIComponent(tagLink(text, 'wa'));
     el.pWa.textContent = R.challenge ? 'Reply' : S.mode === 'countdown' ? 'Share' : 'Challenge';
     el.pCopy.textContent = 'Copy';
     // In the daily, sharing waits for the results screen: one grid for the whole puzzle, with the #daily link.
@@ -1949,6 +1998,7 @@ h1 {
   let boardTab = 'day';
   let boardGame = 'cd';
   function openBoards(game, tab) {
+    track('board', game || boardGame);
     if (game) boardGame = game;
     if (tab) boardTab = tab;
     releasePointer();
@@ -2108,6 +2158,7 @@ h1 {
     const t = runSpec(live.idx);
     prog.run[live.no] = { score: live.idx, res: live.res || [], clock: t.time, n: t.n, left: true };
     delete prog.runLive; saveProg();
+    track('run_end', 'left', live.idx);
   }
   function hideAll() {
     ['picker', 'boards', 'about', 'dailyDone', 'start', 'runDone'].forEach(id => { $(id).hidden = true; });
@@ -2149,6 +2200,7 @@ h1 {
     el.lives.parentElement.classList.add('quiet');
     play.hidden = false;
     api('/api/play', { day: no, pid: prog.pid });
+    track('run_start', no);
     playTurn();
   }
   function playTurn() {
@@ -2165,6 +2217,7 @@ h1 {
     const no = S.no;
     prog.run[no] = { score: S.cleared, res: S.res.slice(), clock: R.ceiling, n: R.n };
     delete prog.runLive; saveProg();
+    track('run_end', 'clock', S.cleared);
   }
   // One square per turn: green with time to spare, yellow cutting it fine, orange at the buzzer, then the clock that won.
   function runGrid(rec) {
@@ -2193,8 +2246,8 @@ h1 {
     $('rWhy').textContent = rec.left ? `The run ended when the page was closed, at the ${rec.clock}-second clock.`
       : `Beaten by the ${rec.clock}-second clock` + (rec.n === 4 ? ' on the 4-item sets.' : '.');
     const text = runShare(no, rec);
-    $('rShareText').value = text; $('rShareText').hidden = true;
-    $('rWa').href = 'https://wa.me/?text=' + encodeURIComponent(text);
+    $('rShareText').value = tagLink(text, 'cp'); $('rShareText').hidden = true;
+    $('rWa').href = 'https://wa.me/?text=' + encodeURIComponent(tagLink(text, 'wa'));
     $('rRank').hidden = true; $('rNamer').hidden = true;
     sendRun(no, rec);
     const tick = () => {
@@ -2229,7 +2282,12 @@ h1 {
     toast(res ? "You're on the board!" : "Couldn't reach the board. Try again later.");
     $('rNameIn').blur();
   });
+  const shareCtx = () => S.mode === 'countdown' ? 'practice' : S.mode === 'run' || S.mode === 'done' ? 'daily' : (S.mode || 'cat');
+  $('rWa').addEventListener('click', () => track('share', 'wa-daily'));
+  el.pWa.addEventListener('click', () => track('share', 'wa-' + shareCtx()));
+  el.pCopy.addEventListener('click', () => track('share', 'cp-' + shareCtx()));
   $('rCopy').addEventListener('click', () => {
+    track('share', 'cp-daily');
     const text = $('rShareText').value;
     const done = () => { $('rCopy').textContent = 'Copied'; setTimeout(() => { $('rCopy').textContent = 'Copy'; }, 1600); };
     try { navigator.clipboard.writeText(text).then(done, () => { $('rShareText').hidden = false; $('rShareText').select(); }); }
@@ -2348,6 +2406,7 @@ h1 {
     }
     if (S.mode === 'countdown') {
       const best = prog.cdBest || 0, got = S.cleared;
+      track('practice_end', '', got);
       if (got > best) { prog.cdBest = got; saveProg(); }
       const title = got > best && best > 0 ? 'New best!' : "Time's up";
       if (got > best && best > 0) confetti(80, innerHeight * 0.25);
@@ -2497,6 +2556,7 @@ h1 {
     S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'countdown' };
     shownScore = 0;
     if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
+    track('practice');
     picker.hidden = true; $('boards').hidden = true; $('about').hidden = true; $('dailyDone').hidden = true;
     play.hidden = false;
     el.lives.parentElement.classList.add('quiet');
