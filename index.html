@@ -655,7 +655,7 @@ h1 {
 
   <section class="start" id="start" hidden>
     <div class="eyebrow">Today's Ordo</div>
-    <h1 class="st-title" id="stTitle">Ordo #1</h1>
+    <h1 class="st-title" id="stTitle">Today</h1>
     <ul class="st-rules">
       <li>Put each set in order before the clock runs out.</li>
       <li>The clock gets quicker every time: 10 seconds, then 9, 8, 7…</li>
@@ -667,7 +667,7 @@ h1 {
 
   <section class="daily" id="runDone" hidden>
     <div class="eyebrow">Today's Ordo</div>
-    <h1 id="rTitle">Ordo #1</h1>
+    <h1 id="rTitle">Today</h1>
     <div class="d-score r-score"><b id="rScore">0</b><span>in a row</span></div>
     <div class="r-grid" id="rGrid" aria-hidden="true"></div>
     <p class="r-why" id="rWhy"></p>
@@ -2182,7 +2182,7 @@ h1 {
     S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'home' };
     shownScore = 0; hud();
     el.lives.parentElement.classList.add('quiet');
-    $('stTitle').textContent = `Ordo #${no}`;
+    $('stTitle').textContent = runDate(no);
     const n = liveStreak();
     const note = $('stNote');
     note.textContent = n > 1 ? `🔥 You're on a ${n}-day streak.` : '';
@@ -2213,8 +2213,13 @@ h1 {
     buildRound(t.ci, t.correct, t.order.slice(), null);
     R.countdown = true; R.ceiling = t.time;
     el.eyebrow.hidden = false;
-    el.eyebrow.textContent = `Ordo #${S.no} · ${t.time} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
+    el.eyebrow.textContent = `${t.time} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
     startClock(); readout();
+  }
+  // Puzzles are named by date ("Saturday 24 October"), not number, so newcomers don't feel they've missed out.
+  function runDate(no, short) {
+    const d = new Date(); d.setDate(d.getDate() - (dailyNo() - no));
+    return d.toLocaleDateString('en-GB', short ? { weekday: 'short', day: 'numeric', month: 'short' } : { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '');
   }
   function endRun() {
     const no = S.no;
@@ -2234,7 +2239,7 @@ h1 {
   }
   const fireFor = n => n >= 20 ? ' 🔥🔥🔥' : n >= 14 ? ' 🔥🔥' : n >= 10 ? ' 🔥' : '';
   function runShare(no, rec) {
-    return [`Ordo #${no} · ${rec.score} in a row${fireFor(rec.score)}`, ...runGrid(rec), `Beaten by the ${rec.clock}-second clock.`, BASE].join('\n');
+    return [`Ordo · ${runDate(no, true)} · ${rec.score} in a row${fireFor(rec.score)}`, ...runGrid(rec), `Beaten by the ${rec.clock}-second clock.`, BASE].join('\n');
   }
   let runTimer = 0;
   function showRunDone(no, fresh) {
@@ -2243,7 +2248,7 @@ h1 {
     S.mode = 'done';
     el.lives.parentElement.classList.add('quiet');
     $('runDone').hidden = false;
-    $('rTitle').textContent = `Ordo #${no}`;
+    $('rTitle').textContent = runDate(no);
     countUp($('rScore'), fresh ? 0 : rec.score, rec.score);
     $('rGrid').textContent = runGrid(rec).join('\n');
     $('rWhy').textContent = rec.left ? `The run ended when the page was closed, at the ${rec.clock}-second clock.`
