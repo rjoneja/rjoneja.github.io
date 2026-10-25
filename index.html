@@ -1208,6 +1208,83 @@ h1 {
         B('Jude Bellingham', '2003-06-29'), B('Lamine Yamal', '2007-07-13')] }
   ];
   POP.forEach((c, i) => CATS.push(Object.assign({ gapAbs: 1, fam: 'p' + i }, c, { group: c.group || 'pop' })));
+  // Everyday questions anyone can reason out: no specialist knowledge, just a sense of how big, how long, how hot.
+  // Figures are typical values; gapRel keeps items far enough apart that nobody can argue the order.
+  const EV_G = g => g < 1000 ? n0(Math.round(g)) + ' g' : g < 1e6 ? +(g / 1000).toFixed(g < 1e4 ? 1 : 0) + ' kg' : n0(+(g / 1e6).toFixed(1)) + ' tonnes';
+  const EV_ML = v => v < 1000 ? n0(v) + ' ml' : v < 1e6 ? +(v / 1000).toFixed(1) + ' litres' : n0(Math.round(v / 1000)) + ' litres';
+  const EV_SEC = s => s < 1 ? s + ' seconds' : s < 120 ? Math.round(s) + ' seconds' : s < 7200 ? Math.round(s / 60) + ' minutes' : s < 172800 ? +(s / 3600).toFixed(1) + ' hours'
+    : s < 3e6 ? Math.round(s / 86400) + ' days' : s < 3e7 ? Math.round(s / 604800) + ' weeks' : (y => y === 1 ? '1 year' : y + ' years')(+(s / 3.156e7).toFixed(1));
+  const EV_KM = v => v < 1 ? n0(v * 1000) + ' m' : v < 1e6 ? n0(Math.round(v)) + ' km' : v < 1e9 ? +(v / 1e6).toFixed(0) + ' million km' : v < 1e12 ? +(v / 1e9).toFixed(1) + ' billion km' : +(v / 1e12).toFixed(0) + ' trillion km';
+  const EV_M2 = v => v < 1e5 ? n0(v) + ' m²' : n0(+(v / 1e6).toFixed(2)) + ' km²';
+  const EV_YRS = y => y < 0.05 ? Math.round(y * 365) + (Math.round(y * 365) === 1 ? ' day' : ' days') : y < 1 ? Math.round(y * 52) + ' weeks' : y + ' years';
+  const EVERYDAY = [
+    { q: 'Which animal usually lives longest?', t: 'animal-life', group: 'nature', top: 'Longest life', bottom: 'Shortest life', asc: false, gapRel: .2, level: 1, fmt: EV_YRS,
+      basis: 'Typical lifespan. Individuals vary a lot.',
+      items: [['Mayfly (adult)', 0.003], ['Honeybee (worker)', 0.12], ['Mouse', 1.5], ['Hamster', 2.5], ['Rabbit', 9], ['Dog', 12], ['Cat', 15], ['Horse', 28],
+        ['Chimpanzee', 40], ['Elephant', 65], ['Human', 80], ['Giant tortoise', 150], ['Bowhead whale', 200], ['Greenland shark', 300]] },
+    { q: 'Which has the most calories?', t: 'calories', group: 'everyday', top: 'Most calories', bottom: 'Fewest', asc: false, gapRel: .18, level: 1, fmt: v => n0(v) + ' kcal',
+      basis: 'Typical figures for a standard portion. Brands and sizes vary.',
+      items: [['A stick of celery', 6], ['A digestive biscuit', 70], ['A boiled egg', 78], ['An apple', 95], ['A tablespoon of olive oil', 120], ['A can of Coca-Cola', 139],
+        ['A glass of red wine', 160], ['A pint of lager', 200], ['A Mars bar', 230], ['A slice of pepperoni pizza', 300], ['A Big Mac', 550], ['A full English breakfast', 850]] },
+    { q: 'Which takes longest?', t: 'duration', group: 'everyday', top: 'Longest', bottom: 'Shortest', asc: false, gapRel: .2, level: 1, fmt: EV_SEC,
+      basis: 'Typical times.',
+      items: [['A blink', 0.3], ['Boiling a kettle', 180], ['Soft-boiling an egg', 360], ['Light travelling from the Sun to Earth', 499], ['Baking a sponge cake', 1500],
+        ['A roast chicken', 4800], ['A football match', 5400], ['The fastest marathon', 7235], ['A flight from London to New York', 28800],
+        ['The Moon going round the Earth', 2.36e6], ['A human pregnancy', 2.42e7], ['The Earth going round the Sun', 3.156e7], ['An elephant pregnancy', 5.8e7]] },
+    { q: 'Which has the most?', t: 'count', group: 'everyday', top: 'Most', bottom: 'Fewest', asc: false, gapRel: .14, level: 1, fmt: v => n0(v),
+      basis: 'Exact counts.',
+      items: [['Strings on a guitar', 6], ['Legs on a spider', 8], ['Players in a football team', 11], ['Holes on a golf course', 18], ['Letters in the alphabet', 26],
+        ['Teeth in an adult mouth', 32], ['Stars on the US flag', 50], ['Squares on a chessboard', 64], ['Keys on a piano', 88], ['Hours in a week', 168],
+        ['Bones in the adult human body', 206], ['Days in a year', 365], ['Minutes in a day', 1440], ['Seconds in an hour', 3600]] },
+    { q: 'Which is fastest?', t: 'speed', group: 'everyday', top: 'Fastest', bottom: 'Slowest', asc: false, gapRel: .2, level: 1, fmt: v => v < 1 ? v + ' km/h' : n0(v) + ' km/h',
+      basis: 'Typical top speeds.',
+      items: [['A garden snail', 0.05], ['Someone walking', 5], ['A cyclist commuting', 20], ['Usain Bolt', 45], ['A racehorse', 70], ['A cheetah', 110],
+        ['A high-speed train', 300], ['A peregrine falcon diving', 390], ['A passenger jet', 900], ['The speed of sound', 1235], ['Concorde', 2180],
+        ['The Space Station', 27600]] },
+    { q: 'Which ball is biggest?', t: 'size', group: 'everyday', top: 'Biggest', bottom: 'Smallest', asc: false, gapRel: .12, level: 1, fmt: v => v + ' cm across',
+      basis: 'Diameter of a standard ball.',
+      items: [['Marble', 1.6], ['Table tennis ball', 4], ['Snooker ball', 5.25], ['Tennis ball', 6.7], ['Cricket ball', 7.2], ['Bowling ball', 21.6], ['Basketball', 24.3]] },
+    { q: 'Which is heaviest?', t: 'weight', group: 'everyday', top: 'Heaviest', bottom: 'Lightest', asc: false, gapRel: .3, level: 1, fmt: EV_G,
+      basis: 'Typical weights.',
+      items: [['A paperclip', 1], ['A teabag', 3], ['An egg', 60], ['A smartphone', 190], ['A tin of soup', 400], ['A bag of sugar', 1000], ['A house brick', 2700],
+        ['A bowling ball', 7000], ['A bicycle', 12000], ['An adult man', 75000], ['A grand piano', 400000], ['A family car', 1500000], ['An elephant', 6e6],
+        ['A double-decker bus', 1.2e7], ['A fully loaded jumbo jet', 4e8]] },
+    { q: 'Which holds the most?', t: 'holds', group: 'everyday', top: 'Holds most', bottom: 'Holds least', asc: false, gapRel: .3, level: 1, fmt: EV_ML,
+      basis: 'Typical capacity.',
+      items: [['A teaspoon', 5], ['A shot glass', 25], ['A can of drink', 330], ['A pint glass', 568], ['A wine bottle', 750], ['A kettle', 1700], ['A bucket', 10000],
+        ['A car fuel tank', 50000], ['A bath', 80000], ['A wheelie bin', 240000], ['A hot tub', 1500000], ['An Olympic swimming pool', 2.5e9]] },
+    { q: 'Which is tallest?', t: 'height', group: 'everyday', top: 'Tallest', bottom: 'Shortest', asc: false, gapRel: .12, level: 1, fmt: v => v < 10 ? v + ' m' : n0(v) + ' m',
+      basis: 'Typical or measured heights.',
+      items: [['An adult man', 1.75], ['A front door', 2], ['A double-decker bus', 4.4], ['A giraffe', 5.5], ['A two-storey house', 8], ['Big Ben', 96],
+        ['The Eiffel Tower', 330], ['The Burj Khalifa', 828], ['Mont Blanc', 4806], ['Kilimanjaro', 5895], ['Mount Everest', 8849], ['A plane at cruising height', 11000]] },
+    { q: 'Which is furthest from Earth?', t: 'far', group: 'everyday', top: 'Furthest', bottom: 'Nearest', asc: false, gapRel: .25, level: 1, fmt: EV_KM,
+      basis: 'Typical or average distance.',
+      items: [['A plane at cruising height', 11], ['The Space Station', 400], ['Sat-nav satellites', 20200], ['TV satellites', 35786], ['The Moon', 384400],
+        ['The Sun', 1.5e8], ['Mars (on average)', 2.25e8], ['Jupiter (on average)', 7.8e8], ['Pluto', 5.9e9], ['Voyager 1', 2.5e10], ['The nearest star', 4e13]] },
+    { q: 'Which is hottest?', t: 'temp', group: 'everyday', top: 'Hottest', bottom: 'Coldest', asc: false, gapAbs: 12, level: 1, fmt: v => (v < 0 ? '−' + n0(-v) : n0(v)) + ' °C',
+      basis: 'Typical temperatures.',
+      items: [['The coldest place on Earth', -89], ['A freezer', -18], ['Inside a fridge', 4], ['A comfortable room', 20], ['The human body', 37], ['A fresh cup of tea', 80],
+        ['Boiling water', 100], ['An oven baking a cake', 180], ['A pizza oven', 400], ['Lava', 1100], ["The Sun's surface", 5500], ['A lightning bolt', 30000]] },
+    { q: 'Which has the most legs?', t: 'legs', group: 'nature', top: 'Most legs', bottom: 'Fewest legs', asc: false, gapAbs: 1, level: 1, fmt: v => v + (v === 1 ? ' leg' : ' legs'),
+      basis: 'Legs on an adult animal.',
+      items: [['Snake', 0], ['Kangaroo', 2], ['Horse', 4], ['Ant', 6], ['Spider', 8], ['Crab', 10], ['House centipede', 30]] },
+    { q: 'Which animal sleeps the most?', t: 'sleep', group: 'nature', top: 'Most sleep', bottom: 'Least sleep', asc: false, gapRel: .2, level: 1, fmt: v => v + ' hours a day',
+      basis: 'Typical hours of sleep in a day.',
+      items: [['Giraffe', 2], ['Horse', 3], ['Cow', 4], ['Human', 8], ['Dog', 12], ['Cat', 15], ['Koala', 20]] },
+    { q: 'Which is biggest?', t: 'area', group: 'everyday', top: 'Biggest', bottom: 'Smallest', asc: false, gapRel: .3, level: 1, fmt: EV_M2,
+      basis: 'Area.',
+      items: [['A tennis court', 261], ['A basketball court', 420], ['A football pitch', 7140], ['Vatican City', 440000], ['Hyde Park', 1420000], ['Monaco', 2080000],
+        ['Central Park', 3410000], ['Manhattan', 5.9e7], ['The Isle of Wight', 3.8e8], ['Greater London', 1.572e9], ['Wales', 2.08e10], ['Texas', 6.96e11]] },
+    { q: 'Which was built first?', t: 'landmark-when', group: 'everyday', top: 'Oldest', bottom: 'Newest', asc: true, gapAbs: 120, level: 1,
+      fmt: v => v < 0 ? `about ${n0(-v)} BC` : v < 1000 ? `AD ${v}` : String(v), basis: 'When it was built or finished.',
+      items: [['Stonehenge', -3000], ['The Pyramids of Giza', -2560], ['The Parthenon', -438], ['The Colosseum', 80], ['The Tower of London', 1078],
+        ['Machu Picchu', 1450], ['The Taj Mahal', 1643], ['The Eiffel Tower', 1889], ['The Empire State Building', 1931], ['The Sydney Opera House', 1973], ['The Shard', 2012]] },
+    { q: 'Which came first?', t: 'invention-when', group: 'everyday', top: 'First', bottom: 'Last', asc: true, gapAbs: 14, level: 1, fmt: v => v < 0 ? `about ${n0(-v)} BC` : String(v),
+      basis: 'Year of the first working version.',
+      items: [['The wheel', -3500], ['The printing press', 1440], ['The telescope', 1608], ['The steam train', 1804], ['The telephone', 1876], ['The car', 1886],
+        ['The aeroplane', 1903], ['Television', 1927], ['The microwave oven', 1946], ['The mobile phone', 1973], ['The World Wide Web', 1989], ['The iPhone', 2007]] }
+  ];
+  EVERYDAY.forEach((c, i) => CATS.push(Object.assign({ fam: 'e' + i, tier: 'guess' }, c)));
 
   // Largest set each question can field once near-ties are kept apart.
   CATS.forEach(c => {
@@ -1228,6 +1305,26 @@ h1 {
   CATS[9].t = 'invention-when';
   CATS.forEach(c => {
     if (!c.t) { const r = TYPE_RULES.find(([re]) => re.test(c.q)); c.t = r ? r[1] : 'q:' + c.q; }
+  });
+  // How guessable each question is, for the daily run:
+  //  guess  - most people can reason it out (bigger, hotter, longer, more)
+  //  known  - widely known pop culture and history; a small share, and only after the first few sets
+  //  spec   - needs specialist knowledge (sports stats, Nobel, charts, chemistry): never in the daily run
+  const TIER_GUESS = new Set(['area', 'height', 'length', 'population', 'latitude', 'distance', 'distance-london', 'gestation', 'gravity', 'temp', 'speed',
+    'weight', 'loudness', 'acidity', 'timezone', 'count-countries', 'strings', 'invention-when', 'landmark-when', 'animal-life', 'calories', 'duration',
+    'count', 'size', 'holds', 'far', 'legs', 'sleep']);
+  const TIER_KNOWN = new Set(['film-release', 'tv-start', 'launch', 'toy-when', 'gaming', 'book-release', 'bond-actor', 'song-release', 'founded', 'events',
+    'theme-park', 'episodes', 'born', 'oscar-count', 'runtime', 'elevation', 'depth']);
+  CATS.forEach(c => {
+    if (c.tier) return;
+    const pop = /Pokémon|Pokemon/.test(c.q) || c.group === 'pop' || c.group === 'film' || c.group === 'music';
+    if (c.t === 'invention-when' || c.t === 'landmark-when') c.tier = c.level <= 1 ? 'known' : 'spec';   // dates need knowledge unless far apart (the everyday sets)
+    // Sets built on place or people names are only guessable when the names are famous (level 1).
+    else if (/world is widest|sports star|volcano/.test(c.q)) c.tier = 'spec';
+    else if (['area', 'height', 'length', 'population', 'latitude'].includes(c.t) && !pop) c.tier = c.level <= 1 ? 'guess' : 'known';
+    else if (TIER_GUESS.has(c.t) && !pop) c.tier = c.level <= 2 ? 'guess' : 'spec';
+    else if (TIER_GUESS.has(c.t) || TIER_KNOWN.has(c.t)) c.tier = c.level <= 1 ? 'known' : 'spec';
+    else c.tier = 'spec';
   });
   const BY_GROUP = {};
   CATS.forEach((c, i) => (BY_GROUP[c.group] = BY_GROUP[c.group] || []).push(i));
@@ -1495,6 +1592,19 @@ h1 {
   const cdLimit = r => runSpec(r).time;
   function newRound() {
     const cd = S.mode === 'countdown';
+    // Practice uses the same rules as the daily run (guessable questions, getting closer), just a random sequence.
+    if (cd) {
+      if (!S.plan) S.plan = buildRun(1e6 + Math.floor(Math.random() * 1e8), 150);
+      const t = S.plan[Math.min(S.round, S.plan.length - 1)];
+      S.lastCat = t.ci;
+      buildRound(t.ci, t.correct, t.order.slice(), null);
+      R.countdown = true; R.ceiling = cdLimit(S.round);
+      el.eyebrow.hidden = false;
+      el.eyebrow.textContent = `Practice · ${R.ceiling} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
+      readout();
+      if (S.round === 0) countIn(); else startClock();
+      return;
+    }
     const n = cd ? runSpec(S.round).n : SIZES[Math.min(S.round, SIZES.length - 1)];
     let ci, set = null;
     const groupIds = GROUPS.map(g => g.id).filter(g => g !== 'mix');
@@ -2202,6 +2312,8 @@ h1 {
   }
   // Test hooks: what this round asks, and what a given day's puzzle would be.
   window.__ordoRound = () => R && { q: R.cat.q, t: R.cat.t, g: R.cat.group, n: R.n, items: R.correct.map(it => [it.name, it.v]) };
+  window.__ordoCats = () => CATS.map((c, i) => ({ i, t: c.t, q: c.q, g: c.group, level: c.level, n: c.items.length, maxN: c.maxN, region: c.region || '', fam: c.fam, tier: c.tier || '',
+    ex: c.items.slice(0, 6).map(x => x[0].split('\n')[0]).join(', ') }));
   // Test hook: the planned daily run for puzzle no (count sets).
   window.__ordoRun = (no, count) => buildRun(no, count || 40).map(t => ({ q: CATS[t.ci].q, t: CATS[t.ci].t, g: CATS[t.ci].group, ci: t.ci, level: CATS[t.ci].level, time: t.time,
     items: t.correct.map(it => [it.name, it.v, CATS[t.ci].fmt ? CATS[t.ci].fmt(it.v) : String(it.v)]) }));
@@ -2245,14 +2357,18 @@ h1 {
     const prev = rand;
     rand = seeded(no * 104729 + 7);
     const pick = a => a[Math.floor(rand() * a.length)];
-    const base = CATS.map((c, i) => i).filter(i => CATS[i].group !== 'gotcha' && !CATS[i].region);
+    // Mostly questions anyone can reason out. Widely known pop culture and history: a small share, and not before set 6.
+    // Specialist questions never appear. Later sets get harder through closer values (tight), not obscure facts.
+    const base = CATS.map((c, i) => i).filter(i => CATS[i].group !== 'gotcha' && !CATS[i].region && CATS[i].tier !== 'spec');
     const turns = [], used = {};
     let lastT = null, lastG = null, lastCi = -1;
+    const shown = new Set();
     for (let i = 0; i < count; i++) {
       const sp = runSpec(i);
-      let pool = base.filter(ci => CATS[ci].maxN >= sp.n && CATS[ci].level <= sp.lv && ci !== lastCi && (i >= RUN_A.length || dailyOk(CATS[ci])));
-      const near = pool.filter(ci => CATS[ci].level >= sp.lv - 1);
-      if (near.length) pool = near;
+      const wantKnown = i >= 5 && rand() < 0.18;
+      let pool = base.filter(ci => CATS[ci].maxN >= sp.n && CATS[ci].level <= Math.min(2, sp.lv) && ci !== lastCi
+        && CATS[ci].tier === (wantKnown ? 'known' : 'guess'));
+      if (!pool.length) pool = base.filter(ci => CATS[ci].maxN >= sp.n && CATS[ci].tier === 'guess' && ci !== lastCi);
       const cost = ci => (used[CATS[ci].t] || 0) * 10 + (CATS[ci].t === lastT ? 100 : 0) + (CATS[ci].group === lastG ? 3 : 0);
       let got = null;
       for (let t = 0; t < 30 && !got; t++) {
@@ -2260,13 +2376,17 @@ h1 {
         const fams = [...new Set(pool.filter(ci => cost(ci) === lo).map(ci => CATS[ci].fam))];
         const fam = pick(fams);
         const ci = pick(pool.filter(x => CATS[x].fam === fam && cost(x) === lo));
-        const set = pickSet(CATS[ci], sp.n, sp.tight);
+        let set = pickSet(CATS[ci], sp.n, sp.tight);
+        // Never show exactly the same set twice in one run.
+        if (set && shown.has(ci + '|' + set.map(a => a[0]).sort().join('|'))) set = pickSet(CATS[ci], sp.n, Math.max(0, sp.tight - 0.4));
+        if (set && shown.has(ci + '|' + set.map(a => a[0]).sort().join('|'))) set = null;
         if (set) got = { ci, set };
         else pool = pool.filter(x => CATS[x].fam !== fam);
         if (!pool.length) break;
       }
       if (!got) continue;
       const cat = CATS[got.ci];
+      shown.add(got.ci + '|' + got.set.map(a => a[0]).sort().join('|'));
       const items = got.set.map(a => ({ name: a[0], v: a[1], idx: cat.items.indexOf(a) }));
       const correct = sortItems(cat, items);
       turns.push({ ci: got.ci, correct, order: scramble(correct), time: sp.time });
@@ -2322,7 +2442,7 @@ h1 {
     hideAll();
     runFactor = relaxedOn() ? 2 : 1;
     S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'run',
-      no, turns: buildRun(no, 60), idx: 0, res: [], relaxed: relaxedOn() };
+      no, turns: buildRun(no, 150), idx: 0, res: [], relaxed: relaxedOn() };
     shownScore = 0; hud();
     el.lives.parentElement.classList.add('quiet');
     play.hidden = false;
