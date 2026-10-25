@@ -244,6 +244,8 @@ button { font: inherit; color: inherit; }
 .hold::after { content: ""; position: absolute; inset: 0; background: var(--aqua); transform: scaleX(0); transform-origin: left; opacity: .6; }
 .hold.holding::after { transform: scaleX(1); transition: transform 2s linear; }
 .grown { display: grid; gap: 12px; padding: 16px; border: 3px solid var(--ink); border-radius: 20px; background: var(--surface); }
+.grown-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.grown-adult a { color: inherit; font-weight: 800; }
 .grown h2 { margin: 0; font-family: var(--font-display); font-size: 24px; }
 .grown p { margin: 0; font-size: 15px; color: var(--soft); }
 .switch { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 700; }
@@ -274,7 +276,7 @@ button { font: inherit; color: inherit; }
     <div class="tiles" id="tiles"></div>
     <button class="toggle hold" id="grownBtn" type="button" style="justify-self:start">Grown-ups: hold for 2 seconds</button>
     <div class="grown" id="grown" hidden>
-      <h2>For grown-ups</h2>
+      <div class="grown-head"><h2>For grown-ups</h2><button class="toggle" id="grownClose" type="button" aria-label="Close the grown-ups section">✕ Close</button></div>
       <div class="lvl-wrap">
         <span class="lvl-h" id="lvlH">Starting level</span>
         <div class="lvl" role="group" aria-labelledby="lvlH">
@@ -289,6 +291,7 @@ button { font: inherit; color: inherit; }
       <div class="switch">Read questions aloud when a round starts<button class="toggle" id="autoRead" type="button" aria-pressed="false">Off</button></div>
       <div class="switch">Limit the number of moves (balloons pop with each move)<button class="toggle" id="moveLimit" type="button" aria-pressed="true">On</button></div>
       <div class="switch">Clear the sticker book<button class="toggle" id="resetBtn" type="button">Clear</button></div>
+      <p class="grown-adult">Ordo for grown-ups: a daily game against the clock at <a href="https://ordogame.com/" target="_blank" rel="noopener">ordogame.com</a></p>
       <p>No ads and no sign-up. Progress is saved only on this device. Facts use rounded, typical figures, for example an average adult elephant's weight.</p>
     </div>
   </section>
@@ -1242,6 +1245,7 @@ button { font: inherit; color: inherit; }
   });
 
   // Grown-ups: hold for 2 seconds so a quick tap from a child does nothing.
+  $('grownClose').addEventListener('click', () => { $('grown').hidden = true; try { $('grownBtn').scrollIntoView({ block: 'nearest' }); } catch {} });
   const gb = $('grownBtn');
   let holdT = 0;
   const startHold = e => { e.preventDefault(); gb.classList.add('holding'); holdT = setTimeout(() => { gb.classList.remove('holding'); $('grown').hidden = !$('grown').hidden; }, 2000); };

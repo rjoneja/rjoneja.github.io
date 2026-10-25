@@ -199,7 +199,7 @@ async function saveRun(db, day, pid, score, rx) {
 }
 
 // ---------- Usage stats ----------
-const EV_TYPES = new Set(['visit', 'time', 'run_start', 'run_end', 'practice', 'practice_end', 'share', 'board', 'kids_start', 'kids_end', 'relaxed']);
+const EV_TYPES = new Set(['visit', 'time', 'run_start', 'run_end', 'practice', 'practice_end', 'share', 'board', 'kids_start', 'kids_end', 'relaxed', 'warmup']);
 const okId = x => typeof x === 'string' && /^[a-z0-9]{8,20}$/.test(x);
 const short = (x, n) => typeof x === 'string' ? x.replace(/[^\w.:-]/g, '').slice(0, n) : '';
 const LONDON = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
