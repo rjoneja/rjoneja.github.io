@@ -1282,7 +1282,35 @@ h1 {
     { q: 'Which came first?', t: 'invention-when', group: 'everyday', top: 'First', bottom: 'Last', asc: true, gapAbs: 14, level: 1, fmt: v => v < 0 ? `about ${n0(-v)} BC` : String(v),
       basis: 'Year of the first working version.',
       items: [['The wheel', -3500], ['The printing press', 1440], ['The telescope', 1608], ['The steam train', 1804], ['The telephone', 1876], ['The car', 1886],
-        ['The aeroplane', 1903], ['Television', 1927], ['The microwave oven', 1946], ['The mobile phone', 1973], ['The World Wide Web', 1989], ['The iPhone', 2007]] }
+        ['The aeroplane', 1903], ['Television', 1927], ['The microwave oven', 1946], ['The mobile phone', 1973], ['The World Wide Web', 1989], ['The iPhone', 2007]] },
+    // Added 26 October 2026 (puzzle 6). "from" keeps earlier puzzles exactly as they were played.
+    { q: 'Which uses the most power?', t: 'watts', group: 'everyday', top: 'Most power', bottom: 'Least power', asc: false, gapRel: .35, level: 1, from: 6,
+      fmt: v => v < 1000 ? v + ' watts' : +(v / 1000).toFixed(1) + ' kW', basis: 'Typical power while it’s on. Models vary.',
+      items: [['A phone charger', 5], ['An LED light bulb', 8], ['A laptop', 50], ['A TV', 100], ['A fridge', 150], ['A microwave', 1000],
+        ['A hair dryer', 2000], ['A kettle', 3000], ['An electric car charging at home', 7000], ['An electric shower', 9500]] },
+    { q: 'Which has the most caffeine?', t: 'caffeine', group: 'everyday', top: 'Most caffeine', bottom: 'Least', asc: false, gapRel: .3, level: 1, from: 6,
+      fmt: v => v + ' mg', basis: 'Typical amounts, mostly from the UK Food Standards Agency. Brands vary.',
+      items: [['A mug of decaf coffee', 3], ['A bar of milk chocolate', 10], ['A bar of dark chocolate', 25], ['A can of cola', 40], ['A mug of tea', 75],
+        ['A small can of energy drink', 80], ['A mug of instant coffee', 100], ['A mug of filter coffee', 140], ['A big can of energy drink', 160]] },
+    { q: 'Which is hottest to eat?', t: 'chilli', group: 'everyday', top: 'Hottest', bottom: 'Mildest', asc: false, gapRel: .6, level: 2, from: 6,
+      fmt: v => n0(v) + ' Scoville', basis: 'Typical heat on the Scoville scale. Individual chillies vary.',
+      items: [['A bell pepper', 0], ['Sriracha sauce', 2200], ['A jalapeño', 5000], ['Cayenne pepper', 40000], ['A Scotch bonnet', 200000],
+        ['A ghost pepper', 1000000], ['A Carolina Reaper', 1640000], ['Pure capsaicin', 16000000]] },
+    { q: 'Which melts at the highest temperature?', t: 'melt', group: 'everyday', top: 'Highest', bottom: 'Lowest', asc: false, gapRel: .3, level: 1, from: 6,
+      fmt: v => n0(v) + ' °C', basis: 'Melting point.',
+      items: [['Ice', 0], ['Chocolate', 34], ['Candle wax', 60], ['Lead', 327], ['Aluminium', 660], ['Gold', 1064], ['Iron', 1538], ['Tungsten', 3422]] },
+    { q: 'Which grows tallest?', t: 'grow', group: 'nature', top: 'Tallest', bottom: 'Shortest', asc: false, gapRel: .3, level: 1, from: 6,
+      fmt: v => v < 1 ? Math.round(v * 100) + ' cm' : v + ' m', basis: 'Typical full-grown height.',
+      items: [['A daisy', 0.1], ['A tulip', 0.5], ['A rose bush', 1.5], ['A sunflower', 3], ['An apple tree', 5], ['An oak tree', 25], ['A coast redwood', 115]] },
+    { q: 'Which happened longest ago?', t: 'ago', group: 'everyday', top: 'Longest ago', bottom: 'Most recent', asc: false, gapRel: .5, level: 1, from: 6,
+      fmt: v => v >= 1e9 ? +(v / 1e9).toFixed(1) + ' billion years ago' : v >= 1e6 ? n0(v / 1e6) + ' million years ago' : n0(v) + ' years ago',
+      basis: 'Roughly how many years ago.',
+      items: [['The first Moon landing', 57], ['The Great Fire of London', 360], ['The Battle of Hastings', 960], ['The Romans invading Britain', 1983],
+        ['Stonehenge being built', 5000], ['The end of the last ice age', 11700], ['The first modern humans', 300000], ['The dinosaurs dying out', 66e6],
+        ['The first dinosaurs', 230e6], ['The Earth forming', 4.5e9], ['The Big Bang', 13.8e9]] },
+    { q: 'Which uses the most water?', t: 'water', group: 'everyday', top: 'Most water', bottom: 'Least water', asc: false, gapRel: .3, level: 1, from: 6,
+      fmt: v => n0(v) + (v === 1 ? ' litre' : ' litres'), basis: 'Typical amounts. Showers vary a lot.',
+      items: [['Flushing a modern toilet', 6], ['A dishwasher load', 12], ['A 5-minute shower', 40], ['A full bath', 80], ['An hour with a garden hose', 1000]] }
   ];
   EVERYDAY.forEach((c, i) => CATS.push(Object.assign({ fam: 'e' + i, tier: 'guess' }, c)));
 
@@ -1341,6 +1369,17 @@ h1 {
   const BASE = 'https://ordogame.com/';
   // Anonymous usage counts (see track.js, added on the live site only). Shared links carry ?s=wa or ?s=cp so arrivals can be counted.
   const track = (t, v, n) => { try { window.ordoTrack && window.ordoTrack(t, v, n); } catch {} };
+  // Per-set results, so difficulty can be measured: which puzzle (or practice seed), which set, how long it took.
+  // The short key checks the set can be rebuilt exactly later. Anonymous, like the other counts.
+  const setKey = t => { const s = CATS[t.ci].q + '|' + t.correct.map(x => x.name).join('|'); let h = 5381; for (let i = 0; i < s.length; i++) h = (Math.imul(h, 33) ^ s.charCodeAt(i)) >>> 0; return (h % 1679616).toString(36).padStart(4, '0'); };
+  function logSet(ok) {
+    let t, id, pos;
+    if (S.mode === 'run') { t = S.turns[S.idx]; id = (S.relaxed ? 'r' : 'd') + S.no; pos = S.idx; }
+    else if (S.mode === 'countdown' && S.plan && S.seed) { pos = Math.min(S.round, S.plan.length - 1); t = S.plan[pos]; id = (runFactor > 1 ? 'q' : 'p') + S.seed.toString(36); }
+    if (!t) return;
+    track(ok ? 'set' : 'miss', id + ':' + pos + ':' + setKey(t), Math.round((ok ? R.elapsed : R.ceiling) * 1000));
+  }
+  window.__ordoSetKey = setKey;
   const tagLink = (text, src) => text.split(BASE).join(BASE + '?s=' + src);
   const SQ = { warm: '🟩', same: '🟨', cold: '🟥' };
 
@@ -1594,7 +1633,7 @@ h1 {
     const cd = S.mode === 'countdown';
     // Practice uses the same rules as the daily run (guessable questions, getting closer), just a random sequence.
     if (cd) {
-      if (!S.plan) S.plan = buildRun(1e6 + Math.floor(Math.random() * 1e8), 150);
+      if (!S.plan) { S.seed = 1e6 + Math.floor(Math.random() * 1e8); S.plan = buildRun(S.seed, 150, Infinity); }
       const t = S.plan[Math.min(S.round, S.plan.length - 1)];
       S.lastCat = t.ci;
       buildRound(t.ci, t.correct, t.order.slice(), null);
@@ -2080,6 +2119,7 @@ h1 {
       prog.fastest[R.n] = Math.round(eff * 10) / 10; saveProg();
     }
     if (S.mode === 'run') {
+      logSet(true);
       S.cleared++; S.score = S.cleared; hud();
       S.res.push(R.elapsed / R.ceiling);
       S.idx++;
@@ -2089,6 +2129,7 @@ h1 {
       return;
     }
     if (S.mode === 'countdown') {
+      logSet(true);
       S.cleared++; S.score = S.cleared; hud();
       (S.cdRes = S.cdRes || []).push(R.elapsed / R.ceiling);
       const run = S;
@@ -2320,6 +2361,21 @@ h1 {
   // Test hook: the planned daily run for puzzle no (count sets).
   window.__ordoRun = (no, count) => buildRun(no, count || 40).map(t => ({ q: CATS[t.ci].q, t: CATS[t.ci].t, g: CATS[t.ci].group, ci: t.ci, level: CATS[t.ci].level, time: t.time,
     items: t.correct.map(it => [it.name, it.v, CATS[t.ci].fmt ? CATS[t.ci].fmt(it.v) : String(it.v)]) }));
+  // Rebuild a logged set ("d6", 3) for the difficulty model. Cached per run, as building one takes a few ms.
+  const runCache = {};
+  window.__ordoSetFor = (run, pos) => {
+    const kind = run[0], id = kind === 'p' || kind === 'q' ? parseInt(run.slice(1), 36) : +run.slice(1);
+    if (!runCache[run]) {
+      const keep = runFactor; runFactor = 1;
+      runCache[run] = kind === 'p' || kind === 'q' ? buildRun(id, 150, Infinity) : buildRun(id, 150);
+      runFactor = keep;
+    }
+    const t = runCache[run][pos]; if (!t) return null;
+    const c = CATS[t.ci], keep = runFactor; runFactor = 1; const sp = runSpec(pos); runFactor = keep;
+    return { q: c.q, t: c.t, fam: c.fam, group: c.group, tier: c.tier, level: c.level, n: t.correct.length, pos, relaxed: kind === 'r' || kind === 'q',
+      time: sp.time * (kind === 'r' || kind === 'q' ? 2 : 1), asc: !!c.asc, key: setKey(t),
+      items: t.correct.map(it => [it.name, it.v]), shown: t.order.map(it => it.name), famVals: c.items.map(x => x[1]) };
+  };
   window.__ordoFmt = ts => CATS.filter(c => ts.includes(c.t)).map(c => [c.q, c.level, c.items.slice(0, 4).map(([n, v]) => n.replace('\n', ' / ') + ': ' + c.fmt(v))]);
   window.__ordoDaily = no => buildDaily(no).map(r => ({ q: CATS[r.ci].q, t: CATS[r.ci].t, g: CATS[r.ci].group, items: r.correct.map(it => it.name) }));
   // ---------- Today's run: the same sequence for everyone ----------
@@ -2356,13 +2412,13 @@ h1 {
   }
   document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themePick)));
   setTheme((() => { try { return localStorage.getItem('ordo.theme') || 'auto'; } catch { return 'auto'; } })());
-  function buildRun(no, count) {
+  function buildRun(no, count, day = no) {
     const prev = rand;
     rand = seeded(no * 104729 + 7);
     const pick = a => a[Math.floor(rand() * a.length)];
     // Mostly questions anyone can reason out. Widely known pop culture and history: a small share, and not before set 6.
     // Specialist questions never appear. Later sets get harder through closer values (tight), not obscure facts.
-    const base = CATS.map((c, i) => i).filter(i => CATS[i].group !== 'gotcha' && !CATS[i].region && CATS[i].tier !== 'spec');
+    const base = CATS.map((c, i) => i).filter(i => CATS[i].group !== 'gotcha' && !CATS[i].region && CATS[i].tier !== 'spec' && !(CATS[i].from > day));
     const turns = [], used = {};
     let lastT = null, lastG = null, lastCi = -1;
     const shown = new Set();
@@ -2452,7 +2508,7 @@ h1 {
     playTurn();
   }
   function playTurn() {
-    if (S.idx >= S.turns.length) S.turns = S.turns.concat(buildRun(S.no * 31 + S.turns.length, 40).map(t => Object.assign(t, { time: runSpec(S.idx).time })));
+    if (S.idx >= S.turns.length) S.turns = S.turns.concat(buildRun(S.no * 31 + S.turns.length, 40, S.no).map(t => Object.assign(t, { time: runSpec(S.idx).time })));
     const t = S.turns[S.idx];
     prog.runLive = { no: S.no, idx: S.idx, res: S.res.slice(), relaxed: S.relaxed }; saveProg();
     buildRound(t.ci, t.correct, t.order.slice(), null);
@@ -2655,6 +2711,7 @@ h1 {
   }
 
   function fail(why) {
+    if (!why) logSet(false);
     R.status = 'failed';
     $('leaveAsk').hidden = true;
     R.why = why;
