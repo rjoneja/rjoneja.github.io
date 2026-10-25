@@ -54,8 +54,24 @@
   }
   function ev(t, v, n) { return { t: t, v: v == null ? '' : String(v).slice(0, 24), n: typeof n === 'number' && isFinite(n) ? Math.round(n) : null }; }
   window.ordoTrack = function (t, v, n) { if (!on) return; queue.push(ev(t, v, n)); if (queue.length >= 20) { post(queue); queue = []; } };
-  // The visit goes straight away (n = 1 for a first-ever visit from this browser).
-  if (fresh) post([ev('visit', page, isNew ? 1 : 0)]);
+  // The visit goes straight away (n = 1 for a first-ever visit from this browser), with the screen width (rounded into a band).
+  // Once a day, the main game also says how many days since this browser first came (0 = first day), so the dashboard
+  // can show how many people come back. Only the first-visit and last-visit dates are kept on the device; no history.
+  if (fresh) {
+    var list = [ev('visit', page, isNew ? 1 : 0)], w = window.innerWidth || 0;
+    list.push(ev('screen', w < 360 ? 'a' : w < 400 ? 'b' : w < 480 ? 'c' : w < 768 ? 'd' : w < 1024 ? 'e' : w < 1440 ? 'f' : 'g'));
+    if (page !== 'kids') {
+      var dk = function (d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+      var today = dk(new Date()), first = ls('ordo.first'), last = ls('ordo.last');
+      if (!first) { first = isNew ? today : '?'; ls('ordo.first', first); }
+      if (last !== today) {
+        ls('ordo.last', today);
+        var since = first === '?' ? '?' : String(Math.min(60, Math.round((Date.parse(today) - Date.parse(first)) / 864e5)));
+        list.push(ev('back', since));
+      }
+    }
+    post(list);
+  }
   // Time on site: only while the page is on screen, sent whenever it's hidden or closed.
   var shown = document.visibilityState === 'visible' ? Date.now() : 0, acc = 0;
   function flush() {
@@ -783,6 +799,8 @@ button { font: inherit; color: inherit; }
   // ---------- Read aloud: recorded voice, with the device voice as a back-up ----------
   const lineKey = t => String(t).toLowerCase().replace(/[‘’]/g, "'").replace(/[–—−]/g, '-').replace(/\s+/g, ' ').trim();
   const VOICE_URL = 'voice/emma';
+  // Changes whenever the recordings change (set by the build), so phones never mix an old recording with new timings.
+  const VOICE_V = 'aec96e9d';
   const A = { ctx: null, buf: null, map: null, loading: null, srcs: [] };
   function audioCtx() {
     try {
@@ -793,7 +811,7 @@ button { font: inherit; color: inherit; }
   }
   function loadVoice() {
     if (A.loading) return A.loading;
-    A.loading = Promise.all([fetch(VOICE_URL + '.json').then(r => r.json()), fetch(VOICE_URL + '.mp3').then(r => r.arrayBuffer())])
+    A.loading = Promise.all([fetch(VOICE_URL + '.json?v=' + VOICE_V).then(r => r.json()), fetch(VOICE_URL + '.mp3?v=' + VOICE_V).then(r => r.arrayBuffer())])
       .then(([map, ab]) => { A.map = map; const ctx = audioCtx(); return new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)); })
       .then(buf => { A.buf = buf; })
       .catch(() => { A.failed = true; });
