@@ -849,7 +849,7 @@ button { font: inherit; color: inherit; }
     Object.values(TYPE_FACTS).flat().concat(Object.values(ITEM_FACTS).flat()).forEach(f => add(f));
     PRAISE.flat().forEach(p => add(p));
     STICKER_NAMES.forEach(n => add(n));
-    ['You won a sticker!', 'Sticker book full!', 'You got', 'stars!', 'star!', 'Read aloud is on.', 'Out of moves!', "Here's the right order."].forEach(w => add(w));
+    ['You won a sticker!', 'Sticker book full!', 'You got', 'stars!', 'star!', 'Read aloud is on.', 'Out of moves!', "Here's the right order.", 'So close!', 'Good try!', 'Get nine stars to win a sticker.', 'Read each one carefully!'].forEach(w => add(w));
     return [...out.entries()];
   };
 
@@ -908,6 +908,7 @@ button { font: inherit; color: inherit; }
   // ---------- A game: 5 rounds ----------
   const PRAISE = [['Amazing!', 'Perfect!', 'Superstar!'], ['Brilliant!', 'Great job!', 'Well done!'], ['You did it!', 'Nice work!', 'Hooray!']];
   const ROUNDS = 5;
+  const STICKER_STARS = 9;
   let G = null, R = null;
   function startGame(topicId) {
     G = { topic: topicId, i: 0, stars: 0, order: [], usedKinds: {}, facts: new Set(), types: new Set() };
@@ -993,10 +994,12 @@ button { font: inherit; color: inherit; }
     });
     paint();
   }
+  // Ticks only show once the round is over, so children have to read rather than shuffle until everything turns green.
   function paint() {
     R.order.forEach((it, i) => {
-      it.el.classList.toggle('ok', R.correct[i] === it);
-      it.el.setAttribute('aria-label', `${i + 1}: ${it.t}${R.correct[i] === it ? ', correct' : ''}`);
+      const ok = !!R.done && R.correct[i] === it;
+      it.el.classList.toggle('ok', ok);
+      it.el.setAttribute('aria-label', `${i + 1}: ${it.t}${ok ? ', correct' : ''}`);
     });
   }
   function flip(mutate) {
@@ -1028,7 +1031,7 @@ button { font: inherit; color: inherit; }
     R.moves++;
     paintMoves(true);
     const okNow = R.order.filter((it, i) => R.correct[i] === it).length;
-    buzz(okNow > (R.lastOk || 0) ? 15 : 6);
+    buzz(8);
     R.lastOk = okNow;
     if (okNow === R.order.length) return solved();
     if (R.limit && R.moves >= R.budget) outOfMoves();
@@ -1145,6 +1148,7 @@ button { font: inherit; color: inherit; }
 
   function solved() {
     R.done = true;
+    paint();
     sortLogo(document.querySelector('#homeBtn .logo-svg'), 200);
     R.order.forEach(it => { it.el.querySelector('.val').textContent = it.s || ''; });
     const stars = R.moves <= R.min ? 3 : R.moves <= R.min + 1 ? 2 : 1;
@@ -1169,6 +1173,20 @@ button { font: inherit; color: inherit; }
   function finish() {
     P.games++;
     try { window.ordoTrack && window.ordoTrack('kids_end', G.topic || 'mix', G.stars); } catch {}
+    // A sticker takes 9 of the 15 stars: careful play earns it, random shuffling doesn't.
+    const need = STICKER_STARS;
+    if (G.stars < need) {
+      save(); paintCount();
+      $('badge').textContent = '⭐';
+      const head = G.stars >= 6 ? 'So close!' : 'Good try!';
+      $('rewardT').textContent = head;
+      $('rewardP').textContent = `You got ${G.stars} out of ${ROUNDS * 3} stars. Get ${need} stars to win a sticker. Read each one carefully!`;
+      show('reward');
+      confetti(40);
+      buzz([30, 60, 30]);
+      say([head, 'You got', ...numParts(G.stars), G.stars === 1 ? 'star!' : 'stars!', 'Get nine stars to win a sticker.', 'Read each one carefully!']);
+      return;
+    }
     const left = STICKERS.filter(s => !P.stickers.includes(s));
     const got = left.length ? pick(left) : pick(STICKERS);
     if (left.length) P.stickers.push(got);
