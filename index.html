@@ -9,7 +9,8 @@
 <meta property="og:image" content="https://ordogame.com/og.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#EDF0FF">
+<meta name="theme-color" content="#EDF0FF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17122E" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-title" content="Ordo">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.png" type="image/png" sizes="64x64">
@@ -21,6 +22,7 @@
   (function () {
     var d = document.documentElement, skin = 'pop';
     d.setAttribute('data-skin', skin);
+    try { var th = localStorage.getItem('ordo.theme'); if (th === 'light' || th === 'dark') d.setAttribute('data-theme', th); } catch (e) {}
     try {
       if (sessionStorage.getItem('ordo.splash') !== '1' && !matchMedia('(prefers-reduced-motion: reduce)').matches) d.setAttribute('data-splash', '1');
     } catch (e) {}
@@ -52,9 +54,11 @@
   }
   var on = ls('ordo.notrack') !== '1' && (/(^|\.)ordogame\.com$/.test(location.hostname) || ls('ordo.trackTest') === '1');
   var rid = function () { var s = ''; try { s = Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(14)), function (b) { return (b % 36).toString(36); }).join(''); } catch (e) {} return s.length === 14 ? s : (Math.random().toString(36).slice(2) + Date.now().toString(36)).slice(0, 14); };
-  var vid = ls('ordo.vid'), isNew = !vid; if (!vid) { vid = rid(); ls('ordo.vid', vid); }
-  var sid = ss('ordo.sid'), fresh = !sid; if (!sid) { sid = rid(); ss('ordo.sid', sid); }
   var page = window.ORDO_PAGE || 'home';
+  var sid = ss('ordo.sid'), fresh = !sid; if (!sid) { sid = rid(); ss('ordo.sid', sid); }
+  // Ordo Kids keeps no lasting ID (UK Children's Code: privacy by default). Its visits are counted per tab session only.
+  var vid = page === 'kids' ? sid : ls('ordo.vid'), isNew = !vid; if (!vid) { vid = rid(); ls('ordo.vid', vid); }
+  if (page === 'kids') isNew = false;
   // Events wait in a queue and go in one request when the page is hidden or closed (or the queue fills up).
   var queue = [];
   function post(list) {
@@ -429,6 +433,13 @@ h1 {
 .st-rules { margin: 0; padding: 0 0 0 20px; display: grid; gap: 6px; font-size: 16px; }
 .st-go { font-size: 20px; padding: 16px; }
 .st-note { margin: 0; color: var(--muted); font-size: 14px; }
+.st-relax { appearance: none; background: none; border: 0; padding: 4px 0; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer;
+  font: inherit; font-size: 16px; font-weight: 700; color: var(--fg); }
+.st-relax small { display: block; font-weight: 600; font-size: 13px; color: var(--muted); }
+.st-relax-box { flex: none; width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--edge, var(--fg)); background: var(--surface); display: grid; place-items: center; }
+.st-relax[aria-pressed="true"] .st-relax-box { background: var(--accent); border-color: var(--edge, var(--accent)); }
+.st-relax[aria-pressed="true"] .st-relax-box::after { content: "✓"; color: var(--accent-ink); font-weight: 800; font-size: 16px; line-height: 1; }
+.st-relax:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
 .r-grid { font-size: 24px; line-height: 1.25; letter-spacing: 2px; white-space: pre-line; }
 .r-why { margin: 0; color: var(--muted); }
 .d-score { align-items: baseline; gap: 4px; font-family: var(--font-display); font-weight: var(--dw); }
@@ -637,6 +648,18 @@ h1 {
       </div>
     </div>
     <div class="tool">
+      <span class="tool-label" id="themeLabel">Appearance</span>
+      <div class="seg" role="group" aria-labelledby="themeLabel">
+        <button type="button" data-theme-pick="auto" aria-pressed="true">Auto</button>
+        <button type="button" data-theme-pick="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-pick="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+    <div class="tool">
+      <span class="tool-label">Relaxed clock 🐢</span>
+      <button type="button" class="toggle" id="relaxBtn" aria-pressed="false">Off</button>
+    </div>
+    <div class="tool">
       <span class="tool-label">Warmer / colder hints</span>
       <button type="button" class="toggle" id="hintsBtn" aria-pressed="true">On</button>
     </div>
@@ -658,10 +681,11 @@ h1 {
     <h1 class="st-title" id="stTitle">Today</h1>
     <ul class="st-rules">
       <li>Put each set in order before the clock runs out.</li>
-      <li>The clock gets quicker every time: 10 seconds, then 9, 8, 7…</li>
+      <li id="stClock">The clock gets quicker every time: 10 seconds, then 9, 8, 7…</li>
       <li>One go a day. Same puzzle for everyone.</li>
     </ul>
     <button class="btn st-go" id="stGo" type="button">Start</button>
+    <button class="st-relax" id="stRelax" type="button" aria-pressed="false"><span class="st-relax-box" aria-hidden="true"></span><span>Relaxed clock 🐢 <small>Twice the time. Own leaderboard.</small></span></button>
     <p class="st-note" id="stNote" hidden></p>
   </section>
 
@@ -710,6 +734,10 @@ h1 {
     <div class="seg" role="group" aria-label="Game" hidden>
       <button type="button" id="gameDaily" aria-pressed="true">Daily puzzle</button>
       <button type="button" id="gameCd" aria-pressed="false">Countdown</button>
+    </div>
+    <div class="seg" role="group" aria-label="Clock">
+      <button type="button" id="clockStd" aria-pressed="true">Standard</button>
+      <button type="button" id="clockRelax" aria-pressed="false">Relaxed 🐢</button>
     </div>
     <div class="seg" role="group" aria-label="Period">
       <button type="button" id="tabDay" aria-pressed="true">Today</button>
@@ -1884,7 +1912,7 @@ h1 {
       S.cleared++; S.score = S.cleared; hud();
       S.res.push(R.elapsed / R.ceiling);
       S.idx++;
-      prog.runLive = { no: S.no, idx: S.idx, res: S.res.slice() }; saveProg();
+      prog.runLive = { no: S.no, idx: S.idx, res: S.res.slice(), relaxed: S.relaxed }; saveProg();
       const run = S;
       setTimeout(() => { if (S === run && R.status === 'solved') playTurn(); }, 650);
       return;
@@ -2001,7 +2029,7 @@ h1 {
   });
   // Boards screen, reached from the category picker.
   let boardTab = 'day';
-  let boardGame = 'cd';
+  let boardGame = 'cd', boardRelaxed = false;
   function openBoards(game, tab) {
     track('board', game || boardGame);
     if (game) boardGame = game;
@@ -2024,11 +2052,13 @@ h1 {
     if (boardGame === 'cd') {
       list.innerHTML = '<li class="empty">Loading…</li>';
       note.textContent = '';
-      api(`/api/cdboard?day=${dailyNo()}&pid=${prog.pid}`).then(b => {
-        if (boardGame !== 'cd' || boardTab !== tab || $('boards').hidden) return;
+      const rx = boardRelaxed;
+      $('clockStd').setAttribute('aria-pressed', String(!rx)); $('clockRelax').setAttribute('aria-pressed', String(rx));
+      api(`/api/cdboard?day=${dailyNo()}&pid=${prog.pid}` + (rx ? '&relaxed=1' : '')).then(b => {
+        if (boardGame !== 'cd' || boardTab !== tab || boardRelaxed !== rx || $('boards').hidden) return;
         if (!b) { list.innerHTML = '<li class="empty">Couldn’t reach the board just now.</li>'; return; }
         renderShared(list, tab === 'day' ? b.today : b.all, tab === 'all', true);
-        note.textContent = tab === 'day' ? "Today's longest runs." : 'Longest runs ever, one per player.';
+        note.textContent = (tab === 'day' ? "Today's longest runs" : 'Longest runs ever, one per player') + (rx ? ' on the relaxed clock 🐢.' : '.');
       });
       return;
     }
@@ -2064,6 +2094,8 @@ h1 {
   $('tabDay').addEventListener('click', () => { boardTab = 'day'; showBoards(); });
   $('gameDaily').addEventListener('click', () => { boardGame = 'daily'; showBoards(); });
   $('gameCd').addEventListener('click', () => { boardGame = 'cd'; showBoards(); });
+  $('clockStd').addEventListener('click', () => { boardRelaxed = false; showBoards(); });
+  $('clockRelax').addEventListener('click', () => { boardRelaxed = true; showBoards(); });
   $('tabAll').addEventListener('click', () => { boardTab = 'all'; showBoards(); });
   $('boardsBack').addEventListener('click', () => { $('boards').hidden = true; $('about').hidden = true; $('picker').hidden = false; });
 
@@ -2116,11 +2148,37 @@ h1 {
   // ---------- Today's run: the same sequence for everyone ----------
   // Turns 1-10: 3 items, 10 seconds down to 3. After that: 4 items, 6 seconds down to 4, and harder questions.
   const RUN_A = [10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3], RUN_B = [6, 5.5, 5, 4.5, 4];
+  // Relaxed clock: the same sets in the same order, with twice the time on every one.
+  let runFactor = 1;
   function runSpec(i) {
-    if (i < RUN_A.length) return { n: 3, time: RUN_A[i], lv: i < 4 ? 1 : 2, tight: 0.2 + i * 0.03 };
+    if (i < RUN_A.length) return { n: 3, time: RUN_A[i] * runFactor, lv: i < 4 ? 1 : 2, tight: 0.2 + i * 0.03 };
     const k = i - RUN_A.length;
-    return { n: 4, time: RUN_B[Math.min(k, RUN_B.length - 1)], lv: Math.min(4, 2 + Math.floor(k / 5)), tight: Math.min(0.95, 0.4 + k * 0.03) };
+    return { n: 4, time: RUN_B[Math.min(k, RUN_B.length - 1)] * runFactor, lv: Math.min(4, 2 + Math.floor(k / 5)), tight: Math.min(0.95, 0.4 + k * 0.03) };
   }
+  const relaxedOn = () => !!prog.relaxed;
+  function paintRelax() {
+    const on = relaxedOn();
+    $('relaxBtn').setAttribute('aria-pressed', String(on)); $('relaxBtn').textContent = on ? 'On' : 'Off';
+    $('stRelax').setAttribute('aria-pressed', String(on));
+    $('stClock').textContent = on ? 'The clock gets quicker every time: 20 seconds, then 18, 16, 14…' : 'The clock gets quicker every time: 10 seconds, then 9, 8, 7…';
+  }
+  function setRelaxed(on) { prog.relaxed = !!on; saveProg(); paintRelax(); track('relaxed', on ? 'on' : 'off'); }
+  $('relaxBtn').addEventListener('click', () => setRelaxed(!relaxedOn()));
+  $('stRelax').addEventListener('click', () => setRelaxed(!relaxedOn()));
+  paintRelax();
+  // Appearance: Auto follows the phone; Light or Dark overrides it.
+  function setTheme(t) {
+    const d = document.documentElement;
+    if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t); else d.removeAttribute('data-theme');
+    try { if (t === 'light' || t === 'dark') localStorage.setItem('ordo.theme', t); else localStorage.removeItem('ordo.theme'); } catch {}
+    document.querySelectorAll('[data-theme-pick]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themePick === (t || 'auto'))));
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m => {
+      const dark = t === 'dark' || (t !== 'light' && /dark/.test(m.media || ''));
+      m.content = dark ? '#17122E' : '#EDF0FF';
+    });
+  }
+  document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themePick)));
+  setTheme((() => { try { return localStorage.getItem('ordo.theme') || 'auto'; } catch { return 'auto'; } })());
   function buildRun(no, count) {
     const prev = rand;
     rand = seeded(no * 104729 + 7);
@@ -2160,10 +2218,11 @@ h1 {
   function settleLeftRun() {
     const live = prog.runLive;
     if (!live || prog.run[live.no]) { if (live) { delete prog.runLive; saveProg(); } return; }
+    runFactor = live.relaxed ? 2 : 1;
     const t = runSpec(live.idx);
-    prog.run[live.no] = { score: live.idx, res: live.res || [], clock: t.time, n: t.n, left: true };
+    prog.run[live.no] = { score: live.idx, res: live.res || [], clock: t.time, n: t.n, left: true, relaxed: !!live.relaxed };
     delete prog.runLive; saveProg();
-    track('run_end', 'left', live.idx);
+    track('run_end', live.relaxed ? 'relaxed-left' : 'left', live.idx);
   }
   function hideAll() {
     ['picker', 'boards', 'about', 'dailyDone', 'start', 'runDone'].forEach(id => { $(id).hidden = true; });
@@ -2199,8 +2258,9 @@ h1 {
     const no = dailyNo();
     if (prog.run[no]) return showRunDone(no, false);
     hideAll();
+    runFactor = relaxedOn() ? 2 : 1;
     S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'run',
-      no, turns: buildRun(no, 60), idx: 0, res: [] };
+      no, turns: buildRun(no, 60), idx: 0, res: [], relaxed: relaxedOn() };
     shownScore = 0; hud();
     el.lives.parentElement.classList.add('quiet');
     play.hidden = false;
@@ -2209,11 +2269,11 @@ h1 {
   function playTurn() {
     if (S.idx >= S.turns.length) S.turns = S.turns.concat(buildRun(S.no * 31 + S.turns.length, 40).map(t => Object.assign(t, { time: runSpec(S.idx).time })));
     const t = S.turns[S.idx];
-    prog.runLive = { no: S.no, idx: S.idx, res: S.res.slice() }; saveProg();
+    prog.runLive = { no: S.no, idx: S.idx, res: S.res.slice(), relaxed: S.relaxed }; saveProg();
     buildRound(t.ci, t.correct, t.order.slice(), null);
     R.countdown = true; R.ceiling = t.time;
     el.eyebrow.hidden = false;
-    el.eyebrow.textContent = `${t.time} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
+    el.eyebrow.textContent = (S.relaxed ? '🐢 ' : '') + `${t.time} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
     startClock(); readout();
   }
   // Puzzles are named by date ("Saturday 24 October"), not number, so newcomers don't feel they've missed out.
@@ -2223,9 +2283,9 @@ h1 {
   }
   function endRun() {
     const no = S.no;
-    prog.run[no] = { score: S.cleared, res: S.res.slice(), clock: R.ceiling, n: R.n };
+    prog.run[no] = { score: S.cleared, res: S.res.slice(), clock: R.ceiling, n: R.n, relaxed: !!S.relaxed };
     delete prog.runLive; saveProg();
-    track('run_end', 'clock', S.cleared);
+    track('run_end', S.relaxed ? 'relaxed' : 'clock', S.cleared);
   }
   // One square per turn: green with time to spare, yellow cutting it fine, orange at the buzzer, then the clock that won.
   function runGrid(rec) {
@@ -2239,7 +2299,8 @@ h1 {
   }
   const fireFor = n => n >= 20 ? ' 🔥🔥🔥' : n >= 14 ? ' 🔥🔥' : n >= 10 ? ' 🔥' : '';
   function runShare(no, rec) {
-    return [`Ordo · ${runDate(no, true)} · ${rec.score} in a row${fireFor(rec.score)}`, ...runGrid(rec), `Beaten by the ${rec.clock}-second clock.`, BASE].join('\n');
+    return [`Ordo${rec.relaxed ? ' 🐢' : ''} · ${runDate(no, true)} · ${rec.score} in a row${fireFor(rec.score)}`, ...runGrid(rec),
+      `Beaten by the ${rec.clock}-second clock` + (rec.relaxed ? ' (relaxed).' : '.'), BASE].join('\n');
   }
   let runTimer = 0;
   function showRunDone(no, fresh) {
@@ -2252,7 +2313,7 @@ h1 {
     countUp($('rScore'), fresh ? 0 : rec.score, rec.score);
     $('rGrid').textContent = runGrid(rec).join('\n');
     $('rWhy').textContent = rec.left ? `The run ended when the page was closed, at the ${rec.clock}-second clock.`
-      : `Beaten by the ${rec.clock}-second clock` + (rec.n === 4 ? ' on the 4-item sets.' : '.');
+      : `Beaten by the ${rec.clock}-second clock` + (rec.n === 4 ? ' on the 4-item sets' : '') + '.' + (rec.relaxed ? ' Relaxed clock 🐢.' : '');
     const text = runShare(no, rec);
     $('rShareText').value = tagLink(text, 'cp'); $('rShareText').hidden = true;
     $('rWa').href = 'https://wa.me/?text=' + encodeURIComponent(tagLink(text, 'wa'));
@@ -2269,10 +2330,12 @@ h1 {
     try { scrollTo(0, 0); } catch {}
   }
   async function sendRun(no, rec) {
-    const res = await api('/api/cd', { day: no, pid: prog.pid, score: rec.score });
+    const res = await api('/api/cd', { day: no, pid: prog.pid, score: rec.score, relaxed: !!rec.relaxed });
     if (!res || $('runDone').hidden) return;
     const rk = $('rRank');
-    rk.textContent = res.rankDay === 1 ? 'Longest run anyone has had today!' : `${ordinal(res.rankDay)} longest run today.` + (res.rankAll <= 5 ? ` ${ordinal(res.rankAll)} of all time!` : '');
+    const kind = rec.relaxed ? 'relaxed run' : 'run';
+    rk.textContent = res.rankDay === 1 ? `Longest ${kind} anyone has had today!` : `${ordinal(res.rankDay)} longest ${kind} today.` + (res.rankAll <= 5 ? ` ${ordinal(res.rankAll)} of all time!` : '');
+    boardRelaxed = !!rec.relaxed;
     rk.hidden = false;
     cdBoardTab = res.rankAll <= 5 ? 'all' : 'day';
     if ((res.rankDay <= 5 || res.rankAll <= 5) && !res.named && rec.score > 0) {
@@ -2286,7 +2349,8 @@ h1 {
     const name = $('rNameIn').value.trim().slice(0, 16) || 'Player';
     prog.name = name; saveProg();
     $('rNamer').hidden = true;
-    const res = await api('/api/cdname', { day: dailyNo(), pid: prog.pid, name });
+    const rec = prog.run[dailyNo()] || {};
+    const res = await api('/api/cdname', { day: dailyNo(), pid: prog.pid, name, relaxed: !!rec.relaxed });
     toast(res ? "You're on the board!" : "Couldn't reach the board. Try again later.");
     $('rNameIn').blur();
   });
@@ -2301,7 +2365,7 @@ h1 {
     try { navigator.clipboard.writeText(text).then(done, () => { $('rShareText').hidden = false; $('rShareText').select(); }); }
     catch { $('rShareText').hidden = false; $('rShareText').select(); }
   });
-  $('rBoardLink').addEventListener('click', () => openBoards('cd', cdBoardTab || 'day'));
+  $('rBoardLink').addEventListener('click', () => { const rec = prog.run[dailyNo()]; boardRelaxed = !!(rec && rec.relaxed); openBoards('cd', cdBoardTab || 'day'); });
   $('rPractice').addEventListener('click', () => startCountdown());
   $('stGo').addEventListener('click', beginRun);
   function startDaily() {
@@ -2564,7 +2628,8 @@ h1 {
     S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'countdown' };
     shownScore = 0;
     if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
-    track('practice');
+    track('practice', relaxedOn() ? 'relaxed' : '');
+    runFactor = relaxedOn() ? 2 : 1;
     picker.hidden = true; $('boards').hidden = true; $('about').hidden = true; $('dailyDone').hidden = true;
     play.hidden = false;
     el.lives.parentElement.classList.add('quiet');

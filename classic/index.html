@@ -53,9 +53,11 @@
   }
   var on = ls('ordo.notrack') !== '1' && (/(^|\.)ordogame\.com$/.test(location.hostname) || ls('ordo.trackTest') === '1');
   var rid = function () { var s = ''; try { s = Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(14)), function (b) { return (b % 36).toString(36); }).join(''); } catch (e) {} return s.length === 14 ? s : (Math.random().toString(36).slice(2) + Date.now().toString(36)).slice(0, 14); };
-  var vid = ls('ordo.vid'), isNew = !vid; if (!vid) { vid = rid(); ls('ordo.vid', vid); }
-  var sid = ss('ordo.sid'), fresh = !sid; if (!sid) { sid = rid(); ss('ordo.sid', sid); }
   var page = window.ORDO_PAGE || 'home';
+  var sid = ss('ordo.sid'), fresh = !sid; if (!sid) { sid = rid(); ss('ordo.sid', sid); }
+  // Ordo Kids keeps no lasting ID (UK Children's Code: privacy by default). Its visits are counted per tab session only.
+  var vid = page === 'kids' ? sid : ls('ordo.vid'), isNew = !vid; if (!vid) { vid = rid(); ls('ordo.vid', vid); }
+  if (page === 'kids') isNew = false;
   // Events wait in a queue and go in one request when the page is hidden or closed (or the queue fills up).
   var queue = [];
   function post(list) {
