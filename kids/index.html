@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="A picture-first ordering game for ages 4 to 9, from Reception to Year 4. No ads, no sign-up.">
+<meta name="description" content="A picture-first ordering game for ages 4 to 9. No ads, no sign-up.">
 <meta property="og:title" content="Ordo Kids">
-<meta property="og:description" content="A picture-first ordering game for ages 4 to 9, from Reception to Year 4. No ads, no sign-up.">
+<meta property="og:description" content="A picture-first ordering game for ages 4 to 9. No ads, no sign-up.">
 <meta property="og:image" content="https://ordogame.com/og.png">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#E6FAF2">
@@ -278,13 +278,13 @@ button { font: inherit; color: inherit; }
       <div class="lvl-wrap">
         <span class="lvl-h" id="lvlH">Starting level</span>
         <div class="lvl" role="group" aria-labelledby="lvlH">
-          <button type="button" data-lv="0"><b>Reception</b><span>age 4–5</span></button>
-          <button type="button" data-lv="1"><b>Year 1</b><span>age 5–6</span></button>
-          <button type="button" data-lv="2"><b>Year 2</b><span>age 6–7</span></button>
-          <button type="button" data-lv="3"><b>Year 3</b><span>age 7–8</span></button>
-          <button type="button" data-lv="4"><b>Year 4</b><span>age 8–9</span></button>
+          <button type="button" data-lv="0"><b>Age 4–5</b><span data-uk="Reception" data-us="Pre-K"></span></button>
+          <button type="button" data-lv="1"><b>Age 5–6</b><span data-uk="Year 1" data-us="Kindergarten"></span></button>
+          <button type="button" data-lv="2"><b>Age 6–7</b><span data-uk="Year 2" data-us="1st grade"></span></button>
+          <button type="button" data-lv="3"><b>Age 7–8</b><span data-uk="Year 3" data-us="2nd grade"></span></button>
+          <button type="button" data-lv="4"><b>Age 8–9</b><span data-uk="Year 4" data-us="3rd grade"></span></button>
         </div>
-        <p class="lvl-note">Maths follows the English national curriculum. After that, each topic moves up or down by itself as your child plays. They never see a level.</p>
+        <p class="lvl-note"><span id="lvlCurric">Maths is pitched by age.</span> After that, each topic moves up or down by itself as your child plays. They never see a level.</p>
       </div>
       <div class="switch">Read questions aloud when a round starts<button class="toggle" id="autoRead" type="button" aria-pressed="false">Off</button></div>
       <div class="switch">Limit the number of moves (balloons pop with each move)<button class="toggle" id="moveLimit" type="button" aria-pressed="true">On</button></div>
@@ -633,6 +633,11 @@ button { font: inherit; color: inherit; }
     for (let g = 0; items.length < n && g < 300; g++) { const it = make(); if (!seen.has(it.v)) { seen.add(it.v); items.push(it); } }
     return items;
   }
+  // Where the grown-up's phone is set to: UK English gets school years and coin questions; the US gets US grades; everyone else sees ages only.
+  const REGION = (() => { const l = String((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase(); return l === 'en-gb' ? 'uk' : l === 'en-us' ? 'us' : 'other'; })();
+  document.querySelectorAll('.lvl [data-uk]').forEach(el => { el.textContent = REGION === 'uk' ? el.dataset.uk : REGION === 'us' ? el.dataset.us : ''; el.hidden = REGION === 'other'; });
+  if (REGION === 'uk') $('lvlCurric').textContent = 'Maths follows the English national curriculum.';
+  if (REGION === 'us') $('lvlCurric').textContent = 'Math is pitched by age.';
   const TOPICS = [
     { id: 'animals', em: '🐾', name: 'Animals', sub: 'Big, fast, long, legs', kinds: [
       T('weight', n => ({ q: 'Which animal is heaviest?', top: 'Heaviest', bottom: 'Lightest', asc: false, items: chooseFar(ANIMAL_WEIGHT, n, 1.8), facts: TYPE_FACTS.weight })),
@@ -749,6 +754,11 @@ button { font: inherit; color: inherit; }
       T('long', n => ({ q: 'Which is longest?', top: 'Longest', bottom: 'Shortest', asc: false, items: chooseFar(LONG_THINGS, n, 1.6), facts: TYPE_FACTS.longThings }))
     ] }
   ];
+  // Coin questions use UK money, so they only appear for UK players.
+  if (REGION !== 'uk') TOPICS.forEach(tp => {
+    tp.kinds = tp.kinds.filter(k => k.t !== 'money');
+    tp.sub = tp.sub.replace(', money', '').replace(' coins,', '');
+  });
   // Spoken pieces for each item: coins are said the way children say them.
   const COIN_SAY = { '1p': 'one p', '2p': 'two p', '5p': 'five p', '10p': 'ten p', '20p': 'twenty p', '50p': 'fifty p', '£1': 'one pound', '£2': 'two pounds' };
   const itemParts = it => it.parts || [it.t];
