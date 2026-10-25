@@ -840,7 +840,7 @@ button { font: inherit; color: inherit; }
     deviceSay(parts);
   }
   // Everything the game can say, for recording. Each entry is [key, words for the recording].
-  window.__lineupRound = () => R && { q: R.q, t: R.t };
+  window.__lineupRound = () => R && { q: R.q, t: R.t, min: R.min, moves: R.moves, correct: R.correct.map(it => it.t) };
   window.__lineupGen = (id, n, age) => TOPICS.find(t => t.id === id).kinds.map(k => k(n, age));
   window.__lineupVoiceReady = () => !!(A.buf && A.map);
   window.__lineupLines = () => {
@@ -960,8 +960,10 @@ button { font: inherit; color: inherit; }
     do { order = shuffle(correct.slice()); } while (order.every((it, k) => it === correct[k]));
     R = Object.assign(r, { correct, order, moves: 0, done: false, picked: null });
     R.min = Math.min(minMoves(order, correct), minSwaps(order, correct));
+    // Par: the fewest moves whether a child drags (moves one card) or taps (swaps two), so perfect play either way earns 3 stars.
+    R.par = Math.max(minMoves(order, correct), minSwaps(order, correct));
     R.limit = P.moveLimit !== false;
-    R.budget = R.min + (lv <= 0 ? 3 : 2);
+    R.budget = R.par + (lv <= 0 ? 3 : 2);
     paintMoves(false);
     $('dots').innerHTML = Array.from({ length: ROUNDS }, (_, k) => `<i class="${k < G.i ? 'done' : k === G.i ? 'now' : ''}"></i>`).join('');
     $('q').textContent = r.q;
@@ -1164,7 +1166,7 @@ button { font: inherit; color: inherit; }
     paint();
     sortLogo(document.querySelector('#homeBtn .logo-svg'), 200);
     R.order.forEach(it => { it.el.querySelector('.val').textContent = it.s || ''; });
-    const stars = R.moves <= R.min ? 3 : R.moves <= R.min + 1 ? 2 : 1;
+    const stars = R.moves <= R.par ? 3 : R.moves <= R.par + 1 ? 2 : 1;
     learn(R.topicId, stars);
     G.stars += stars;
     $('cheerT').textContent = pick(PRAISE[3 - stars]);
