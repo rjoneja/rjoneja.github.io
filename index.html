@@ -424,6 +424,37 @@ h1 {
 .panel .board li { padding: 6px 10px; }
 .board-note { margin: 0; font-size: 12px; color: var(--muted); }
 .namer { display: grid; gap: 6px; margin: 0; }
+/* Leaderboard name prompt: a gold trophy card right under the score, hard to miss. */
+.trophy { display: grid; justify-items: center; gap: 8px; margin: 4px 0 2px; padding: 16px 16px 14px; border-radius: 18px; text-align: center;
+  background: linear-gradient(160deg, #FFE27A, #FFC82E 55%, #FFB01F); color: #1A1033; border: 2.5px solid #1A1033; box-shadow: 3px 4px 0 #1A1033;
+  animation: pop .45s cubic-bezier(.34, 1.56, .64, 1); }
+.trophy-icon { font-size: 56px; line-height: 1; animation: trophy-bob 1.6s ease-in-out .5s 2; }
+@keyframes trophy-bob { 0%, 100% { transform: none; } 30% { transform: translateY(-6px) rotate(-8deg); } 60% { transform: translateY(0) rotate(6deg); } }
+.trophy-head { margin: 0; font-family: var(--font-display); font-size: 26px; line-height: 1.1; letter-spacing: -0.01em; }
+.trophy-ask { display: grid; gap: 10px; width: 100%; }
+.trophy-sub { margin: 0; font-weight: 700; font-size: 16px; }
+.trophy-in { width: 100%; box-sizing: border-box; font: inherit; font-size: 22px; font-weight: 800; text-align: center; padding: 12px 14px; border-radius: 14px;
+  border: 3px solid #B414B4; background: #FFFFFF; color: #1A1033; }
+.trophy-in::placeholder { color: #8A7F9E; font-weight: 600; }
+.trophy-in:focus { outline: 3px solid #1A1033; outline-offset: 2px; }
+.trophy .trophy-btn { width: 100%; font-size: 18px; padding: 13px 16px; background: #B414B4; color: #FFFFFF; border: 2.5px solid #1A1033; }
+.trophy-skip { background: none; border: 0; padding: 4px 8px; font: inherit; font-size: 14px; font-weight: 700; color: #4A3F5E; text-decoration: underline; cursor: pointer; }
+.trophy-done { margin: 0; font-size: 17px; }
+.trophy-done b { font-weight: 800; }
+@media (prefers-reduced-motion: reduce) { .trophy, .trophy-icon { animation: none; } }
+/* Short phones: a compact card (trophy beside the headline) so the Share button still shows without scrolling. */
+@media (max-height: 700px) {
+  .trophy { grid-template-columns: auto 1fr; justify-items: start; text-align: left; gap: 6px 10px; padding: 10px 12px; }
+  .trophy-icon { font-size: 32px; grid-row: span 1; }
+  .trophy-head { font-size: 20px; align-self: center; }
+  .trophy-ask, .trophy-done { grid-column: 1 / -1; }
+  .trophy-ask { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .trophy-sub { display: none; }
+  .trophy-in { font-size: 18px; padding: 8px 10px; text-align: left; }
+  .trophy .trophy-btn { width: auto; font-size: 16px; padding: 8px 14px; }
+  .trophy-skip { grid-column: 1 / -1; justify-self: center; padding: 0 8px; }
+  .trophy-done { font-size: 15px; }
+}
 .namer-label { font-weight: 700; font-size: 14px; }
 .namer-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .namer-in { min-width: 0; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--edge); background: var(--surface-2); color: var(--fg); }
@@ -731,7 +762,7 @@ h1 {
     <ul class="st-rules">
       <li>Put each set in order before the clock runs out.</li>
       <li>To move one, tap it, then tap where it should go. Or drag it.</li>
-      <li id="stClock">The clock gets quicker every time: 10 seconds, then 9, 8, 7…</li>
+      <li id="stClock">Starts with 3 items and 10 seconds. The clock settles at 7 seconds, and every 5 sets adds an item.</li>
       <li>One go a day. Same puzzle for everyone.</li>
     </ul>
     <button class="btn st-go" id="stGo" type="button">Start</button>
@@ -743,6 +774,17 @@ h1 {
     <div class="eyebrow">Today's Ordo</div>
     <h1 id="rTitle">Today</h1>
     <div class="d-score r-score"><b id="rScore">0</b><span>in a row</span></div>
+    <form class="trophy" id="rNamer" hidden aria-labelledby="rNamerLabel">
+      <div class="trophy-icon" aria-hidden="true">🏆</div>
+      <h2 class="trophy-head" id="rNamerLabel">You're on the leaderboard!</h2>
+      <div class="trophy-ask" id="rNamerAsk">
+        <p class="trophy-sub">Put your name on it:</p>
+        <input class="trophy-in" id="rNameIn" maxlength="16" autocomplete="nickname" autocapitalize="words" enterkeyhint="done" placeholder="Your name" required aria-label="Your name">
+        <button class="btn trophy-btn" type="submit">Add name</button>
+        <button class="trophy-skip" id="rNameSkip" type="button">Not now</button>
+      </div>
+      <p class="trophy-done" id="rNamerDone" hidden>On the board as <b id="rNamerName"></b>. <button class="trophy-skip" id="rNameChange" type="button">Change</button></p>
+    </form>
     <div class="r-grid" id="rGrid" aria-hidden="true"></div>
     <p class="r-why" id="rWhy"></p>
     <div class="actions d-actions">
@@ -751,13 +793,6 @@ h1 {
     </div>
     <textarea class="sharebox" id="rShareText" rows="5" readonly hidden aria-label="Result message"></textarea>
     <p class="d-rank" id="rRank" hidden></p>
-    <form class="namer" id="rNamer" hidden>
-      <label class="namer-label" for="rNameIn" id="rNamerLabel">You made the top 5. Add your name:</label>
-      <div class="namer-row">
-        <input class="namer-in" id="rNameIn" maxlength="16" autocomplete="nickname" placeholder="Your name" required>
-        <button class="btn-alt" type="submit">Save</button>
-      </div>
-    </form>
     <button type="button" class="link-btn" id="rBoardLink">See the leaderboard →</button>
     <p class="d-next" id="rNext"></p>
     <button class="btn-alt" id="rPractice" type="button">Practice run (doesn't count)</button>
@@ -773,7 +808,7 @@ h1 {
     </button>
     <button type="button" class="cd-card" id="cdCard">
       <span class="cd-icon" aria-hidden="true">⏱</span>
-      <span class="cd-text"><span class="cd-title">Countdown</span><span class="cd-sub" id="cdSub">Beat the clock. It gets quicker every time.</span></span>
+      <span class="cd-text"><span class="cd-title">Countdown</span><span class="cd-sub" id="cdSub">Beat the clock. Every 5 sets adds an item.</span></span>
     </button>
     <div class="picker-head"><h2 class="sub-h">Or practise a category</h2><button type="button" class="toggle" id="boardsBtn">Top scores</button></div>
     <div class="cats" id="cats"></div>
@@ -799,7 +834,7 @@ h1 {
 
   <section class="about" id="about" hidden>
     <div class="picker-head"><h1>About Ordo</h1><button type="button" class="toggle" id="aboutBack">Back</button></div>
-    <p>Put things in the right order before the clock runs out. It gets quicker every time. A new run every day, the same for everyone.</p>
+    <p>Put things in the right order before the clock runs out. Every 5 sets adds one more thing to sort. A new run every day, the same for everyone.</p>
     <p>Made in London. No ads, no sign-up.</p>
     <p><a class="about-kids" id="kidsLink" href="https://ordogame.com/kids/" target="_blank" rel="noopener">Ordo Kids</a>: a picture-first version for ages 4 to 9.</p>
     <h2 class="sub-h">Your data</h2>
@@ -1642,7 +1677,7 @@ h1 {
     if (h) { void el.heat.offsetWidth; el.heat.classList.add('ping'); }
   }
 
-  // Countdown: seconds for each turn, one second less each time down to 3, then the questions get harder instead.
+  // Practice: the same rules as today's run, with a random sequence.
   const CD_TIMES = [10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3];
   const cdLimit = r => runSpec(r).time;
   function newRound() {
@@ -1655,7 +1690,7 @@ h1 {
       buildRound(t.ci, t.correct, t.order.slice(), null);
       R.countdown = true; R.ceiling = cdLimit(S.round);
       el.eyebrow.hidden = false;
-      el.eyebrow.textContent = `Practice · ${R.ceiling} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
+      el.eyebrow.textContent = `Practice · ${R.n} items · ${R.ceiling} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
       readout();
       if (S.round === 0) countIn(); else startClock();
       return;
@@ -1705,7 +1740,7 @@ h1 {
       // The clock starts as soon as the round appears, and moves cost nothing but time.
       R.countdown = true; R.ceiling = cdLimit(S.round);
       el.eyebrow.hidden = false;
-      el.eyebrow.textContent = `Practice · ${R.ceiling} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
+      el.eyebrow.textContent = `Practice · ${R.n} items · ${R.ceiling} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
       readout();
       if (S.round === 0) countIn(); else startClock();
     }
@@ -1756,7 +1791,7 @@ h1 {
     el.bottom.textContent = '↓ ' + cat.bottom;
     showHeat(null);
 
-    el.stack.className = 'stack live' + (n >= 6 ? ' dense' : '');
+    el.stack.className = 'stack live' + (n >= 6 || (n >= 5 && innerHeight < 700) ? ' dense' : '');   // 5 items on a short phone: compact rows so the clock still fits
     el.stack.innerHTML = '';
     R.order.forEach(it => {
       const li = document.createElement('li');
@@ -2086,7 +2121,7 @@ h1 {
       if (rows.length > 3) rows.splice(3, rows.length - 3, `…and ${sq.length - 30} more`);
       const grid = (rows.length ? rows : ['']).map((r, i, a) => i === a.length - 1 ? r + '⏰' : r);
       const fire = S.cleared >= 20 ? ' 🔥🔥🔥' : S.cleared >= 12 ? ' 🔥🔥' : S.cleared >= 8 ? ' 🔥' : '';
-      return [`⏱ Ordo practice run: ${S.cleared} in a row${fire}`, ...grid, `Beaten by the ${R.ceiling}-second clock.`, 'How far can you get?', `${BASE}#countdown`].join('\n');
+      return [`⏱ Ordo practice run: ${S.cleared} in a row${fire}`, ...grid, `Beaten by the ${R.n}-item sets (${R.ceiling} seconds).`, 'How far can you get?', `${BASE}#countdown`].join('\n');
     }
     const solved = R.status === 'solved';
     const eff = effOf();
@@ -2387,29 +2422,44 @@ h1 {
       runFactor = keep;
     }
     const t = runCache[run][pos]; if (!t) return null;
-    const c = CATS[t.ci], keep = runFactor; runFactor = 1; const sp = runSpec(pos); runFactor = keep;
+    const c = CATS[t.ci], keep = runFactor; runFactor = 1; const sp = runSpec(pos, kind === 'p' || kind === 'q' ? Infinity : id); runFactor = keep;
     return { q: c.q, t: c.t, fam: c.fam, group: c.group, tier: c.tier, level: c.level, n: t.correct.length, pos, relaxed: kind === 'r' || kind === 'q',
       time: sp.time * (kind === 'r' || kind === 'q' ? 2 : 1), asc: !!c.asc, key: setKey(t),
       items: t.correct.map(it => [it.name, it.v]), shown: t.order.map(it => it.name), famVals: c.items.map(x => x[1]) };
   };
+  window.__ordoSpec = (i, day) => runSpec(i, day == null ? dailyNo() : day);
   window.__ordoFmt = ts => CATS.filter(c => ts.includes(c.t)).map(c => [c.q, c.level, c.items.slice(0, 4).map(([n, v]) => n.replace('\n', ' / ') + ': ' + c.fmt(v))]);
   window.__ordoDaily = no => buildDaily(no).map(r => ({ q: CATS[r.ci].q, t: CATS[r.ci].t, g: CATS[r.ci].group, items: r.correct.map(it => it.name) }));
   // ---------- Today's run: the same sequence for everyone ----------
-  // Turns 1-10: 3 items, 10 seconds down to 3. After that: 4 items, 6 seconds down to 4, and harder questions.
+  // Rules up to puzzle 5: 3 items with the clock falling from 10 seconds to 3, then 4 items from 6 seconds down to 4.
+  // From puzzle 6 (players found the falling clock too harsh): the clock settles at 7 seconds and every 5 sets adds an item
+  // (3, then 4, then 5). Late on it tightens to 6 then 5 seconds, and the values get closer, so a run always ends.
+  // Practice always uses the current rules. Old puzzles keep their old rules, so they can still be rebuilt exactly.
   const RUN_A = [10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3], RUN_B = [6, 5.5, 5, 4.5, 4];
+  const RULES2_FROM = 6;
   // Relaxed clock: the same sets in the same order, with twice the time on every one.
   let runFactor = 1;
-  function runSpec(i) {
-    if (i < RUN_A.length) return { n: 3, time: RUN_A[i] * runFactor, lv: i < 4 ? 1 : 2, tight: 0.2 + i * 0.03 };
-    const k = i - RUN_A.length;
-    return { n: 4, time: RUN_B[Math.min(k, RUN_B.length - 1)] * runFactor, lv: Math.min(4, 2 + Math.floor(k / 5)), tight: Math.min(0.95, 0.4 + k * 0.03) };
+  function runSpec(i, day = Infinity) {
+    if (day < RULES2_FROM) {
+      if (i < RUN_A.length) return { n: 3, time: RUN_A[i] * runFactor, lv: i < 4 ? 1 : 2, tight: 0.2 + i * 0.03 };
+      const k = i - RUN_A.length;
+      return { n: 4, time: RUN_B[Math.min(k, RUN_B.length - 1)] * runFactor, lv: Math.min(4, 2 + Math.floor(k / 5)), tight: Math.min(0.95, 0.4 + k * 0.03) };
+    }
+    const n = Math.min(5, 3 + Math.floor(i / 5));
+    const time = (i < 4 ? [10, 9, 8, 7][i] : i < 15 ? 7 : i < 20 ? 6 : 5) * runFactor;
+    return { n, time, lv: i < 4 ? 1 : Math.min(4, 2 + Math.floor(Math.max(0, i - 10) / 5)), tight: Math.min(0.95, 0.15 + (i % 5) * 0.06 + Math.max(0, i - 15) * 0.04) };
   }
+  // How the clock works, for the Start screen.
+  const rulesLine = (day, relaxed) => day < RULES2_FROM
+    ? (relaxed ? 'The clock gets quicker every time: 20 seconds, then 18, 16, 14…' : 'The clock gets quicker every time: 10 seconds, then 9, 8, 7…')
+    : (relaxed ? 'Starts with 3 items and 20 seconds. The clock settles at 14 seconds, and every 5 sets adds an item.'
+      : 'Starts with 3 items and 10 seconds. The clock settles at 7 seconds, and every 5 sets adds an item.');
   const relaxedOn = () => !!prog.relaxed;
   function paintRelax() {
     const on = relaxedOn();
     $('relaxBtn').setAttribute('aria-pressed', String(on)); $('relaxBtn').textContent = on ? 'On' : 'Off';
     $('stRelax').setAttribute('aria-pressed', String(on));
-    $('stClock').textContent = on ? 'The clock gets quicker every time: 20 seconds, then 18, 16, 14…' : 'The clock gets quicker every time: 10 seconds, then 9, 8, 7…';
+    $('stClock').textContent = rulesLine(dailyNo(), on);
   }
   function setRelaxed(on) { prog.relaxed = !!on; saveProg(); paintRelax(); track('relaxed', on ? 'on' : 'off'); }
   $('relaxBtn').addEventListener('click', () => setRelaxed(!relaxedOn()));
@@ -2439,7 +2489,7 @@ h1 {
     let lastT = null, lastG = null, lastCi = -1;
     const shown = new Set();
     for (let i = 0; i < count; i++) {
-      const sp = runSpec(i);
+      const sp = runSpec(i, day);
       const wantKnown = i >= 5 && rand() < 0.18;
       let pool = base.filter(ci => CATS[ci].maxN >= sp.n && CATS[ci].level <= Math.min(2, sp.lv) && ci !== lastCi
         && CATS[ci].tier === (wantKnown ? 'known' : 'guess'));
@@ -2476,8 +2526,8 @@ h1 {
     const live = prog.runLive;
     if (!live || prog.run[live.no]) { if (live) { delete prog.runLive; saveProg(); } return; }
     runFactor = live.relaxed ? 2 : 1;
-    const t = runSpec(live.idx);
-    prog.run[live.no] = { score: live.idx, res: live.res || [], clock: t.time, n: t.n, left: true, relaxed: !!live.relaxed };
+    const t = runSpec(live.idx, live.no);
+    prog.run[live.no] = { score: live.idx, res: live.res || [], clock: t.time, n: t.n, left: true, relaxed: !!live.relaxed, v: live.no >= RULES2_FROM ? 2 : 1 };
     delete prog.runLive; saveProg();
     track('run_end', live.relaxed ? 'relaxed-left' : 'left', live.idx);
   }
@@ -2524,13 +2574,13 @@ h1 {
     playTurn();
   }
   function playTurn() {
-    if (S.idx >= S.turns.length) S.turns = S.turns.concat(buildRun(S.no * 31 + S.turns.length, 40, S.no).map(t => Object.assign(t, { time: runSpec(S.idx).time })));
+    if (S.idx >= S.turns.length) S.turns = S.turns.concat(buildRun(S.no * 31 + S.turns.length, 40, S.no).map(t => Object.assign(t, { time: runSpec(S.idx, S.no).time })));
     const t = S.turns[S.idx];
     prog.runLive = { no: S.no, idx: S.idx, res: S.res.slice(), relaxed: S.relaxed }; saveProg();
     buildRound(t.ci, t.correct, t.order.slice(), null);
     R.countdown = true; R.ceiling = t.time;
     el.eyebrow.hidden = false;
-    el.eyebrow.textContent = (S.relaxed ? '🐢 ' : '') + `${t.time} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
+    el.eyebrow.textContent = (S.relaxed ? '🐢 ' : '') + (S.no >= RULES2_FROM ? `${t.correct.length} items · ` : '') + `${t.time} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
     readout();
     if (S.idx === 0) countIn(); else startClock();
   }
@@ -2554,7 +2604,7 @@ h1 {
   }
   function endRun() {
     const no = S.no;
-    prog.run[no] = { score: S.cleared, res: S.res.slice(), clock: R.ceiling, n: R.n, relaxed: !!S.relaxed };
+    prog.run[no] = { score: S.cleared, res: S.res.slice(), clock: R.ceiling, n: R.n, relaxed: !!S.relaxed, v: no >= RULES2_FROM ? 2 : 1 };
     delete prog.runLive; saveProg();
     track('run_end', S.relaxed ? 'relaxed' : 'clock', S.cleared);
   }
@@ -2569,9 +2619,11 @@ h1 {
     return rows;
   }
   const fireFor = n => n >= 20 ? ' 🔥🔥🔥' : n >= 14 ? ' 🔥🔥' : n >= 10 ? ' 🔥' : '';
+  // What ended the run: the clock (old rules) or the size of the sets with their clock (current rules).
+  const beatenBy = rec => rec.v === 2 ? `Beaten by the ${rec.n}-item sets (${rec.clock} seconds)` : `Beaten by the ${rec.clock}-second clock`;
   function runShare(no, rec) {
     return [`Ordo${rec.relaxed ? ' 🐢' : ''} · ${runDate(no, true)} · ${rec.score} in a row${fireFor(rec.score)}`, ...runGrid(rec),
-      `Beaten by the ${rec.clock}-second clock` + (rec.relaxed ? ' (relaxed).' : '.'), BASE].join('\n');
+      beatenBy(rec) + (rec.relaxed ? ' (relaxed).' : '.'), BASE].join('\n');
   }
   let runTimer = 0;
   function showRunDone(no, fresh) {
@@ -2583,8 +2635,8 @@ h1 {
     $('rTitle').textContent = runDate(no);
     countUp($('rScore'), fresh ? 0 : rec.score, rec.score);
     $('rGrid').textContent = runGrid(rec).join('\n');
-    $('rWhy').textContent = rec.left ? `You left the run at the ${rec.clock}-second clock.`
-      : `Beaten by the ${rec.clock}-second clock` + (rec.n === 4 ? ' on the 4-item sets' : '') + '.' + (rec.relaxed ? ' Relaxed clock 🐢.' : '');
+    $('rWhy').textContent = rec.left ? (rec.v === 2 ? `You left the run on the ${rec.n}-item sets.` : `You left the run at the ${rec.clock}-second clock.`)
+      : (rec.v === 2 ? beatenBy(rec) : `Beaten by the ${rec.clock}-second clock` + (rec.n === 4 ? ' on the 4-item sets' : '')) + '.' + (rec.relaxed ? ' Relaxed clock 🐢.' : '');
     const text = runShare(no, rec);
     $('rShareText').value = tagLink(text, 'cp'); $('rShareText').hidden = true;
     $('rWa').href = 'https://wa.me/?text=' + encodeURIComponent(tagLink(text, 'wa'));
@@ -2609,21 +2661,38 @@ h1 {
     boardRelaxed = !!rec.relaxed;
     rk.hidden = false;
     cdBoardTab = res.rankAll <= 5 ? 'all' : 'day';
-    if ((res.rankDay <= 5 || res.rankAll <= 5) && !res.named && rec.score > 0) {
-      $('rNamerLabel').textContent = res.rankAll <= 5 ? `You're ${ordinal(res.rankAll)} of all time! Add your name:` : "You're in today's top 5! Add your name:";
-      $('rNameIn').value = prog.name || '';
-      $('rNamer').hidden = false;
-    }
+    if ((res.rankDay <= 5 || res.rankAll <= 5) && rec.score > 0) showTrophy(res, rec);
   }
+  // Top 5 today or all time: a trophy card under the score. A name used before goes on the board straight away (with Change);
+  // otherwise a big name box asks for one.
+  function showTrophy(res, rec) {
+    const saved = prog.name && prog.name !== 'Player' ? prog.name : '';
+    if (res.named && !saved) return;   // already named on the board (e.g. after a reload): the rank line is enough
+    $('rNamerLabel').textContent = res.rankAll <= 5 ? `${ordinal(res.rankAll)} of all time!` : res.rankDay === 1 ? "Top of today's board!" : `${ordinal(res.rankDay)} today!`;
+    $('rRank').hidden = true;
+    $('rNamer').hidden = false;
+    if (res.named && saved) trophyNamed(saved);
+    else if (saved) { trophyNamed(saved); postName(saved, rec, true); }
+    else { $('rNamerAsk').hidden = false; $('rNamerDone').hidden = true; $('rNameIn').value = ''; }
+    if (!res.named) confetti(60, innerHeight * 0.3);
+  }
+  function trophyNamed(name) { $('rNamerName').textContent = name; $('rNamerAsk').hidden = true; $('rNamerDone').hidden = false; }
+  async function postName(name, rec, quiet) {
+    const res = await api('/api/cdname', { day: dailyNo(), pid: prog.pid, name, relaxed: !!(rec && rec.relaxed) });
+    if (!quiet || !res) toast(res ? "You're on the board!" : "Couldn't reach the board. Try again later.");
+    // The board may tidy the name (or swap a rude one for "Player"): show what it really says.
+    if (res && res.name && res.name !== name) { trophyNamed(res.name); prog.name = res.name; saveProg(); }
+    return res;
+  }
+  $('rNameSkip').addEventListener('click', () => { $('rNamer').hidden = true; $('rRank').hidden = false; });
+  $('rNameChange').addEventListener('click', () => { $('rNamerAsk').hidden = false; $('rNamerDone').hidden = true; $('rNameIn').value = prog.name || ''; $('rNameIn').focus(); });
   $('rNamer').addEventListener('submit', async e => {
     e.preventDefault();
     const name = $('rNameIn').value.trim().slice(0, 16) || 'Player';
     prog.name = name; saveProg();
-    $('rNamer').hidden = true;
-    const rec = prog.run[dailyNo()] || {};
-    const res = await api('/api/cdname', { day: dailyNo(), pid: prog.pid, name, relaxed: !!rec.relaxed });
-    toast(res ? "You're on the board!" : "Couldn't reach the board. Try again later.");
     $('rNameIn').blur();
+    trophyNamed(name);
+    await postName(name, prog.run[dailyNo()] || {}, false);
   });
   const shareCtx = () => S.mode === 'countdown' ? 'practice' : S.mode === 'run' || S.mode === 'done' ? 'daily' : (S.mode || 'cat');
   $('rWa').addEventListener('click', () => track('share', 'wa-daily'));
@@ -2752,7 +2821,7 @@ h1 {
         S.warmup = true;
         track('warmup', '', S.cleared);
         return setPanel('Warm-up done', `${S.cleared} in a row`, false,
-          "Now you know how it works: the clock starts straight away and gets faster each time. This one doesn't count. Have your real go.", 'Start my real go');
+          "Now you know how it works: the clock starts straight away, and every 5 sets adds an item. This one doesn't count. Have your real go.", 'Start my real go');
       }
       endRun();
       return setPanel("Time's up", `${S.cleared} in a row`, false, close, 'See your result');
@@ -2764,7 +2833,7 @@ h1 {
       const title = got > best && best > 0 ? 'New best!' : "Time's up";
       if (got > best && best > 0) confetti(80, innerHeight * 0.25);
       return setPanel(title, `${got} in a row`, false,
-        `The ${R.ceiling}-second clock got you. ` + (got > best ? (best ? `Your old best was ${best}.` : 'That’s your first best.') : `Your best is ${best}.`), 'Play again');
+        `The ${R.n}-item sets got you. ` + (got > best ? (best ? `Your old best was ${best}.` : 'That’s your first best.') : `Your best is ${best}.`), 'Play again');
     }
     if (S.mode === 'daily') {
       S.played++;
@@ -2826,7 +2895,7 @@ h1 {
     }).join('') + `<a class="cat cat-kids" href="https://ordogame.com/kids/" target="_blank" rel="noopener">` +
       `<span class="cat-name">Ordo<span class="kids-tag">kids</span></span><span class="cat-sub">For ages 4 to 9: pictures, counting, sums and read aloud</span></a>`;
     const no = dailyNo(), rec = prog.daily && prog.daily[no];
-    $('cdSub').textContent = prog.cdBest ? `Beat the clock. Your best: ${prog.cdBest} in a row.` : 'Beat the clock. It gets quicker every time.';
+    $('cdSub').textContent = prog.cdBest ? `Beat the clock. Your best: ${prog.cdBest} in a row.` : 'Beat the clock. Every 5 sets adds an item.';
     $('dcTitle').textContent = `#${no}`;
     const run = prog.dailyRun && prog.dailyRun.no === no ? prog.dailyRun : null;
     $('dcStatus').textContent = rec ? `Done · ${rec.score}/${rec.res.length * 100} · tap to see your result`
