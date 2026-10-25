@@ -2660,22 +2660,14 @@ h1 {
     else if (levelAt(S.round) > levelAt(r0)) toast('Level up · harder questions');
   });
 
-  function boot(data) {
+  function boot() {
     splash();
-    const c = parseChallenge();
-    if (c) { hud(); return startChallenge(c); }
-    if (/^#daily$/.test(location.hash || '')) { try { history.replaceState(null, '', location.pathname); } catch {} return goHome(); }
-    if (/^#countdown$/i.test(location.hash || '')) return startCountdown();
-    // Category links, e.g. ordogame.com/football or #football, open straight into practice for that category.
-    const CAT_LINKS = { football: 'sport', sport: 'games', olympics: 'games', pop: 'pop', 'pop-culture': 'pop', people: 'people', places: 'places',
-      history: 'history', science: 'science', film: 'film', music: 'music', mix: 'mix' };
-    const want = CAT_LINKS[(location.hash || '').replace(/^#/, '').toLowerCase()];
-    if (want) { hud(); return startLadder(want); }
-    if (data && data.S && typeof data.S.round === 'number' && data.S.group && data.S.mode !== 'daily') { S = Object.assign(S, data.S); return newRound(); }
+    // Old links (#daily, #countdown, challenge links like #qr-…, category links like #football) all land on today's game now.
+    if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
     hud();
     goHome();
   }
-  try { window.claude?.hot?.snapshot?.(() => ({ S: S.mode === 'ladder' ? { ...S } : {} })); } catch {}
+  try { window.claude?.hot?.snapshot?.(() => ({})); } catch {}
   window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
 })();
 </script>
