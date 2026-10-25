@@ -1964,10 +1964,12 @@ h1 {
     P = null;
   }
 
-  function reveal() {
+  // quiet: a solved set in a timed run just shows the answers on the cards; the next set follows straight away, so no panel.
+  function reveal(quiet) {
     R.order.forEach(it => { it.el.querySelector('.val').textContent = R.cat.fmt(it.v); });
     el.stack.classList.remove('live');
     el.stack.classList.add('revealed');
+    if (quiet) { showHeat(null); return; }
     el.panel.hidden = false;
     el.meter.hidden = true;
     el.pBasis.textContent = R.cat.basis;
@@ -2055,7 +2057,7 @@ h1 {
     R.elapsed = R.started ? (performance.now() - R.t0) / 1000 : 0;
     const eff = effOf();
     readout();
-    reveal();
+    reveal(S.mode === 'run' || S.mode === 'countdown');
     requestAnimationFrame(() => el.stack.classList.add('solved'));
     sortLogo(document.querySelector('#mark .logo'), 250);
     // Each round is out of 100: 50 for moves (fewest possible gets all 50), 50 for speed against a par time.
@@ -2069,7 +2071,8 @@ h1 {
     confetti(R.stars === 3 ? 110 : R.stars === 2 ? 60 : 30);
     const detail = `Moves ${R.mPts}/50 · Speed ${R.sPts}/50 (${R.elapsed.toFixed(1)}s, par ${R.par}s)`;
     const c = R.challenge;
-    const grew = tickStreak();
+    // Practice doesn't count towards the daily streak.
+    const grew = S.mode === 'countdown' ? 0 : tickStreak();
     // Fastest-ever solve for this many items.
     let badge = '';
     const prevFast = prog.fastest[R.n];
@@ -2668,7 +2671,7 @@ h1 {
     buzz([60, 40, 60]);
     const close = off <= 2 ? `So close: only ${off} out of place.` : `Here's the right order.`;
     const warm = S.mode === 'run' && !prog.warmed && S.cleared <= 1 && !Object.keys(prog.run || {}).length;
-    const grew = warm ? 0 : tickStreak();
+    const grew = warm || S.mode === 'countdown' ? 0 : tickStreak();
     if (grew) toast(grew === 1 ? 'Streak started. Come back tomorrow' : `${grew}-day streak!`, true);
     if (S.mode === 'run') {
       if (warm) {
@@ -2835,9 +2838,10 @@ h1 {
     if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
     track('practice', relaxedOn() ? 'relaxed' : '');
     runFactor = relaxedOn() ? 2 : 1;
-    picker.hidden = true; $('boards').hidden = true; $('about').hidden = true; $('dailyDone').hidden = true;
+    hideAll();
     play.hidden = false;
     el.lives.parentElement.classList.add('quiet');
+    try { scrollTo(0, 0); } catch {}
     hud();
     newRound();
   }
