@@ -2036,7 +2036,7 @@ h1 {
     if (tab) boardTab = tab;
     releasePointer();
     if (R && R.status === 'play') R.status = 'idle';
-    ['play', 'dailyDone', 'about'].forEach(id => { $(id).hidden = true; });
+    ['play', 'dailyDone', 'about', 'picker', 'start', 'runDone'].forEach(id => { $(id).hidden = true; });
     el.app.classList.remove('sheet-open');
     $('tools').hidden = true; $('setBtn').setAttribute('aria-expanded', 'false');
     showBoards();
@@ -2080,16 +2080,17 @@ h1 {
   let aboutPrev = null;
   $('aboutBtn').addEventListener('click', () => {
     $('tools').hidden = true; $('setBtn').setAttribute('aria-expanded', 'false');
-    const secs = ['picker', 'boards', 'dailyDone', 'play'].map(id => $(id));
-    aboutPrev = secs.filter(x => !x.hidden);
-    secs.forEach(x => { x.hidden = true; });
+    // Remember a run in progress so Back returns to it; everything else goes back home.
+    aboutPrev = !play.hidden && R && R.status === 'play' ? 'play' : null;
+    ['picker', 'boards', 'dailyDone', 'start', 'runDone', 'play'].forEach(id => { $(id).hidden = true; });
     $('about').hidden = false;
     try { scrollTo(0, 0); } catch {}
   });
   $('aboutBack').addEventListener('click', () => {
     $('about').hidden = true;
-    (aboutPrev && aboutPrev.length ? aboutPrev : [$('picker')]).forEach(x => { x.hidden = false; });
+    if (aboutPrev === 'play') play.hidden = false; else goHome();
     aboutPrev = null;
+    try { scrollTo(0, 0); } catch {}
   });
   $('tabDay').addEventListener('click', () => { boardTab = 'day'; showBoards(); });
   $('gameDaily').addEventListener('click', () => { boardGame = 'daily'; showBoards(); });
@@ -2097,7 +2098,7 @@ h1 {
   $('clockStd').addEventListener('click', () => { boardRelaxed = false; showBoards(); });
   $('clockRelax').addEventListener('click', () => { boardRelaxed = true; showBoards(); });
   $('tabAll').addEventListener('click', () => { boardTab = 'all'; showBoards(); });
-  $('boardsBack').addEventListener('click', () => { $('boards').hidden = true; $('about').hidden = true; $('picker').hidden = false; });
+  $('boardsBack').addEventListener('click', () => { $('boards').hidden = true; $('about').hidden = true; goHome(); try { scrollTo(0, 0); } catch {} });
 
   // ---------- Daily puzzle ----------
   const DAILY_START = Date.UTC(2026, 9, 21);
@@ -2331,7 +2332,7 @@ h1 {
   }
   async function sendRun(no, rec) {
     const res = await api('/api/cd', { day: no, pid: prog.pid, score: rec.score, relaxed: !!rec.relaxed });
-    if (!res || $('runDone').hidden) return;
+    if (!res || $('runDone').hidden || !rec.score) return;
     const rk = $('rRank');
     const kind = rec.relaxed ? 'relaxed run' : 'run';
     rk.textContent = res.rankDay === 1 ? `Longest ${kind} anyone has had today!` : `${ordinal(res.rankDay)} longest ${kind} today.` + (res.rankAll <= 5 ? ` ${ordinal(res.rankAll)} of all time!` : '');
