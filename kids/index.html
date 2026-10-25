@@ -831,7 +831,8 @@ button { font: inherit; color: inherit; }
         src.buffer = A.buf; src.connect(ctx.destination);
         src.start(t, st, du);
         A.srcs.push(src);
-        t += du + (/[.!?]$/.test(p) ? 0.3 : 0.06);
+        // Each clip carries ~0.14 s of quiet at its end: overlap it within a phrase so pieces run together.
+        t += /[.!?]$/.test(p) ? du + 0.3 : Math.max(0.12, du - 0.11);
       }
       return;
     }
@@ -861,6 +862,7 @@ button { font: inherit; color: inherit; }
     TOPICS.forEach(tp => tp.kinds.forEach(k => { for (const age of [5, 6, 7, 8, 9]) { const r = k(3, age); if (r) add(r.q); } }));
     Object.values(TYPE_FACTS).flat().concat(Object.values(ITEM_FACTS).flat()).forEach(f => add(f));
     PRAISE.flat().forEach(p => add(p));
+    for (let n = 0; n <= 15; n++) add(scoreLine(n), `You got ${NUMWORDS[n]} ${n === 1 ? 'star' : 'stars'}!`);
     STICKER_NAMES.forEach(n => add(n));
     ['You won a sticker!', 'Sticker book full!', 'You got', 'stars!', 'star!', 'Read aloud is on.', 'Out of moves!', "Here's the right order.", 'So close!', 'Good try!', 'Get nine stars to win a sticker.', 'Read each one carefully!'].forEach(w => add(w));
     return [...out.entries()];
@@ -921,6 +923,8 @@ button { font: inherit; color: inherit; }
   // ---------- A game: 5 rounds ----------
   const PRAISE = [['Amazing!', 'Perfect!', 'Superstar!'], ['Brilliant!', 'Great job!', 'Well done!'], ['You did it!', 'Nice work!', 'Hooray!']];
   const ROUNDS = 5;
+  // Scores are said as one recording each ("You got twelve stars!") rather than stitched from pieces.
+  const scoreLine = n => `You got ${n} ${n === 1 ? 'star' : 'stars'}!`;
   const STICKER_STARS = 9;
   let G = null, R = null;
   function startGame(topicId) {
@@ -1199,7 +1203,7 @@ button { font: inherit; color: inherit; }
       show('reward');
       confetti(40);
       buzz([30, 60, 30]);
-      say([head, 'You got', ...numParts(G.stars), G.stars === 1 ? 'star!' : 'stars!', 'Get nine stars to win a sticker.', 'Read each one carefully!']);
+      say([head, scoreLine(G.stars), 'Get nine stars to win a sticker.', 'Read each one carefully!']);
       return;
     }
     const left = STICKERS.filter(s => !P.stickers.includes(s));
@@ -1212,7 +1216,7 @@ button { font: inherit; color: inherit; }
     show('reward');
     confetti(160);
     buzz([30, 60, 30, 60, 90]);
-    say([$('rewardT').textContent, 'You got', ...numParts(G.stars), G.stars === 1 ? 'star!' : 'stars!']);
+    say([$('rewardT').textContent, scoreLine(G.stars)]);
   }
   // Tap a sticker: it wiggles, bounces, spins or jumps, and says its name if read aloud is on.
   function playSticker(el) {
