@@ -1563,15 +1563,18 @@ h1 {
     }
     if (!fxRun) { fxRun = true; requestAnimationFrame(fxStep); }
   }
+  // Wipe the whole canvas, not just the current window size: on phones the window height changes while confetti falls
+  // (keyboard opening for the name box, the address bar hiding), and a partial wipe left frozen bits at the bottom.
+  function fxClear() { fxc.save(); fxc.setTransform(1, 0, 0, 1, 0, 0); fxc.clearRect(0, 0, fx.width, fx.height); fxc.restore(); }
   function fxStep() {
-    fxc.clearRect(0, 0, innerWidth, innerHeight);
+    fxClear();
     bits = bits.filter(b => b.life > 0 && b.y < innerHeight + 40);
     for (const b of bits) {
       b.vy += 0.32; b.vx *= 0.985; b.x += b.vx; b.y += b.vy; b.r += b.vr; b.life--;
       fxc.save(); fxc.translate(b.x, b.y); fxc.rotate(b.r); fxc.globalAlpha = Math.min(1, b.life / 30);
       fxc.fillStyle = b.c; fxc.fillRect(-b.w / 2, -b.h / 2, b.w, b.h); fxc.restore();
     }
-    if (bits.length) requestAnimationFrame(fxStep); else { fxRun = false; fxc.clearRect(0, 0, innerWidth, innerHeight); }
+    if (bits.length) requestAnimationFrame(fxStep); else { fxRun = false; fxClear(); }
   }
 
   // Numbers that count up instead of jumping.
@@ -2429,6 +2432,7 @@ h1 {
       items: t.correct.map(it => [it.name, it.v]), shown: t.order.map(it => it.name), famVals: c.items.map(x => x[1]) };
   };
   window.__ordoSpec = (i, day) => runSpec(i, day == null ? dailyNo() : day);
+  window.__ordoConfetti = () => confetti(80, innerHeight * 0.3);
   window.__ordoFmt = ts => CATS.filter(c => ts.includes(c.t)).map(c => [c.q, c.level, c.items.slice(0, 4).map(([n, v]) => n.replace('\n', ' / ') + ': ' + c.fmt(v))]);
   window.__ordoDaily = no => buildDaily(no).map(r => ({ q: CATS[r.ci].q, t: CATS[r.ci].t, g: CATS[r.ci].group, items: r.correct.map(it => it.name) }));
   // ---------- Today's run: the same sequence for everyone ----------
