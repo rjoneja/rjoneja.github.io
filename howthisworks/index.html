@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Ordo works</title>
+<meta name="description" content="A plain-English tour of what happens behind the scenes when you play Ordo.">
+<meta property="og:title" content="How Ordo works">
+<meta property="og:description" content="A plain-English tour of what happens behind the scenes when you play Ordo.">
+<meta property="og:image" content="https://ordogame.com/og.png">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" type="image/png" sizes="64x64">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script>(function () { try { var t = localStorage.getItem('ordo.theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {} })();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap">
+<style>
+:root {
+  --bg: #EDF0FF; --surface: #FFFFFF; --surface-2: #DCE2FF; --fg: #1A1033; --muted: #5D5880; --line: #C3C8F0;
+  --edge: #1A1033; --accent: #B414B4; --accent-ink: #FFFFFF; --shadow: 3px 4px 0 #1A1033;
+  --c0: #F2353B; --c1: #FF8A1F; --c2: #FFC82E; --c3: #3ED62C; --c4: #5AA0FF; --c5: #9B6BFF; --c6: #D52BD5; --ink: #1A1033;
+  --display: "Fredoka", "Arial Rounded MT Bold", ui-rounded, system-ui, sans-serif;
+  --body: "Nunito", ui-rounded, "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17122E; --surface: #2A2152; --surface-2: #211A42; --fg: #F3F0FF; --muted: #A9A2D6; --line: #3B3170;
+    --edge: #07051A; --accent: #FF6BEA; --accent-ink: #1A1033; --shadow: 3px 4px 0 #07051A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17122E; --surface: #2A2152; --surface-2: #211A42; --fg: #F3F0FF; --muted: #A9A2D6; --line: #3B3170;
+  --edge: #07051A; --accent: #FF6BEA; --accent-ink: #1A1033; --shadow: 3px 4px 0 #07051A; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 600 17px/1.55 var(--body); padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+.wrap { max-width: 720px; margin: 0 auto; padding: 18px 16px 64px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 26px; }
+.brand { display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; font: 600 26px/1 var(--display); }
+.brand svg { width: 34px; height: 34px; }
+.play { font: 800 15px/1 var(--body); color: var(--accent-ink); background: var(--accent); border: 2px solid var(--edge); border-radius: 999px; padding: 10px 16px; text-decoration: none; box-shadow: var(--shadow); white-space: nowrap; }
+h1 { font: 600 clamp(34px, 9vw, 52px)/1.05 var(--display); margin: 0 0 12px; letter-spacing: -0.01em; }
+.lede { font-size: 19px; color: var(--muted); margin: 0 0 8px; }
+h2 { font: 600 clamp(25px, 6.4vw, 32px)/1.15 var(--display); margin: 0 0 10px; }
+h3 { font: 800 17px/1.3 var(--body); margin: 18px 0 6px; }
+p { margin: 0 0 12px; }
+section { margin-top: 44px; }
+.num { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--edge); color: var(--ink); font: 600 17px/1 var(--display); margin-right: 8px; vertical-align: 3px; }
+.card { background: var(--surface); border: 2px solid var(--edge); border-radius: 18px; box-shadow: var(--shadow); padding: 16px; margin: 14px 0; }
+.note { background: var(--surface-2); border-radius: 14px; padding: 12px 14px; margin: 14px 0; }
+.note b { color: var(--fg); }
+figure { margin: 16px 0; }
+figure svg { display: block; width: 100%; height: auto; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+.steps { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 10px; counter-reset: s; }
+.steps li { display: grid; grid-template-columns: 38px 1fr; gap: 10px; align-items: start; background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; padding: 12px; box-shadow: var(--shadow); }
+.steps li::before { counter-increment: s; content: counter(s); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--edge); color: var(--ink); font: 600 17px/1 var(--display); background: var(--c, var(--c4)); }
+.steps li:nth-child(1) { --c: var(--c0); } .steps li:nth-child(2) { --c: var(--c1); } .steps li:nth-child(3) { --c: var(--c2); }
+.steps li:nth-child(4) { --c: var(--c3); } .steps li:nth-child(5) { --c: var(--c4); } .steps li:nth-child(6) { --c: var(--c5); }
+.steps b { display: block; }
+.steps span { color: var(--muted); font-size: 15px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0; }
+.cols .card { margin: 0; }
+.cols h3 { margin-top: 0; }
+ul.ticks { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+ul.ticks li { padding-left: 26px; position: relative; font-size: 15px; }
+ul.ticks li::before { content: "✓"; position: absolute; left: 2px; font-weight: 800; color: var(--accent); }
+ul.ticks.no li::before { content: "✕"; }
+.foot { margin-top: 56px; padding-top: 18px; border-top: 2px dashed var(--line); color: var(--muted); font-size: 15px; }
+.foot a { color: var(--accent); font-weight: 800; }
+a { color: var(--accent); }
+/* Chart and diagram colours follow the theme. */
+.d-box { fill: var(--surface); stroke: var(--edge); stroke-width: 2.5; }
+.d-box2 { fill: var(--surface-2); stroke: var(--edge); stroke-width: 2.5; }
+.d-t { fill: var(--fg); font: 600 19px var(--display); }
+.d-s { fill: var(--muted); font: 700 13.5px var(--body); }
+.d-line { stroke: var(--fg); stroke-width: 2.5; fill: none; }
+.d-dash { stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 5; fill: none; }
+.d-head { fill: var(--fg); }
+.d-axis { stroke: var(--line); stroke-width: 1.5; }
+.d-grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.d-lab { fill: var(--muted); font: 700 12px var(--body); }
+.d-val { fill: var(--fg); font: 800 12px var(--body); }
+.k3 { fill: var(--c4); } .k4 { fill: var(--c5); } .k5 { fill: var(--c6); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--muted); margin-top: 6px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1.5px solid var(--edge); }
+.bar { display: grid; grid-template-columns: 9.5em 1fr 3em; gap: 10px; align-items: center; font-size: 15px; margin: 6px 0; }
+.bar .t { height: 16px; background: var(--surface-2); border-radius: 8px; overflow: hidden; }
+.bar .t b { display: block; height: 100%; border-radius: 8px; background: var(--c, var(--accent)); }
+.bar .n { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+.mix { display: flex; height: 34px; border-radius: 10px; overflow: hidden; border: 2px solid var(--edge); margin: 10px 0 6px; }
+.mix div { display: grid; place-items: center; font: 800 13px var(--body); color: var(--ink); }
+@media (max-width: 420px) { body { font-size: 16px; } .bar { grid-template-columns: 7.5em 1fr 2.6em; font-size: 14px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/" aria-label="Ordo home">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><polygon points="60,6 86,28 34,28" fill="#F2353B"/><rect x="20" y="38" width="80" height="13" rx="6.5" fill="#FF8A1F"/><rect x="28" y="55" width="64" height="13" rx="6.5" fill="#FFC82E"/><rect x="36" y="72" width="48" height="13" rx="6.5" fill="#3ED62C"/><polygon points="34,92 86,92 60,114" fill="#3FB6E0"/></svg>
+      ordo
+    </a>
+    <a class="play" href="/">Play today's Ordo</a>
+  </header>
+
+  <h1>How Ordo works</h1>
+  <p class="lede">A plain-English tour of what happens behind the scenes when you play. No technical knowledge needed.</p>
+
+  <!-- 1 -->
+  <section>
+    <h2>Three pieces</h2>
+    <p>Ordo is made of just three things: the <b>game</b> itself, your <b>phone</b>, and a small <b>scorekeeper</b> that runs the leaderboard.</p>
+    <figure>
+      <svg viewBox="0 0 360 470" role="img" aria-labelledby="f1t">
+        <title id="f1t">The game file comes from GitHub to your phone once. Your phone sends your score to the scorekeeper and gets your rank back.</title>
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" class="d-head"/></marker></defs>
+        <rect x="40" y="8" width="280" height="86" rx="16" class="d-box"/>
+        <text x="180" y="42" text-anchor="middle" class="d-t">📦 The game</text>
+        <text x="180" y="66" text-anchor="middle" class="d-s">One file, kept on GitHub Pages</text>
+        <text x="180" y="83" text-anchor="middle" class="d-s">(a free website host)</text>
+        <path d="M180 98 V160" class="d-line" marker-end="url(#ah)"/>
+        <text x="194" y="126" class="d-s">sent to your phone,</text>
+        <text x="194" y="143" class="d-s">which keeps a copy</text>
+        <rect x="110" y="168" width="140" height="126" rx="22" class="d-box2"/>
+        <rect x="160" y="178" width="40" height="6" rx="3" class="d-head" opacity=".35"/>
+        <text x="180" y="232" text-anchor="middle" class="d-t">📱 Your phone</text>
+        <text x="180" y="256" text-anchor="middle" class="d-s">does all the</text>
+        <text x="180" y="273" text-anchor="middle" class="d-s">actual playing</text>
+        <path d="M160 300 V362" class="d-line" marker-end="url(#ah)"/>
+        <path d="M200 362 V300" class="d-line" marker-end="url(#ah)"/>
+        <text x="152" y="336" text-anchor="end" class="d-s">your score</text>
+        <text x="208" y="336" class="d-s">your rank</text>
+        <rect x="40" y="370" width="280" height="92" rx="16" class="d-box"/>
+        <text x="180" y="405" text-anchor="middle" class="d-t">📒 The scorekeeper</text>
+        <text x="180" y="429" text-anchor="middle" class="d-s">A tiny program on Cloudflare,</text>
+        <text x="180" y="447" text-anchor="middle" class="d-s">with a notebook of scores</text>
+      </svg>
+      <figcaption>The game travels to your phone, then only a few numbers go back and forth.</figcaption>
+    </figure>
+    <p>The whole game, including every question, is <b>one file of about 1 MB</b>, smaller than a typical phone photo. It's like a booklet handed to you at the door: once you have it, you don't need to go back for more. That's why Ordo is quick, and why a run carries on even if your signal drops halfway through.</p>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <h2>What happens when you play</h2>
+    <ol class="steps">
+      <li><div><b>Your phone fetches the game</b><span>Your browser then keeps a copy for a while, so opening Ordo again is near-instant. It picks up a newer version when there is one.</span></div></li>
+      <li><div><b>It works out today's puzzle number</b><span>Simply the number of days since Ordo began on 21 October 2026. Monday 26 October is puzzle 6.</span></div></li>
+      <li><div><b>It builds today's sets from that number</b><span>Every phone gets exactly the same sets, in the same order. More on how below.</span></div></li>
+      <li><div><b>You play, entirely on your phone</b><span>The clock, the dragging, the checking: nothing is sent anywhere while you play.</span></div></li>
+      <li><div><b>Your score goes to the scorekeeper</b><span>Just the number, plus a random code that stands in for "this phone". No name unless you add one.</span></div></li>
+      <li><div><b>It replies with your rank</b><span>"3rd today". Make the top 5 and you're asked for a name for the leaderboard.</span></div></li>
+    </ol>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <h2>The same puzzle for everyone, without sending it</h2>
+    <p>Nobody emails out today's questions. Instead, every phone already has all the questions, and follows the same recipe to pick from them.</p>
+    <div class="note">Think of a pack of cards and a written rule: <b>"shuffle exactly like this, using the number 6."</b> Anyone with the same pack and the same rule ends up with the same order. Tomorrow the number is 7, so the order is different, but still the same for everyone.</div>
+    <figure>
+      <svg viewBox="0 0 360 200" role="img" aria-labelledby="f2t">
+        <title id="f2t">Today's number goes into the same recipe on every phone, so every phone gets the same sets.</title>
+        <defs><marker id="ah2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10z" class="d-head"/></marker></defs>
+        <rect x="8" y="70" width="96" height="60" rx="14" class="d-box2"/>
+        <text x="56" y="98" text-anchor="middle" class="d-s">Puzzle</text>
+        <text x="56" y="120" text-anchor="middle" class="d-t">No. 6</text>
+        <path d="M108 100 H136" class="d-line" marker-end="url(#ah2)"/>
+        <rect x="142" y="70" width="86" height="60" rx="14" class="d-box"/>
+        <text x="185" y="98" text-anchor="middle" class="d-t">🔀</text>
+        <text x="185" y="120" text-anchor="middle" class="d-s">same recipe</text>
+        <path d="M232 92 L262 40" class="d-line" marker-end="url(#ah2)"/>
+        <path d="M232 100 H262" class="d-line" marker-end="url(#ah2)"/>
+        <path d="M232 108 L262 160" class="d-line" marker-end="url(#ah2)"/>
+        <g><rect x="268" y="14" width="84" height="48" rx="10" class="d-box"/><rect x="278" y="24" width="64" height="7" rx="3.5" class="k3"/><rect x="278" y="35" width="52" height="7" rx="3.5" class="k4"/><rect x="278" y="46" width="40" height="7" rx="3.5" class="k5"/></g>
+        <g><rect x="268" y="76" width="84" height="48" rx="10" class="d-box"/><rect x="278" y="86" width="64" height="7" rx="3.5" class="k3"/><rect x="278" y="97" width="52" height="7" rx="3.5" class="k4"/><rect x="278" y="108" width="40" height="7" rx="3.5" class="k5"/></g>
+        <g><rect x="268" y="138" width="84" height="48" rx="10" class="d-box"/><rect x="278" y="148" width="64" height="7" rx="3.5" class="k3"/><rect x="278" y="159" width="52" height="7" rx="3.5" class="k4"/><rect x="278" y="170" width="40" height="7" rx="3.5" class="k5"/></g>
+      </svg>
+      <figcaption>Three phones, one number, identical puzzles. Nothing needs to be sent out.</figcaption>
+    </figure>
+    <p>Practice runs use the same recipe with a random number, so each practice is different and never affects the daily puzzle.</p>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <h2>Where the questions come from</h2>
+    <p>Ordo carries a bank of about <b>165 kinds of question</b> ("Which is heaviest?", "Which country is biggest?"), built from <b>1,800 ready-made sets</b> and around <b>14,000 names</b>. The figures come from public reference data: country statistics, the periodic table, chart histories, record books, and everyday facts like how hot an oven gets.</p>
+    <p>Each kind of question gets a label for how fair it is to an ordinary player:</p>
+    <div class="mix" role="img" aria-label="A typical day: about 84 percent guessable questions, 16 percent widely known, no specialist questions">
+      <div style="flex:84;background:var(--c3)">Guessable · 84%</div>
+      <div style="flex:16;background:var(--c2)">16%</div>
+    </div>
+    <div class="legend"><span><i style="background:var(--c3)"></i>Guessable: anyone can reason it out (a horse is heavier than a cat)</span><span><i style="background:var(--c2)"></i>Widely known: famous films, inventions, landmarks; never in the first 5 sets</span><span><i style="background:var(--surface-2)"></i>Specialist: sports stats and the like; never in the daily run</span></div>
+    <p style="margin-top:14px">Difficulty comes mostly from <b>how close the answers are</b>, not from obscure facts. Early on, Ordo picks things far apart (a mouse, a horse, a whale). Later it picks things nearer each other (a horse, a cow, a giraffe), which takes more thought.</p>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <h2>How a run gets harder</h2>
+    <p>The clock starts generous and quickly settles at 7 seconds. After that, every 5 sets adds one more thing to sort. Much later the clock tightens again, so every run ends eventually.</p>
+    <figure>
+      <svg id="runChart" viewBox="0 0 360 214" style="max-width:560px" role="img" aria-labelledby="f3t">
+        <title id="f3t">Seconds allowed for sets 1 to 25: 10, 9, 8, 7, then 7 until set 15, 6 until set 20, then 5. Sets 1 to 5 have 3 items, 6 to 10 have 4, and from 11 there are 5.</title>
+      </svg>
+      <div class="legend"><span><i class="k3" style="background:var(--c4)"></i>3 items</span><span><i style="background:var(--c5)"></i>4 items</span><span><i style="background:var(--c6)"></i>5 items</span></div>
+      <figcaption>Bar height is the seconds you get for each set. Relaxed mode doubles every bar.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <h2>What's kept where</h2>
+    <div class="cols">
+      <div class="card"><h3>📱 On your phone only</h3>
+        <ul class="ticks"><li>Your streak and best scores</li><li>Your settings (light or dark, relaxed clock)</li><li>The name you chose for the leaderboard</li><li>A random code meaning "this phone"</li></ul></div>
+      <div class="card"><h3>📒 Sent to the scorekeeper</h3>
+        <ul class="ticks"><li>Your daily score, with that random code</li><li>Your leaderboard name, only if you add one</li><li>Anonymous counts: visits, shares, how long each set took, type of device, screen size, rough town</li></ul></div>
+      <div class="card"><h3>🚫 Never collected</h3>
+        <ul class="ticks no"><li>Your real name, email or phone number</li><li>Your exact location (no GPS)</li><li>Your contacts or photos</li><li>Cookies or adverts</li></ul></div>
+    </div>
+    <p>Because everything personal lives on your phone, clearing your browser's data resets your streak. That's the trade-off for not needing an account.</p>
+  </section>
+
+  <!-- 7 -->
+  <section>
+    <h2>If it suddenly gets popular</h2>
+    <p>Both outside services, GitHub and Cloudflare, keep copies of Ordo on computers in many cities around the world, so a player in Leeds and a player in Sydney are each served from somewhere nearby.</p>
+    <div class="note">The leaderboard uses a trick like a shop's "now serving" board. Instead of recounting every score for every visitor, the scorekeeper <b>refreshes the board every 20 seconds</b> and shows everyone that copy, always with your own score added. Ten people or ten thousand, the work stays roughly the same.</div>
+    <p>Running costs: the game hosting is free, and the scorekeeper is free up to about 100,000 requests a day. Beyond that it's about $5 a month. The only fixed cost is the yearly fee for the ordogame.com name.</p>
+  </section>
+
+  <!-- 8 -->
+  <section>
+    <h2>Ordo Kids' voice</h2>
+    <p>Emma, the voice in <a href="/kids/">Ordo Kids</a>, is an AI voice that runs on an ordinary computer rather than a paid online service. Every sentence the game can say, over 500 of them, was recorded once and joined into a <b>single sound file</b> of about 15 minutes.</p>
+    <p>When the game needs a line, it skips straight to the right moment in that file, like jumping to a track on a CD. Words the voice tended to get wrong (like "live" in "lives longest") are spelled out by sound, so Emma says them properly.</p>
+    <p>Ordo Kids keeps even less than the main game: no lasting code for the device and no town, in line with the UK's rules for apps used by children.</p>
+  </section>
+
+  <!-- 9 -->
+  <section>
+    <h2>Checking it works</h2>
+    <p>Before any change goes live, about <b>300 automatic checks</b> run. Robot "players" open the game on pretend phones of different sizes, play whole runs, drag, tap and swipe, switch to dark mode, lose their internet connection, and open two copies at once. Any failure stops the release.</p>
+    <div class="card">
+      <div class="bar"><span>Daily run</span><div class="t"><b style="width:91%;--c:var(--c0)"></b></div><span class="n">66</span></div>
+      <div class="bar"><span>Robustness</span><div class="t"><b style="width:100%;--c:var(--c1)"></b></div><span class="n">73</span></div>
+      <div class="bar"><span>Menus and links</span><div class="t"><b style="width:86%;--c:var(--c2)"></b></div><span class="n">63</span></div>
+      <div class="bar"><span>Ordo Kids</span><div class="t"><b style="width:70%;--c:var(--c3)"></b></div><span class="n">51</span></div>
+      <div class="bar"><span>Scores and counts</span><div class="t"><b style="width:37%;--c:var(--c4)"></b></div><span class="n">27</span></div>
+      <div class="bar"><span>New rules</span><div class="t"><b style="width:29%;--c:var(--c5)"></b></div><span class="n">21</span></div>
+    </div>
+    <p>The question check builds the next 120 days of puzzles in advance and looks for ties, duplicates, repeats and anything a player could argue with.</p>
+  </section>
+
+  <!-- 10 -->
+  <section>
+    <h2>Learning from play</h2>
+    <p>For every set played, the game counts (anonymously) whether it was solved and how long it took. Once there are a few thousand of these, a widely used statistics method called <b>XGBoost</b> looks for patterns. It combines lots of simple yes-or-no rules ("are the answers close?", "are there 5 items?", "is it about films?") into a good guess at how hard a set really is.</p>
+    <figure>
+      <svg viewBox="0 0 360 150" role="img" aria-labelledby="f4t">
+        <title id="f4t">Anonymous results go into the model, which ranks questions by real difficulty, which then shapes future puzzles.</title>
+        <defs><marker id="ah3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10z" class="d-head"/></marker></defs>
+        <rect x="6" y="40" width="100" height="70" rx="14" class="d-box2"/><text x="56" y="70" text-anchor="middle" class="d-t">✓ ✕ ⏱</text><text x="56" y="94" text-anchor="middle" class="d-s">set results</text>
+        <path d="M110 75 H134" class="d-line" marker-end="url(#ah3)"/>
+        <rect x="140" y="40" width="96" height="70" rx="14" class="d-box"/><text x="188" y="70" text-anchor="middle" class="d-t">🌳🌳🌳</text><text x="188" y="94" text-anchor="middle" class="d-s">the model</text>
+        <path d="M240 75 H264" class="d-line" marker-end="url(#ah3)"/>
+        <rect x="270" y="40" width="84" height="70" rx="14" class="d-box2"/><text x="312" y="70" text-anchor="middle" class="d-t">📈</text><text x="312" y="94" text-anchor="middle" class="d-s">fairer days</text>
+        <path d="M312 114 C312 146, 56 146, 56 114" class="d-dash" marker-end="url(#ah3)"/>
+      </svg>
+      <figcaption>The loop: play, measure, adjust. Questions that turn out to be coin-flips get dropped or moved later.</figcaption>
+    </figure>
+    <p>The aim is simple: every day should feel about as hard as the last, and climb smoothly instead of in jumps.</p>
+  </section>
+
+  <footer class="foot">
+    <p>Questions, ideas or a mistake you've spotted: <a href="mailto:hello@ordogame.com">hello@ordogame.com</a></p>
+    <p><a href="/">← Play today's Ordo</a></p>
+  </footer>
+</div>
+<script>
+// Draws the "how a run gets harder" chart from the same rules the game uses.
+(function () {
+  var svg = document.getElementById('runChart'), NS = 'http://www.w3.org/2000/svg';
+  function el(t, a, txt) { var e = document.createElementNS(NS, t); for (var k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; }
+  var L = 30, R = 356, T = 16, B = 176, N = 25, max = 10;
+  var w = (R - L) / N, y = function (v) { return B - (B - T) * v / max; };
+  [0, 5, 10].forEach(function (v) { el('line', { x1: L, x2: R, y1: y(v), y2: y(v), 'class': v ? 'd-grid' : 'd-axis' }); el('text', { x: L - 8, y: y(v) + 4, 'text-anchor': 'end', 'class': 'd-lab' }, v + 's'); });
+  for (var i = 0; i < N; i++) {
+    var n = Math.min(5, 3 + Math.floor(i / 5)), s = i < 4 ? [10, 9, 8, 7][i] : i < 15 ? 7 : i < 20 ? 6 : 5;
+    var x = L + i * w + 1.5, h = B - y(s);
+    el('rect', { x: x, y: y(s), width: w - 3, height: h, rx: 3, 'class': 'k' + n });
+    if (i < 4 || i === 15 || i === 20) el('text', { x: x + (w - 3) / 2, y: y(s) - 6, 'text-anchor': 'middle', 'class': 'd-val' }, s);
+    if (i === 0 || (i + 1) % 5 === 0) el('text', { x: x + (w - 3) / 2, y: B + 16, 'text-anchor': 'middle', 'class': 'd-lab' }, i + 1);
+  }
+  el('text', { x: (L + R) / 2, y: B + 34, 'text-anchor': 'middle', 'class': 'd-lab' }, 'Set number');
+})();
+</script>
+</body>
+</html>
