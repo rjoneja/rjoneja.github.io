@@ -378,6 +378,11 @@ h1 {
 .ios-hint .ios-step { font-size: 17px; line-height: 1.5; }
 .ios-share { width: 22px; height: 22px; vertical-align: -4px; color: var(--accent); }
 .ios-hint .ios-note { color: var(--muted); font-size: 14px; }
+.remind-btn { display: block; text-align: center; text-decoration: none; }
+.remind-done { margin: 0; font-size: 14px; color: var(--muted); }
+.r-pct { margin: -4px 0 0; font-weight: 800; font-size: 17px; color: var(--accent); }
+.trophy-note { margin: 0; font-size: 13px; color: #4A3F5E; }
+@media (max-height: 700px) { .trophy-note { grid-column: 1; font-size: 12px; line-height: 1.3; align-self: center; } .trophy-ask .trophy-skip { grid-column: 2; justify-self: end; } }
 /* Resuming: the next set stays covered during 3-2-1, so a pause never buys reading time. */
 #play.veiled #question, #play.veiled #stack .nm, #play.veiled #topLabel, #play.veiled #bottomLabel { visibility: hidden; }
 .toast {
@@ -790,6 +795,7 @@ h1 {
     <div class="eyebrow">Today's Ordo</div>
     <h1 id="rTitle">Today</h1>
     <div class="d-score r-score"><b id="rScore">0</b><span>in a row</span></div>
+    <p class="r-pct" id="rPct" hidden></p>
     <form class="trophy" id="rNamer" hidden aria-labelledby="rNamerLabel">
       <div class="trophy-icon" aria-hidden="true">🏆</div>
       <h2 class="trophy-head" id="rNamerLabel">You're on the leaderboard!</h2>
@@ -797,6 +803,7 @@ h1 {
         <p class="trophy-sub">Put your name on it:</p>
         <input class="trophy-in" id="rNameIn" maxlength="16" autocomplete="nickname" autocapitalize="words" enterkeyhint="done" placeholder="Your name" required aria-label="Your name">
         <button class="btn trophy-btn" type="submit">Add name</button>
+        <p class="trophy-note">Use a nickname, not your real name. Everyone can see it.</p>
         <button class="trophy-skip" id="rNameSkip" type="button">Not now</button>
       </div>
       <p class="trophy-done" id="rNamerDone" hidden>On the board as <b id="rNamerName"></b>. <button class="trophy-skip" id="rNameChange" type="button">Change</button></p>
@@ -812,6 +819,8 @@ h1 {
       <button class="btn-alt install-btn" id="rInstallBtn" type="button">📲 Add Ordo to your home screen</button>
       <button class="install-no" id="rInstallNo" type="button" aria-label="Not now">Not now</button>
     </div>
+    <a class="btn-alt remind-btn" id="rRemind" href="/ordo-daily.ics" hidden>⏰ Remind me each morning</a>
+    <p class="remind-done" id="rRemindDone" hidden>⏰ Reminder added for 8am each day. You can change the time in your calendar.</p>
     <p class="d-rank" id="rRank" hidden></p>
     <button type="button" class="link-btn" id="rBoardLink">See the leaderboard →</button>
     <p class="d-next" id="rNext"></p>
@@ -2571,7 +2580,7 @@ h1 {
     track('run_end', live.relaxed ? 'relaxed-left' : 'left', live.idx);
   }
   function hideAll() {
-    ['picker', 'boards', 'about', 'dailyDone', 'start', 'runDone', 'pausedBox', 'iosHint'].forEach(id => { $(id).hidden = true; });
+    ['picker', 'boards', 'about', 'dailyDone', 'start', 'runDone', 'pausedBox', 'iosHint', 'rRemindDone'].forEach(id => { $(id).hidden = true; });
     play.hidden = true; play.classList.remove('veiled');
     el.app.classList.remove('sheet-open');
     el.eyebrow.hidden = true;
@@ -2593,7 +2602,8 @@ h1 {
     const held = pausedRun();
     $('stGo').textContent = held ? 'Resume my run' : 'Start';
     $('stRelax').hidden = !!held;
-    note.textContent = (held ? `⏸ Paused at ${held.idx} in a row${held.relaxed ? ' (relaxed)' : ''}. Pick it up any time before midnight. ` : '') + (n > 1 ? `🔥 You're on a ${n}-day streak.` : '');
+    const y = prog.run[no - 1], yLine = y && !y.left && y.score > 0 ? `Yesterday: ${y.score} in a row${pctLine(y.pct) ? ', ' + pctLine(y.pct).toLowerCase() : ''}. ` : '';
+    note.textContent = (held ? `⏸ Paused at ${held.idx} in a row${held.relaxed ? ' (relaxed)' : ''}. Pick it up any time before midnight. ` : yLine) + (n > 1 ? `🔥 You're on a ${n}-day streak.` : '');
     note.hidden = !note.textContent;
     api(`/api/cdboard?day=${no}`).then(b => {
       if (!b || !b.players || b.players < SHOW_COUNT || $('start').hidden) return;
@@ -2730,7 +2740,7 @@ h1 {
   const beatenBy = rec => rec.v === 2 ? `Beaten by the ${rec.n}-item sets (${rec.clock} seconds)` : `Beaten by the ${rec.clock}-second clock`;
   function runShare(no, rec) {
     return [`Ordo${rec.relaxed ? ' 🐢' : ''} · ${runDate(no, true)} · ${rec.score} in a row${fireFor(rec.score)}`, ...runGrid(rec),
-      beatenBy(rec) + (rec.relaxed ? ' (relaxed).' : '.'), BASE].join('\n');
+      beatenBy(rec) + (rec.relaxed ? ' (relaxed).' : '.'), ...(rec.pct >= 50 ? [pctLine(rec.pct) + ' 🏅'] : []), BASE].join('\n');
   }
   let runTimer = 0;
   // ---------- Add to home screen ----------
@@ -2760,6 +2770,26 @@ h1 {
   });
   $('iosHintOk').addEventListener('click', () => { $('iosHint').hidden = true; });
   $('rInstallNo').addEventListener('click', () => { try { localStorage.setItem('ordo.installNo', String(Date.now())); } catch {} track('install', 'not-now'); paintInstall(); });
+  // ---------- Daily reminder: a calendar event at 8am, so the phone does the reminding ----------
+  // iPhones and Macs open the .ics file and offer "Add to Calendar"; everyone else gets Google Calendar's add-event page.
+  const appleCal = /iPhone|iPad|iPod|Macintosh/.test(ua);
+  function paintRemind() {
+    let done = false; try { done = localStorage.getItem('ordo.remind') === '1'; } catch {}
+    $('rRemind').hidden = done || $('runDone').hidden;
+    if (!appleCal) {
+      const d = new Date(Date.now() + 864e5), ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+      $('rRemind').href = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent("Today's Ordo") +
+        '&details=' + encodeURIComponent('A new puzzle is ready: https://ordogame.com/?s=cal') + `&dates=${ymd}T080000/${ymd}T080500&recur=` + encodeURIComponent('RRULE:FREQ=DAILY');
+      $('rRemind').target = '_blank'; $('rRemind').rel = 'noopener';
+    }
+  }
+  $('rRemind').addEventListener('click', () => {
+    track('remind', appleCal ? 'ics' : 'google');
+    try { localStorage.setItem('ordo.remind', '1'); } catch {}
+    setTimeout(() => { $('rRemind').hidden = true; $('rRemindDone').hidden = false; }, 400);
+  });
+  // "Better than X% of runs" (sent back by the scoreboard once there are enough runs to compare with).
+  const pctLine = p => p != null && p >= 30 ? `Better than ${p}% of runs` : '';
   function showRunDone(no, fresh) {
     const rec = prog.run[no];
     hideAll();
@@ -2775,7 +2805,8 @@ h1 {
     $('rShareText').value = tagLink(text, 'cp'); $('rShareText').hidden = true;
     $('rWa').href = 'https://wa.me/?text=' + encodeURIComponent(tagLink(text, 'wa'));
     $('rRank').hidden = true; $('rNamer').hidden = true;
-    paintInstall();
+    paintInstall(); paintRemind(); $('rRemindDone').hidden = true;
+    $('rPct').textContent = pctLine(rec.pct); $('rPct').hidden = !$('rPct').textContent;
     sendRun(no, rec);
     const tick = () => {
       const now = new Date(), mid = new Date(now); mid.setHours(24, 0, 0, 0);
@@ -2789,6 +2820,14 @@ h1 {
   }
   async function sendRun(no, rec) {
     const res = await api('/api/cd', { day: no, pid: prog.pid, score: rec.score, relaxed: !!rec.relaxed });
+    if (res && res.pct != null && rec.score > 0) {
+      rec.pct = res.pct; saveProg();
+      if (!$('runDone').hidden) {
+        $('rPct').textContent = pctLine(rec.pct); $('rPct').hidden = !$('rPct').textContent;
+        const text = runShare(no, rec);
+        $('rShareText').value = tagLink(text, 'cp'); $('rWa').href = 'https://wa.me/?text=' + encodeURIComponent(tagLink(text, 'wa'));
+      }
+    }
     if (!res || $('runDone').hidden || !rec.score) return;
     const rk = $('rRank');
     const kind = rec.relaxed ? 'relaxed run' : 'run';
