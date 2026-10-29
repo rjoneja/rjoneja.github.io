@@ -366,6 +366,15 @@ h1 {
 .leave-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 /* Pause: stops after the current set. */
 .meter:has(.pause-btn:not([hidden])) { grid-template-columns: minmax(0, 1fr) auto auto; }
+.meter:has(#fpDone:not([hidden])) { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+/* Free play pace: Standard, Relaxed or No clock. Changes apply from the next set. */
+.pace { display: flex; gap: 6px; margin: 2px 0 4px; flex-wrap: wrap; }
+.pace button { font: inherit; font-size: 13px; font-weight: 800; color: var(--fg); background: var(--surface); border: 2px solid var(--edge, var(--line)); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.pace button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.brief-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 8px; }
+.brief-top .eyebrow { margin-bottom: 0; }
+/* Short phones: icons only, on the same line as a shorter label, so 5 items and the clock still fit. */
+@media (max-height: 700px) { .brief-top { flex-wrap: nowrap; } .pace { margin: 0; flex: none; } .pace .pl { display: none; } .pace button { padding: 0 7px; font-size: 13px; line-height: 20px; border-width: 1.5px; } }
 .pause-btn { font: inherit; font-size: 14px; font-weight: 800; color: var(--fg); background: var(--surface); border: 2px solid var(--edge, var(--line)); border-radius: 999px;
   padding: 6px 12px; cursor: pointer; white-space: nowrap; }
 .pause-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
@@ -824,7 +833,7 @@ h1 {
     <p class="d-rank" id="rRank" hidden></p>
     <button type="button" class="link-btn" id="rBoardLink">See the leaderboard →</button>
     <p class="d-next" id="rNext"></p>
-    <button class="btn-alt" id="rPractice" type="button">Practice run (doesn't count)</button>
+    <button class="btn-alt" id="rPractice" type="button">Free play: as many runs as you like</button>
   </section>
 
   <section class="picker" id="picker" hidden>
@@ -903,7 +912,12 @@ h1 {
   <div class="play" id="play" hidden>
     <div class="go321" id="go321" aria-live="assertive" hidden></div>
   <section class="brief">
+    <div class="brief-top">
     <div class="eyebrow" id="eyebrow" hidden>Challenge</div>
+    <div class="pace" id="pace" role="group" aria-label="Pace" hidden>
+      <button type="button" data-pace="std" aria-pressed="true" aria-label="Standard clock">⚡<span class="pl"> Standard</span></button><button type="button" data-pace="rx" aria-pressed="false" aria-label="Relaxed clock">🐢<span class="pl"> Relaxed</span></button><button type="button" data-pace="free" aria-pressed="false" aria-label="No clock">🌿<span class="pl"> No clock</span></button>
+    </div>
+    </div>
     <h1 id="question">Who was born first?</h1>
     <div class="challenge" id="challenge" hidden></div>
   </section>
@@ -922,6 +936,7 @@ h1 {
     <div class="track"><div class="fill" id="fill"></div></div>
     <span class="clock"><span class="pen" id="pen">+3s</span><b id="time">0.0s</b></span>
     <button class="pause-btn" id="pauseBtn" type="button" aria-pressed="false" hidden>Pause</button>
+    <button class="pause-btn" id="fpDone" type="button" hidden>Done</button>
   </section>
 
   <section class="panel" id="panel" hidden aria-live="polite">
@@ -1468,7 +1483,7 @@ h1 {
   function logSet(ok) {
     let t, id, pos;
     if (S.mode === 'run') { t = S.turns[S.idx]; id = (S.relaxed ? 'r' : 'd') + S.no; pos = S.idx; }
-    else if (S.mode === 'countdown' && S.plan && S.seed) { pos = Math.min(S.round, S.plan.length - 1); t = S.plan[pos]; id = (runFactor > 1 ? 'q' : 'p') + S.seed.toString(36); }
+    else if (S.mode === 'countdown' && S.plan && S.seed && S.pace !== 'free') { pos = Math.min(S.round, S.plan.length - 1); t = S.plan[pos]; id = (runFactor > 1 ? 'q' : 'p') + S.seed.toString(36); }
     if (!t) return;
     track(ok ? 'set' : 'miss', id + ':' + pos + ':' + setKey(t), Math.round((ok ? R.elapsed : R.ceiling) * 1000));
   }
@@ -1725,6 +1740,41 @@ h1 {
   // Practice: the same rules as today's run, with a random sequence.
   const CD_TIMES = [10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3];
   const cdLimit = r => runSpec(r).time;
+  // ---------- Free play (was "Practice"): as many runs as you like, at Standard, Relaxed or No clock pace ----------
+  const fpCeiling = () => S.pace === 'free' ? Infinity : cdLimit(S.round);
+  function fpEyebrow() {
+    el.eyebrow.hidden = false;
+    el.eyebrow.textContent = innerHeight < 700 ? `${R.n} items` + (S.cleared ? ` · ${S.cleared} done` : '')
+      : `Free play · ${R.n} items · ` + (isFinite(R.ceiling) ? `${R.ceiling} seconds` : 'no clock') + (S.cleared ? ` · ${S.cleared} done` : '');
+  }
+  function paintPace() {
+    const on = S.mode === 'countdown' && !play.hidden;
+    $('pace').hidden = !on;
+    [...$('pace').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pace === S.pace)));
+    $('fpDone').hidden = !(on && S.pace === 'free');
+  }
+  $('pace').addEventListener('click', e => {
+    const b = e.target.closest('[data-pace]');
+    if (!b || S.mode !== 'countdown' || b.dataset.pace === S.pace) return;
+    S.pace = b.dataset.pace; prog.fpPace = S.pace; saveProg();
+    track('practice', 'pace-' + S.pace);
+    if (R && !R.started && R.status !== 'solved') {
+      // Before the clock has started (count-in): change straight away.
+      runFactor = S.pace === 'rx' ? 2 : 1; S.paceUsed.add(S.pace); R.ceiling = fpCeiling(); fpEyebrow(); readout();
+    } else toast('From the next set');
+    paintPace();
+  });
+  // No clock: nothing ends the run, so Done does.
+  $('fpDone').addEventListener('click', () => {
+    if (S.mode !== 'countdown') return;
+    releasePointer();
+    if (R) R.status = 'failed';
+    $('pausedBox').hidden = true; S.paused = false; S.pauseNext = false;
+    track('practice_end', 'free', S.cleared);
+    S.freeDone = true;
+    if (R && R.order) { flip(() => { R.order = R.correct.slice(); applyOrder(); }); reveal(); }
+    setPanel('Nice sorting!', `${S.cleared} sorted`, false, 'Free play with no clock: no best score, just sorting. Switch to ⚡ or 🐢 to chase a best.', 'Play again');
+  });
   function newRound() {
     const cd = S.mode === 'countdown';
     // Practice uses the same rules as the daily run (guessable questions, getting closer), just a random sequence.
@@ -1732,12 +1782,13 @@ h1 {
       if (!S.plan) { S.seed = 1e6 + Math.floor(Math.random() * 1e8); S.plan = buildRun(S.seed, 150, Infinity); }
       const t = S.plan[Math.min(S.round, S.plan.length - 1)];
       S.lastCat = t.ci;
+      runFactor = S.pace === 'rx' ? 2 : 1;
+      (S.paceUsed = S.paceUsed || new Set()).add(S.pace || 'std');
       buildRound(t.ci, t.correct, t.order.slice(), null);
-      R.countdown = true; R.ceiling = cdLimit(S.round);
-      el.eyebrow.hidden = false;
-      el.eyebrow.textContent = `Practice · ${R.n} items · ${R.ceiling} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
+      R.countdown = true; R.ceiling = fpCeiling();
+      fpEyebrow();
       readout();
-      paintPause();
+      paintPause(); paintPace();
       if (S.resumeVeil) { S.resumeVeil = false; countIn(true); } else if (S.round === 0) countIn(); else startClock();
       return;
     }
@@ -1786,7 +1837,7 @@ h1 {
       // The clock starts as soon as the round appears, and moves cost nothing but time.
       R.countdown = true; R.ceiling = cdLimit(S.round);
       el.eyebrow.hidden = false;
-      el.eyebrow.textContent = `Practice · ${R.n} items · ${R.ceiling} seconds` + (S.cleared ? ` · ${S.cleared} done` : '');
+      fpEyebrow();
       readout();
       if (S.round === 0) countIn(); else startClock();
     }
@@ -1922,6 +1973,9 @@ h1 {
     const used = R.elapsed + penalty();
     const clock = el.time.parentElement;
     clock.classList.toggle('cd', !!R.countdown);
+    if (R.countdown && !isFinite(R.ceiling)) {
+      el.time.textContent = '🌿'; clock.classList.remove('low'); el.fill.style.width = '0%'; el.fill.classList.remove('warn'); return;
+    }
     if (R.countdown) {
       const left = Math.max(0, R.ceiling - used);
       el.time.textContent = left.toFixed(1) + 's';
@@ -2167,7 +2221,8 @@ h1 {
       if (rows.length > 3) rows.splice(3, rows.length - 3, `…and ${sq.length - 30} more`);
       const grid = (rows.length ? rows : ['']).map((r, i, a) => i === a.length - 1 ? r + '⏰' : r);
       const fire = S.cleared >= 20 ? ' 🔥🔥🔥' : S.cleared >= 12 ? ' 🔥🔥' : S.cleared >= 8 ? ' 🔥' : '';
-      return [`⏱ Ordo practice run: ${S.cleared} in a row${fire}`, ...grid, `Beaten by the ${R.n}-item sets (${R.ceiling} seconds).`, 'How far can you get?', `${BASE}#countdown`].join('\n');
+      if (S.freeDone) return [`🌿 Ordo free play: ${S.cleared} sets sorted, no clock.`, 'Have a go:', BASE].join('\n');
+      return [`⏱ Ordo free play: ${S.cleared} in a row${fire}`, ...grid, `Beaten by the ${R.n}-item sets (${R.ceiling} seconds).`, 'How far can you get?', BASE].join('\n');
     }
     const solved = R.status === 'solved';
     const eff = effOf();
@@ -2581,7 +2636,7 @@ h1 {
   }
   function hideAll() {
     ['picker', 'boards', 'about', 'dailyDone', 'start', 'runDone', 'pausedBox', 'iosHint', 'rRemindDone'].forEach(id => { $(id).hidden = true; });
-    play.hidden = true; play.classList.remove('veiled');
+    play.hidden = true; play.classList.remove('veiled'); $('pace').hidden = true; $('fpDone').hidden = true;
     el.app.classList.remove('sheet-open');
     el.eyebrow.hidden = true;
   }
@@ -3002,13 +3057,17 @@ h1 {
       return setPanel("Time's up", `${S.cleared} in a row`, false, close, 'See your result');
     }
     if (S.mode === 'countdown') {
-      const best = prog.cdBest || 0, got = S.cleared;
-      track('practice_end', '', got);
-      if (got > best) { prog.cdBest = got; saveProg(); }
+      // A run's best counts at its gentlest pace: any set with no clock means no best; any relaxed set makes it a relaxed best.
+      const used = S.paceUsed || new Set(['std']), got = S.cleared;
+      const key = used.has('free') ? null : used.has('rx') ? 'cdBestRx' : 'cdBest', kind = key === 'cdBestRx' ? 'relaxed ' : '';
+      track('practice_end', key === 'cdBestRx' ? 'relaxed' : key ? '' : 'mixed', got);
+      if (!key) return setPanel("Time's up", `${got} in a row`, false, `The ${R.n}-item sets got you. Part of this run had no clock, so there's no best for it.`, 'Play again');
+      const best = prog[key] || 0;
+      if (got > best) { prog[key] = got; saveProg(); }
       const title = got > best && best > 0 ? 'New best!' : "Time's up";
       if (got > best && best > 0) confetti(80, innerHeight * 0.25);
       return setPanel(title, `${got} in a row`, false,
-        `The ${R.n}-item sets got you. ` + (got > best ? (best ? `Your old best was ${best}.` : 'That’s your first best.') : `Your best is ${best}.`), 'Play again');
+        `The ${R.n}-item sets got you. ` + (got > best ? (best ? `Your old ${kind}best was ${best}.` : `That’s your first ${kind}best.`) : `Your ${kind}best is ${best}.`), 'Play again');
     }
     if (S.mode === 'daily') {
       S.played++;
@@ -3070,7 +3129,7 @@ h1 {
     }).join('') + `<a class="cat cat-kids" href="https://ordogame.com/kids/" target="_blank" rel="noopener">` +
       `<span class="cat-name">Ordo<span class="kids-tag">kids</span></span><span class="cat-sub">For ages 4 to 9: pictures, counting, sums and read aloud</span></a>`;
     const no = dailyNo(), rec = prog.daily && prog.daily[no];
-    $('cdSub').textContent = prog.cdBest ? `Beat the clock. Your best: ${prog.cdBest} in a row.` : 'Beat the clock. Every 5 sets adds an item.';
+    $('cdSub').textContent = prog.cdBest ? `Free play. Your best: ${prog.cdBest} in a row.` : 'Free play: as many runs as you like.';
     $('dcTitle').textContent = `#${no}`;
     const run = prog.dailyRun && prog.dailyRun.no === no ? prog.dailyRun : null;
     $('dcStatus').textContent = rec ? `Done · ${rec.score}/${rec.res.length * 100} · tap to see your result`
@@ -3150,11 +3209,12 @@ h1 {
     $('cdNameIn').blur();
   });
   function startCountdown() {
-    S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'countdown' };
+    const pace = ['std', 'rx', 'free'].includes(prog.fpPace) ? prog.fpPace : relaxedOn() ? 'rx' : 'std';
+    S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'countdown', pace, paceUsed: new Set() };
     shownScore = 0;
     if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
-    track('practice', relaxedOn() ? 'relaxed' : '');
-    runFactor = relaxedOn() ? 2 : 1;
+    track('practice', pace === 'rx' ? 'relaxed' : pace === 'free' ? 'free' : '');
+    runFactor = pace === 'rx' ? 2 : 1;
     hideAll();
     play.hidden = false;
     el.lives.parentElement.classList.add('quiet');
