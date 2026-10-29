@@ -371,6 +371,13 @@ h1 {
 .pause-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .pause-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .paused-box .paused-hint { color: var(--muted); font-size: 14px; }
+/* Add to home screen: one button on the results screen. */
+.install { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.install-btn { width: 100%; }
+.install-no { background: none; border: 0; font: inherit; font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 6px 4px; }
+.ios-hint .ios-step { font-size: 17px; line-height: 1.5; }
+.ios-share { width: 22px; height: 22px; vertical-align: -4px; color: var(--accent); }
+.ios-hint .ios-note { color: var(--muted); font-size: 14px; }
 /* Resuming: the next set stays covered during 3-2-1, so a pause never buys reading time. */
 #play.veiled #question, #play.veiled #stack .nm, #play.veiled #topLabel, #play.veiled #bottomLabel { visibility: hidden; }
 .toast {
@@ -801,6 +808,10 @@ h1 {
       <button class="btn-alt" id="rCopy" type="button">Copy</button>
     </div>
     <textarea class="sharebox" id="rShareText" rows="5" readonly hidden aria-label="Result message"></textarea>
+    <div class="install" id="rInstall" hidden>
+      <button class="btn-alt install-btn" id="rInstallBtn" type="button">📲 Add Ordo to your home screen</button>
+      <button class="install-no" id="rInstallNo" type="button" aria-label="Not now">Not now</button>
+    </div>
     <p class="d-rank" id="rRank" hidden></p>
     <button type="button" class="link-btn" id="rBoardLink">See the leaderboard →</button>
     <p class="d-next" id="rNext"></p>
@@ -936,6 +947,12 @@ h1 {
     <p id="pausedT"><b>Paused</b> · <span id="pausedN"></span></p>
     <p class="paused-hint" id="pausedHint">You can close Ordo and come back any time before midnight.</p>
     <div class="leave-row"><button class="btn" id="pausedGo" type="button">Resume</button><button class="btn-alt" id="pausedLater" type="button">Later</button></div>
+  </div>
+  <div class="leave-ask ios-hint" id="iosHint" role="dialog" aria-labelledby="iosHintT" hidden>
+    <p id="iosHintT"><b>Add Ordo to your home screen</b></p>
+    <p class="ios-step">Tap <svg class="ios-share" viewBox="0 0 24 24" aria-label="Share"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 10H6.5A1.5 1.5 0 0 0 5 11.5v8A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 17.5 10H16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Share, then <b>Add to Home Screen</b>.</p>
+    <p class="ios-note">On newer iPhones, Share is under the ··· button.</p>
+    <button class="btn" id="iosHintOk" type="button">Got it</button>
   </div>
   <canvas class="fx" id="fx" aria-hidden="true"></canvas>
 </main>
@@ -2554,7 +2571,7 @@ h1 {
     track('run_end', live.relaxed ? 'relaxed-left' : 'left', live.idx);
   }
   function hideAll() {
-    ['picker', 'boards', 'about', 'dailyDone', 'start', 'runDone', 'pausedBox'].forEach(id => { $(id).hidden = true; });
+    ['picker', 'boards', 'about', 'dailyDone', 'start', 'runDone', 'pausedBox', 'iosHint'].forEach(id => { $(id).hidden = true; });
     play.hidden = true; play.classList.remove('veiled');
     el.app.classList.remove('sheet-open');
     el.eyebrow.hidden = true;
@@ -2592,7 +2609,8 @@ h1 {
     const no = dailyNo();
     if (prog.run[no]) return showRunDone(no, false);
     const held = pausedRun();
-    if (held) return resumeRun(held);
+    if (held) { track('run_start', 'resume'); return resumeRun(held); }
+    track('run_start', relaxedOn() ? 'relaxed' : '');
     hideAll();
     runFactor = relaxedOn() ? 2 : 1;
     S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'run',
@@ -2715,6 +2733,33 @@ h1 {
       beatenBy(rec) + (rec.relaxed ? ' (relaxed).' : '.'), BASE].join('\n');
   }
   let runTimer = 0;
+  // ---------- Add to home screen ----------
+  // Android and Chrome on computers: the browser's own install box, from one tap. iPhone: Apple doesn't allow that,
+  // so the same button shows where Share → Add to Home Screen is. Hidden once installed, and for a few days after "Not now".
+  let installEvt = null;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; paintInstall(); });
+  addEventListener('appinstalled', () => { track('install', 'installed'); installEvt = null; paintInstall(); });
+  const standalone = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch { return false; } };
+  const ua = navigator.userAgent || '';
+  const iosSafari = /iPhone|iPad|iPod/.test(ua) && /Safari/.test(ua) && !/FBAN|FBAV|Instagram|Snapchat|TikTok|musical_ly|GSA\//.test(ua);
+  const installKind = () => standalone() ? null : installEvt ? 'android' : iosSafari ? 'ios' : null;
+  let installShown = false;
+  function paintInstall() {
+    const kind = installKind(), box = $('rInstall');
+    let snoozed = false; try { snoozed = Date.now() - (+localStorage.getItem('ordo.installNo') || 0) < 3 * 864e5; } catch {}
+    box.hidden = !kind || snoozed || $('runDone').hidden;
+    if (!box.hidden && !installShown) { installShown = true; track('install', 'shown-' + kind); }
+  }
+  $('rInstallBtn').addEventListener('click', async () => {
+    const kind = installKind(); if (!kind) return;
+    track('install', 'tap-' + kind);
+    if (kind === 'ios') { $('iosHint').hidden = false; $('iosHintOk').focus(); return; }
+    const e = installEvt; installEvt = null;
+    try { e.prompt(); const r = await e.userChoice; track('install', r && r.outcome === 'accepted' ? 'accepted' : 'declined'); } catch {}
+    paintInstall();
+  });
+  $('iosHintOk').addEventListener('click', () => { $('iosHint').hidden = true; });
+  $('rInstallNo').addEventListener('click', () => { try { localStorage.setItem('ordo.installNo', String(Date.now())); } catch {} track('install', 'not-now'); paintInstall(); });
   function showRunDone(no, fresh) {
     const rec = prog.run[no];
     hideAll();
@@ -2730,6 +2775,7 @@ h1 {
     $('rShareText').value = tagLink(text, 'cp'); $('rShareText').hidden = true;
     $('rWa').href = 'https://wa.me/?text=' + encodeURIComponent(tagLink(text, 'wa'));
     $('rRank').hidden = true; $('rNamer').hidden = true;
+    paintInstall();
     sendRun(no, rec);
     const tick = () => {
       const now = new Date(), mid = new Date(now); mid.setHours(24, 0, 0, 0);
@@ -3115,6 +3161,8 @@ h1 {
 
   function boot() {
     splash();
+    try { if (standalone() && !sessionStorage.getItem('ordo.app')) { sessionStorage.setItem('ordo.app', '1'); track('install', 'opened'); } } catch {}
+    try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(() => {}); } catch {}
     // Old links (#daily, #countdown, challenge links like #qr-…, category links like #football) all land on today's game now.
     if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
     hud();
