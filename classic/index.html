@@ -30,8 +30,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Atkinson+Hyperlegible:wght@400;700&family=Martian+Mono:wght@400;600&family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap">
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<script>window.ORDO_PAGE=/^#football/.test(location.hash)?"football":"classic";   // arrivals via ordogame.com/football count separately
+<style>
+.fb-badge { display: none; } html.football .fb-badge { display: inline-block; margin-left: 6px; font-size: .9em; line-height: 1; }
+html.football .mark .fb-badge { font-size: 22px; vertical-align: 1px; }
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script>window.ORDO_PAGE=/^#football/.test(location.hash)?"football":"classic"; if (window.ORDO_PAGE==="football") document.documentElement.classList.add("football");   // arrivals via ordogame.com/football count separately
 
 // Anonymous usage counts for the Ordo dashboard. Runs on ordogame.com only.
 // A random visitor ID (this browser) and session ID (this tab) - no names, no cookies, no IP addresses kept.
@@ -603,7 +606,7 @@ h1 {
       <rect class="lg-b" x="36" y="72" width="48" height="13" rx="6.5"/>
       <polygon class="lg-dn" points="34,92 86,92 60,114"/>
     </svg>
-  <span class="wordmark">ordo</span>
+  <span class="wordmark">ordo</span><span class="fb-badge" aria-hidden="true">⚽</span>
 </div>
 
 <main class="app">
@@ -614,7 +617,7 @@ h1 {
       <rect class="lg-b" x="28" y="55" width="64" height="13" rx="6.5"/>
       <rect class="lg-b" x="36" y="72" width="48" height="13" rx="6.5"/>
       <polygon class="lg-dn" points="34,92 86,92 60,114"/>
-    </svg><span class="wordmark" aria-hidden="true">ordo</span></button>
+    </svg><span class="wordmark" aria-hidden="true">ordo</span><span class="fb-badge" aria-hidden="true">⚽</span></button>
     <div class="hud">
       <div class="lives" id="lives" aria-label="Lives"><i></i><i></i><i></i></div>
       <span class="score-wrap" aria-label="Score"><b class="score" id="score">0</b><span class="score-max" id="scoreMax"></span></span>
