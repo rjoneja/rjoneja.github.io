@@ -1421,6 +1421,559 @@ h1 {
       items: [['Flushing a modern toilet', 6], ['A dishwasher load', 12], ['A 5-minute shower', 40], ['A full bath', 80], ['An hour with a garden hose', 1000]] }
   ];
   EVERYDAY.forEach((c, i) => CATS.push(Object.assign({ fam: 'e' + i, tier: 'guess' }, c)));
+  // The shared fact bank (factbank.js, added by the build): hundreds of subject × measure questions, from puzzle 11 (31 October 2026).
+  const FB_FROM = 11;
+  // ===================== Ordo fact bank =====================
+  // Shared by the main game and Ordo Kids. Each pool is a set of things with one or more measures; each measure asked of a pool
+  // is its own question type. Values are typical, rounded figures; gaps keep any two items shown together far enough apart that
+  // nobody can argue the order. Rule: never edit a pool's values once live; add a new pool (or a new measure) instead.
+  const FB_n = v => v.toLocaleString('en-GB', { maximumFractionDigits: v < 10 ? 1 : 0 });
+  const FB_FMT = {
+    kg: v => v < 0.001 ? FB_n(v * 1e6) + ' mg' : v < 1 ? FB_n(v * 1000) + ' g' : v < 1000 ? FB_n(v) + ' kg' : FB_n(v / 1000) + ' tonnes',
+    g: v => v < 1000 ? FB_n(v) + ' g' : FB_n(v / 1000) + ' kg',
+    yrs: v => v < 1 / 30 ? Math.round(v * 365 * 24) + ' hours' : v < 0.1 ? Math.round(v * 365) + ' days' : v < 1 ? Math.round(v * 52) + ' weeks' : FB_n(v) + (v === 1 ? ' year' : ' years'),
+    days: v => v < 1 ? Math.round(v * 24) + ' hours' : v < 60 ? FB_n(v) + (v === 1 ? ' day' : ' days') : v < 730 ? Math.round(v / 30.4) + ' months' : FB_n(Math.round(v / 365)) + ' years',
+    min: v => v < 1 ? (Math.round(v * 60) === 1 ? '1 second' : Math.round(v * 60) + ' seconds') : v === 1 ? '1 minute' : v < 120 ? FB_n(v) + ' minutes' : v < 2880 ? FB_n(+(v / 60).toFixed(1)) + ' hours' : FB_n(Math.round(v / 1440)) + ' days',
+    kmh: v => FB_n(v) + ' km/h',
+    m: v => v < 0.01 ? FB_n(v * 1000) + ' mm' : v < 1 ? FB_n(v * 100) + ' cm' : v < 1000 ? FB_n(v) + ' m' : FB_n(v / 1000) + ' km',
+    mm: v => v < 0.1 ? FB_n(Math.round(v * 1000)) + ' micrometres' : v < 10 ? FB_n(v) + ' mm' : v < 1000 ? FB_n(v / 10) + ' cm' : FB_n(v / 1000) + ' m',
+    cm: v => v < 100 ? FB_n(v) + ' cm' : FB_n(v / 100) + ' m',
+    n: v => FB_n(v),
+    people: v => FB_n(v) + (v === 1 ? ' person' : ' people'),
+    players: v => FB_n(v) + (v === 1 ? ' player' : ' players'),
+    gbp: v => v < 1 ? Math.round(v * 100) + 'p' : '£' + (v < 100 && v % 1 ? v.toFixed(2) : FB_n(v)),
+    kcal: v => FB_n(v) + ' kcal',
+    sugar: v => FB_n(v) + ' g of sugar',
+    bpm: v => FB_n(v) + ' beats a minute',
+    lux: v => FB_n(v) + ' lux',
+    mb: v => v < 1000 ? FB_n(v) + ' MB' : v < 1e6 ? FB_n(v / 1000) + ' GB' : FB_n(v / 1e6) + ' TB',
+    inch: v => FB_n(v) + ' inches',
+    mohs: v => FB_n(v) + ' on the hardness scale',
+    deg: v => v.toFixed(1) + '° north',
+    hours: v => v < 1 ? Math.round(v * 60) + ' minutes' : v < 100 ? FB_n(v) + ' hours' : FB_n(Math.round(v)) + ' hours',
+    perYear: v => v < 1 ? 'every ' + Math.round(1 / v) + ' years' : v === 1 ? 'once a year' : FB_n(Math.round(v)) + ' times a year',
+    mg: v => FB_n(v) + ' mg',
+    dist: v => v < 1000 ? FB_n(v) + ' m' : FB_n(v / 1000) + ' km',
+    ml: v => v < 1000 ? FB_n(v) + ' ml' : v === 1000 ? '1 litre' : FB_n(v / 1000) + ' litres',
+    span: v => v < 1 ? '1 second' : v === 1 ? '1 minute' : v < 1440 ? FB_n(v / 60) + (v === 60 ? ' hour' : ' hours') : v < 525600 ? FB_n(v / 1440) + (v === 1440 ? ' day' : ' days') : FB_n(Math.round(v / 525600)) + (v === 525600 ? ' year' : ' years'),
+    mh: v => FB_n(v) + ' m',
+    m2d: v => v.toFixed(2) + ' m',
+    c: v => (v < 0 ? '−' + FB_n(-v) : FB_n(v)) + ' °C',
+    paper: v => FB_n(v) + ' cm²',
+    pct: v => v + '% water',
+    km2: v => v >= 1e6 ? FB_n(+(v / 1e6).toFixed(1)) + ' million km²' : FB_n(v) + ' km²',
+    rain: v => FB_n(v) + ' mm a year',
+    ago: v => v >= 1e6 ? FB_n(v / 1e6) + ' million years ago' : FB_n(v) + ' years ago',
+    pop: v => v >= 1e9 ? FB_n(+(v / 1e9).toFixed(1)) + ' billion' : v >= 1e6 ? FB_n(+(v / 1e6).toFixed(1)) + ' million' : v >= 10000 ? FB_n(Math.round(v / 1000)) + ',000' : FB_n(v),
+    db: v => v + ' decibels',
+    cmday: v => v < 0.1 ? FB_n(+(v * 10).toFixed(2)) + ' mm a day' : FB_n(v) + ' cm a day',
+    many: v => v >= 1e12 ? FB_n(Math.round(v / 1e12)) + ' million million' : v >= 1e9 ? FB_n(+(v / 1e9).toFixed(1)) + ' billion' : v >= 1e6 ? FB_n(+(v / 1e6).toFixed(1)) + ' million' : FB_n(v),
+    m2: v => v < 1 ? FB_n(Math.round(v * 10000)) + ' cm²' : v < 1e5 ? FB_n(v) + ' m²' : FB_n(+(v / 1e6).toFixed(2)) + ' km²',
+    dens: v => FB_n(v) + ' times as heavy as water',
+    flap: v => FB_n(v) + ' beats a second',
+    year: v => v < 0 ? 'about ' + FB_n(-v) + ' BC' : v < 1000 ? 'AD ' + v : String(v),
+    dec: v => String(+v.toFixed(3)),
+    big: v => v >= 1e12 ? '1 followed by ' + Math.round(Math.log10(v)) + ' zeros' : FB_n(v),
+    doy: v => { const d = new Date(Date.UTC(2026, 0, v)); return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); }
+  };
+  // Measures: what is being compared. m groups measures for the no-repeat rule (two weight questions shouldn't sit close together).
+  const FB_M = {
+    kg: { m: 'weight', q: 'Which {n} is heaviest?', top: 'Heaviest', bottom: 'Lightest', fmt: 'kg', gap: .4, basis: 'Typical adult weight.' },
+    life: { m: 'lifespan', q: 'Which {n} usually lives longest?', top: 'Longest life', bottom: 'Shortest life', fmt: 'yrs', gap: .35, basis: 'Typical lifespan. Individuals vary a lot.' },
+    speed: { m: 'speed', q: 'Which {n} is fastest?', top: 'Fastest', bottom: 'Slowest', fmt: 'kmh', gap: .35, basis: 'Typical top speed.' },
+    len: { m: 'length', q: 'Which {n} is longest?', top: 'Longest', bottom: 'Shortest', fmt: 'm', gap: .35, basis: 'Typical length.' },
+    tall: { m: 'height', q: 'Which {n} is tallest?', top: 'Tallest', bottom: 'Shortest', fmt: 'm', gap: .35, basis: 'Typical height.' },
+    preg: { m: 'pregnancy', q: 'Which {n} carries its baby longest before birth?', top: 'Longest', bottom: 'Shortest', fmt: 'days', gap: .3, basis: 'Typical length of pregnancy.' },
+    sleep: { m: 'sleep', q: 'Which {n} sleeps the most?', top: 'Most sleep', bottom: 'Least sleep', fmt: 'hours', gap: .3, basis: 'Typical hours of sleep in a day.' },
+    wing: { m: 'length', q: 'Which {n} has the widest wings?', top: 'Widest wings', bottom: 'Narrowest', fmt: 'm', gap: .35, basis: 'Typical wingspan, tip to tip.' },
+    g: { m: 'weight', q: 'Which {n} is heaviest?', top: 'Heaviest', bottom: 'Lightest', fmt: 'g', gap: .4, basis: 'Typical weight of one.' },
+    grow: { m: 'duration', q: 'Which {n} takes longest to grow?', top: 'Longest', bottom: 'Quickest', fmt: 'days', gap: .35, basis: 'Typical time from planting to picking.' },
+    vitc: { m: 'nutrition', q: 'Which {n} has the most vitamin C?', top: 'Most vitamin C', bottom: 'Least', fmt: 'mg', gap: .35, basis: 'Vitamin C in 100 g, rounded.', tier: 'known' },
+    sugar: { m: 'nutrition', q: 'Which has the most sugar?', top: 'Most sugar', bottom: 'Least sugar', fmt: 'sugar', gap: .35, basis: 'Typical figures for a standard portion. Brands vary.' },
+    cook: { m: 'duration', q: 'Which takes longest to cook?', top: 'Longest', bottom: 'Quickest', fmt: 'min', gap: .35, basis: 'Typical cooking time.' },
+    price: { m: 'price', q: 'Which usually costs the most?', top: 'Costs most', bottom: 'Costs least', fmt: 'gbp', gap: .4, basis: 'Typical UK prices in 2026, rounded. Prices vary.' },
+    pass: { m: 'count', q: 'Which carries the most people?', top: 'Most people', bottom: 'Fewest', fmt: 'people', gap: .35, basis: 'Typical number of passengers.' },
+    team: { m: 'count', q: 'Which team has the most players on the field?', top: 'Most players', bottom: 'Fewest', fmt: 'players', gap: .25, basis: 'Players per side on the field at once.' },
+    match: { m: 'duration', q: 'Which sporting event lasts longest?', top: 'Longest', bottom: 'Shortest', fmt: 'min', gap: .3, basis: 'Usual length, without breaks or extra time.' },
+    race: { m: 'distance', q: 'Which race is longest?', top: 'Longest', bottom: 'Shortest', fmt: 'dist', gap: .35, basis: 'Race distance.' },
+    strings: { m: 'count', q: 'Which has the most strings?', top: 'Most strings', bottom: 'Fewest', fmt: 'n', gap: .25, basis: 'Usual number of strings.' },
+    thick: { m: 'length', q: 'Which is thickest?', top: 'Thickest', bottom: 'Thinnest', fmt: 'mm', gap: .4, basis: 'Typical thickness.' },
+    keeps: { m: 'duration', q: 'Which keeps longest before it goes off?', top: 'Keeps longest', bottom: 'Goes off soonest', fmt: 'days', gap: .4, basis: 'Typical shelf life, unopened. Check the label.' },
+    rot: { m: 'duration', q: 'Which takes longest to break down as litter?', top: 'Longest', bottom: 'Shortest', fmt: 'yrs', gap: .4, basis: 'Rough estimates, mostly from the US marine debris programme (NOAA). Conditions vary a lot.' },
+    data: { m: 'size', q: 'Which can store the most?', top: 'Holds most', bottom: 'Holds least', fmt: 'mb', gap: .5, basis: 'Typical storage space.' },
+    screen: { m: 'size', q: 'Which screen is biggest?', top: 'Biggest', bottom: 'Smallest', fmt: 'inch', gap: .35, basis: 'Typical screen size, measured corner to corner.' },
+    wind: { m: 'speed', q: 'Which wind is strongest?', top: 'Strongest', bottom: 'Gentlest', fmt: 'kmh', gap: .4, basis: 'Typical wind speeds.' },
+    lux: { m: 'brightness', q: 'Which is brightest?', top: 'Brightest', bottom: 'Dimmest', fmt: 'lux', gap: .6, basis: 'Typical light levels.' },
+    hard: { m: 'hardness', q: 'Which is hardest?', top: 'Hardest', bottom: 'Softest', fmt: 'mohs', gap: .3, basis: 'Mohs scale of hardness, 1 to 10.', tier: 'known' },
+    age: { m: 'lifespan', q: 'Which {n} can live longest?', top: 'Longest life', bottom: 'Shortest life', fmt: 'yrs', gap: .4, basis: 'How long the oldest ones live.' },
+    size: { m: 'size', q: 'Which {n} is biggest?', top: 'Biggest', bottom: 'Smallest', fmt: 'mm', gap: .35, basis: 'Typical size across.' },
+    bpm: { m: 'speed', q: 'Whose heart beats fastest?', top: 'Fastest heartbeat', bottom: 'Slowest', fmt: 'bpm', gap: .35, basis: 'Typical resting heart rate.' },
+    trip: { m: 'duration', q: 'Which journey takes longest?', top: 'Longest', bottom: 'Shortest', fmt: 'min', gap: .35, basis: 'Typical travel time.' },
+    unit: { m: 'units', q: 'Which is longest?', top: 'Longest', bottom: 'Shortest', fmt: null, gap: .3, basis: 'By definition.' },
+    often: { m: 'frequency', q: 'Which happens most often?', top: 'Most often', bottom: 'Least often', fmt: 'perYear', gap: .4, basis: 'Typical number of times a year.' },
+    north: { m: 'position', q: 'Which is furthest north?', top: 'Furthest north', bottom: 'Furthest south', fmt: 'deg', gapAbs: .8, basis: 'Latitude, rounded.' },
+    pop: { m: 'population', q: 'Which has the most people?', top: 'Most people', bottom: 'Fewest people', fmt: 'pop', gap: .35, basis: 'Approximate population of the city itself.', tier: 'known' },
+    dive: { m: 'depth', q: 'Which can dive deepest?', top: 'Deepest', bottom: 'Shallowest', fmt: 'm', gap: .3, basis: 'Typical deepest dives.' },
+    eggs: { m: 'count', q: 'Which has the most babies or eggs at once?', top: 'Most', bottom: 'Fewest', fmt: 'n', gap: .4, basis: 'Typical number of babies or eggs at one time.' },
+    watts: { m: 'power', q: 'Which keeps burning or shining longest?', top: 'Lasts longest', bottom: 'Shortest', fmt: 'hours', gap: .5, basis: 'Typical hours of light before it burns out.' },
+    loud: { m: 'loudness', q: 'Which sound is loudest?', top: 'Loudest', bottom: 'Quietest', fmt: 'db', gap: .2, basis: 'Typical sound level in decibels.' },
+    jump: { m: 'height', q: 'Which can jump highest?', top: 'Highest', bottom: 'Lowest', fmt: 'm', gap: .35, basis: 'Typical best jump straight up.' },
+    teeth: { m: 'count', q: 'Which has the most teeth?', top: 'Most teeth', bottom: 'Fewest', fmt: 'n', gap: .25, basis: 'Usual number of teeth in an adult.' },
+    brain: { m: 'weight', q: 'Whose brain is heaviest?', top: 'Heaviest brain', bottom: 'Lightest', fmt: 'kg', gap: .4, basis: 'Typical brain weight.' },
+    wheels: { m: 'count', q: 'Which has the most wheels?', top: 'Most wheels', bottom: 'Fewest', fmt: 'n', gap: .2, basis: 'Usual number of wheels.' },
+    cold: { m: 'temperature', q: 'Which is coldest?', top: 'Coldest', bottom: 'Warmest', asc: true, fmt: 'c', gapAbs: 12, basis: 'Typical temperatures.' },
+    paper: { m: 'size', q: 'Which piece of paper is biggest?', top: 'Biggest', bottom: 'Smallest', fmt: 'paper', gap: .4, basis: 'Standard paper sizes. Each one is half the one before.', tier: 'known' },
+    water: { m: 'nutrition', q: 'Which has the most water in it?', top: 'Most water', bottom: 'Least water', fmt: 'pct', gapAbs: 12, basis: 'Typical share of water by weight.' },
+    bone: { m: 'length', q: 'Which bone is longest?', top: 'Longest', bottom: 'Shortest', fmt: 'cm', gap: .3, basis: 'Typical length in an adult.', tier: 'known' },
+    body: { m: 'count', q: 'Which do you have the most of?', top: 'Most', bottom: 'Fewest', fmt: 'big', gap: .4, basis: 'Typical numbers for an adult.' },
+    pitch: { m: 'length', q: 'Which playing area is longest?', top: 'Longest', bottom: 'Shortest', fmt: 'm', gap: .35, basis: 'Standard length of the playing area.' },
+    high: { m: 'height', q: 'Which is highest off the ground?', top: 'Highest', bottom: 'Lowest', fmt: 'm2d', gap: .3, basis: 'Standard heights and records.' },
+    hot: { m: 'temperature', q: 'Which city is hottest in summer?', top: 'Hottest', bottom: 'Coolest', fmt: 'c', gapAbs: 5, basis: 'Average high in July.', tier: 'known' },
+    rain: { m: 'weather', q: 'Which place gets the most rain?', top: 'Most rain', bottom: 'Least rain', fmt: 'rain', gap: .35, basis: 'Average rainfall in a year.', tier: 'known' },
+    area: { m: 'area', q: 'Which is biggest?', top: 'Biggest', bottom: 'Smallest', fmt: 'km2', gap: .35, basis: 'Area.' },
+    seats: { m: 'count', q: 'Which holds the biggest crowd?', top: 'Biggest crowd', bottom: 'Smallest', fmt: 'people', gap: .3, basis: 'Capacity, rounded.', tier: 'known' },
+    ago: { m: 'time ago', q: 'Which first happened longest ago?', top: 'Longest ago', bottom: 'Most recent', fmt: 'ago', gap: .4, basis: 'Roughly how many years ago.' },
+    fast: { m: 'speed', q: 'Which travels fastest?', top: 'Fastest', bottom: 'Slowest', fmt: 'kmh', gap: .4, basis: 'Typical speeds.' },
+    scale: { m: 'size', q: 'Which is the biggest thing?', top: 'Biggest', bottom: 'Smallest', fmt: 'mm', gap: .5, basis: 'Typical size.' },
+    alt: { m: 'height', q: 'Which goes highest?', top: 'Highest', bottom: 'Lowest', fmt: 'm', gap: .4, basis: 'Typical height above the ground.' },
+    num: { m: 'maths', q: 'Which is biggest?', top: 'Biggest', bottom: 'Smallest', fmt: 'n', gap: .2, basis: 'Work it out!' },
+    kcal: { m: 'nutrition', q: 'Which drink has the most calories?', top: 'Most calories', bottom: 'Fewest', fmt: 'kcal', gap: .35, basis: 'Typical figures for a standard serving. Brands vary.' },
+    eggw: { m: 'weight', q: 'Which egg is heaviest?', top: 'Heaviest', bottom: 'Lightest', fmt: 'g', gap: .35, basis: 'Typical weight of one egg.' },
+    wingspan: { m: 'length', q: 'Which aircraft has the widest wings?', top: 'Widest', bottom: 'Narrowest', fmt: 'm', gap: .35, basis: 'Wingspan, tip to tip.', tier: 'known' },
+    ocean: { m: 'area', q: 'Which ocean is biggest?', top: 'Biggest', bottom: 'Smallest', fmt: 'km2', gap: .3, basis: 'Area.', tier: 'known' },
+    mtn: { m: 'height', q: 'Which mountain is highest?', top: 'Highest', bottom: 'Lowest', fmt: 'mh', gap: .2, basis: 'Height above sea level.', tier: 'known' },
+    lasts: { m: 'lifespan', q: 'Which usually lasts longest before it needs replacing?', top: 'Lasts longest', bottom: 'Shortest', fmt: 'yrs', gap: .4, basis: 'Typical lifespan in normal use.' },
+    rec: { m: 'distance', q: 'Which world record is the longest distance?', top: 'Longest', bottom: 'Shortest', fmt: 'm2d', gap: .3, basis: 'Men\'s world records, rounded.', tier: 'known' },
+    metro: { m: 'population', q: 'Which city has the most people?', top: 'Most people', bottom: 'Fewest', fmt: 'pop', gap: .35, basis: 'Whole metro area, rounded.', tier: 'known' },
+    speakers: { m: 'population', q: 'Which language has the most speakers?', top: 'Most speakers', bottom: 'Fewest', fmt: 'pop', gap: .35, basis: 'Everyone who speaks it, first or second language. Estimates.', tier: 'known' },
+    words: { m: 'count', q: 'Which book has the most words?', top: 'Most words', bottom: 'Fewest', fmt: 'n', gap: .35, basis: 'Approximate word count.', tier: 'known' },
+    squares: { m: 'count', q: 'Which board has the most squares or spaces?', top: 'Most', bottom: 'Fewest', fmt: 'n', gap: .25, basis: 'Squares or spaces on the board.' },
+    pieces: { m: 'count', q: 'Which comes with the most pieces?', top: 'Most', bottom: 'Fewest', fmt: 'n', gap: .25, basis: 'In a standard set.' },
+    growth: { m: 'speed', q: 'Which grows fastest?', top: 'Fastest', bottom: 'Slowest', fmt: 'cmday', gap: .4, basis: 'Typical growth in a day.' },
+    world: { m: 'population', q: 'Which are there most of in the world?', top: 'Most', bottom: 'Fewest', fmt: 'many', gap: .45, basis: 'Rough world estimates.' },
+    areaU: { m: 'units', q: 'Which is the biggest area?', top: 'Biggest', bottom: 'Smallest', fmt: 'm2', gap: .35, basis: 'By definition, or standard sizes.' },
+    dataU: { m: 'units', q: 'Which amount of data is biggest?', top: 'Biggest', bottom: 'Smallest', fmt: null, gap: .5, basis: 'Each is about a thousand times the one before.', tier: 'known' },
+    baby: { m: 'weight', q: 'Whose baby is heaviest when it\'s born?', top: 'Heaviest', bottom: 'Lightest', fmt: 'kg', gap: .4, basis: 'Typical weight of a newborn.' },
+    daily: { m: 'frequency', q: 'In a day, which do you do most?', top: 'Most', bottom: 'Fewest', fmt: 'n', gap: .4, basis: 'Typical numbers for an adult in a day.' },
+    film: { m: 'duration', q: 'Which film is longest?', top: 'Longest', bottom: 'Shortest', fmt: 'min', gap: .2, basis: 'Running time.', tier: 'known' },
+    kgHome: { m: 'weight', q: 'Which household thing is heaviest?', top: 'Heaviest', bottom: 'Lightest', fmt: 'kg', gap: .4, basis: 'Typical weight.' },
+    shot: { m: 'speed', q: 'Which ball goes fastest?', top: 'Fastest', bottom: 'Slowest', fmt: 'kmh', gap: .3, basis: 'Fastest hits or throws recorded, rounded.', tier: 'known' },
+    temp: { m: 'temperature', q: 'Which has the highest body temperature?', top: 'Warmest', bottom: 'Coolest', fmt: 'c', gapAbs: 1.5, basis: 'Typical body temperature.' },
+    dens: { m: 'weight', q: 'Which is heaviest for its size?', top: 'Heaviest', bottom: 'Lightest', fmt: 'dens', gap: .35, basis: 'Density: how many times heavier than the same amount of water.' },
+    organ: { m: 'weight', q: 'Which part of your body is heaviest?', top: 'Heaviest', bottom: 'Lightest', fmt: 'kg', gap: .4, basis: 'Typical weight in an adult.', tier: 'known' },
+    swim: { m: 'speed', q: 'Which swims fastest?', top: 'Fastest', bottom: 'Slowest', fmt: 'kmh', gap: .4, basis: 'Typical top swimming speed.' },
+    art: { m: 'size', q: 'Which artwork is biggest?', top: 'Biggest', bottom: 'Smallest', fmt: 'm', gap: .35, basis: 'Its longest side or height.' },
+    band: { m: 'count', q: 'Which group has the most people?', top: 'Most people', bottom: 'Fewest', fmt: 'people', gap: .2, basis: 'Usual number of performers.' },
+    sides: { m: 'count', q: 'Which shape has the most sides?', top: 'Most sides', bottom: 'Fewest', fmt: 'n', gap: .2, basis: 'Number of straight sides.' },
+    falls: { m: 'height', q: 'Which waterfall is highest?', top: 'Highest', bottom: 'Lowest', fmt: 'mh', gap: .3, basis: 'Total drop, rounded.', tier: 'known' },
+    lakeDeep: { m: 'depth', q: 'Which lake is deepest?', top: 'Deepest', bottom: 'Shallowest', fmt: 'mh', gap: .35, basis: 'Deepest point, rounded.', tier: 'known' },
+    desert: { m: 'area', q: 'Which desert is biggest?', top: 'Biggest', bottom: 'Smallest', fmt: 'km2', gap: .35, basis: 'Area, rounded.', tier: 'known' },
+    flap: { m: 'speed', q: 'Which flaps its wings fastest?', top: 'Fastest', bottom: 'Slowest', fmt: 'flap', gap: .35, basis: 'Typical wing beats in a second.' },
+    hatch: { m: 'duration', q: 'Whose egg takes longest to hatch?', top: 'Longest', bottom: 'Shortest', fmt: 'days', gap: .3, basis: 'Typical time from laying to hatching.' },
+    longthings: { m: 'length', q: 'Which of these is longest?', top: 'Longest', bottom: 'Shortest', fmt: 'm', gap: .35, basis: 'Total length, rounded.' },
+    built: { m: 'time ago', q: 'Which British landmark is oldest?', top: 'Oldest', bottom: 'Newest', asc: true, fmt: 'year', gapAbs: 40, basis: 'When it was built or finished.' },
+    landmark: { m: 'height', q: 'Which landmark is tallest?', top: 'Tallest', bottom: 'Shortest', fmt: 'mh', gap: .3, basis: 'Height, rounded.' },
+    when: { m: 'calendar', q: 'Which comes first in the year?', top: 'First', bottom: 'Last', asc: true, fmt: 'doy', gapAbs: 10, basis: 'Usual date.' }
+  };
+  // Pools: [name, emoji, { measure: value }]. ask: the measures to ask about (a string, or an object overriding the question).
+  // subj: the subject, for the no-repeat rule. kids: the Ordo Kids topic it can appear in (with the measures in kidsAsk).
+  const FB_POOLS = [
+    // ---------- Animals ----------
+    { id: 'farm', subj: 'farm animals', noun: 'farm animal', group: 'nature', kids: 'animals', kidsAsk: ['kg', 'life'], ask: ['kg', 'life', 'preg'], items: [
+      ['Cow', '🐄', { kg: 700, life: 20, preg: 283 }], ['Pig', '🐖', { kg: 200, life: 15, preg: 114 }], ['Sheep', '🐑', { kg: 70, life: 11, preg: 150 }],
+      ['Goat', '🐐', { kg: 60, life: 15, preg: 150 }], ['Chicken', '🐔', { kg: 2.5, life: 7 }], ['Duck', '🦆', { kg: 1.2, life: 9 }],
+      ['Horse', '🐎', { kg: 500, life: 28, preg: 340 }], ['Rabbit', '🐇', { kg: 2, life: 9, preg: 31 }], ['Turkey', '🦃', { kg: 10, life: 10 }],
+      ['Llama', '🦙', { kg: 150, life: 20, preg: 350 }], ['Honeybee', '🐝', { kg: 0.0001, life: 0.1 }], ['Sheepdog', '🐕', { kg: 20, life: 13, preg: 63 }]] },
+    { id: 'pets', subj: 'pets', noun: 'pet', group: 'nature', kids: 'animals', kidsAsk: ['life', 'kg'], ask: ['life', 'kg'], items: [
+      ['Dog', '🐕', { kg: 30, life: 12 }], ['Cat', '🐈', { kg: 4, life: 15 }], ['Rabbit', '🐇', { kg: 2, life: 9 }], ['Hamster', '🐹', { kg: 0.12, life: 2.5 }],
+      ['Goldfish', '🐠', { kg: 0.1, life: 10 }], ['Tortoise', '🐢', { life: 80 }], ['Parrot', '🦜', { kg: 0.4, life: 50 }], ['Pet mouse', '🐁', { kg: 0.02, life: 1.5 }],
+      ['Pony', '🐴', { kg: 250, life: 30 }], ['Corn snake', '🐍', { life: 18 }], ['Budgie', '🐦', { kg: 0.035, life: 7 }]] },
+    { id: 'sea', subj: 'sea creatures', noun: 'sea creature', group: 'nature', kids: 'animals', kidsAsk: ['len', 'kg'], ask: ['len', 'kg', 'life'], items: [
+      ['Blue whale', '🐋', { len: 30, kg: 150000, life: 90 }], ['Great white shark', '🦈', { len: 5, kg: 1100, life: 70 }], ['Dolphin', '🐬', { len: 3, kg: 200, life: 40 }],
+      ['Octopus', '🐙', { len: 1, kg: 10, life: 1.5 }], ['Crab', '🦀', { len: 0.2, kg: 1 }], ['Clownfish', '🐠', { len: 0.1, life: 8 }],
+      ['Sea turtle', '🐢', { len: 1.2, kg: 150, life: 80 }], ['Seal', '🦭', { len: 2.5, kg: 250, life: 30 }], ['Orca', '🐳', { len: 8, kg: 5000, life: 50 }],
+      ['Lobster', '🦞', { len: 0.4, kg: 1.5 }], ['Shrimp', '🦐', { len: 0.05, kg: 0.01, life: 2 }], ['Giant squid', '🦑', { len: 12, kg: 300 }], ['Jellyfish', '🪼', { len: 0.3 }]] },
+    { id: 'birds', subj: 'birds', noun: 'bird', group: 'nature', kids: 'animals', kidsAsk: ['kg', 'wing'], ask: ['kg', 'wing', { k: 'speed', q: 'Which bird can fly fastest?', basis: 'Top flying speed, including dives.' }, 'life'], items: [
+      ['Hummingbird', '🐦', { kg: 0.004, wing: 0.11, speed: 50, life: 5 }], ['Robin', '🐦', { kg: 0.018, wing: 0.22, speed: 30, life: 2 }], ['Pigeon', '🕊️', { kg: 0.35, wing: 0.67, speed: 80, life: 6 }],
+      ['Barn owl', '🦉', { kg: 0.5, wing: 0.9, life: 4 }], ['Golden eagle', '🦅', { kg: 5, wing: 2.1, speed: 240, life: 30 }], ['Swan', '🦢', { kg: 11, wing: 2.2, life: 20 }],
+      ['Emperor penguin', '🐧', { kg: 30, life: 20 }], ['Ostrich', '🐦', { kg: 110, wing: 2, life: 45 }], ['Flamingo', '🦩', { kg: 3, wing: 1.5, life: 40 }],
+      ['Albatross', '🐦', { kg: 9, wing: 3.4, life: 50 }], ['Macaw', '🦜', { kg: 1.2, wing: 1.1, life: 60 }], ['Peregrine falcon', '🦅', { kg: 1, wing: 1.1, speed: 320, life: 15 }],
+      ['Swift', '🐦', { kg: 0.04, wing: 0.42, speed: 110, life: 9 }]] },
+    { id: 'wild', subj: 'wild animals', noun: 'wild animal', group: 'nature', kids: 'animals', kidsAsk: ['kg', 'speed'], ask: ['kg', 'speed', 'life', 'sleep'], items: [
+      ['Elephant', '🐘', { kg: 6000, speed: 40, life: 65, sleep: 3 }], ['Giraffe', '🦒', { kg: 1200, speed: 55, life: 25, sleep: 2 }], ['Rhino', '🦏', { kg: 2300, speed: 50, life: 40 }],
+      ['Hippo', '🦛', { kg: 1500, speed: 30, life: 45 }], ['Lion', '🦁', { kg: 190, speed: 80, life: 13, sleep: 14 }], ['Cheetah', '🐆', { kg: 50, speed: 110, life: 12 }],
+      ['Zebra', '🦓', { kg: 350, speed: 65, life: 25 }], ['Crocodile', '🐊', { kg: 400, life: 70 }], ['Gorilla', '🦍', { kg: 160, speed: 40, life: 40, sleep: 12 }],
+      ['Brown bear', '🐻', { kg: 400, speed: 50, life: 25 }], ['Panda', '🐼', { kg: 100, life: 20, sleep: 10 }], ['Wolf', '🐺', { kg: 40, speed: 60, life: 7 }],
+      ['Kangaroo', '🦘', { kg: 70, speed: 70, life: 20 }], ['Koala', '🐨', { kg: 9, life: 15, sleep: 20 }], ['Hedgehog', '🦔', { kg: 0.8, speed: 6, life: 4 }],
+      ['Squirrel', '🐿️', { kg: 0.5, speed: 20, life: 6 }], ['Fox', '🦊', { kg: 6, speed: 50, life: 4 }], ['Sloth', '🦥', { kg: 5, speed: 0.2, life: 25, sleep: 15 }]] },
+    { id: 'bugs', subj: 'minibeasts', noun: 'minibeast', group: 'nature', kids: 'animals', kidsAsk: ['len'], ask: ['len', { k: 'life', q: 'Which minibeast usually lives longest as an adult?', basis: 'Typical adult lifespan.' }], items: [
+      ['Ant', '🐜', { len: 0.004, life: 1 }], ['Ladybird', '🐞', { len: 0.007, life: 1 }], ['Honeybee', '🐝', { len: 0.015, life: 0.1 }], ['Housefly', '🪰', { len: 0.007, life: 0.08 }],
+      ['Stag beetle', '🪲', { len: 0.07 }], ['Garden snail', '🐌', { len: 0.03, life: 3 }], ['Garden spider', '🕷️', { len: 0.015, life: 1 }], ['Earthworm', '🪱', { len: 0.25 }],
+      ['Scorpion', '🦂', { len: 0.07, life: 5 }], ['Mayfly', '🪰', { life: 0.003 }], ['Queen ant', '🐜', { life: 20 }], ['Tarantula', '🕷️', { len: 0.1, life: 25 }],
+      ['Stick insect', '🪵', { len: 0.15, life: 1 }]] },
+    { id: 'divers', subj: 'sea creatures', group: 'nature', ask: ['dive'], items: [
+      ['Scuba diver', '🤿', { dive: 40 }], ['Emperor penguin', '🐧', { dive: 550 }], ['Sperm whale', '🐋', { dive: 2200 }], ['Elephant seal', '🦭', { dive: 1500 }],
+      ['Dolphin', '🐬', { dive: 300 }], ['Puffin', '🐦', { dive: 60 }], ['Leatherback turtle', '🐢', { dive: 1200 }], ['Cuvier\'s beaked whale', '🐋', { dive: 3000 }]] },
+    { id: 'dinos', subj: 'dinosaurs', noun: 'dinosaur', group: 'nature', kids: 'animals', kidsAsk: ['len', 'kg'], ask: ['len', 'kg'], items: [
+      ['Tyrannosaurus rex', '🦖', { len: 12, kg: 8000 }], ['Velociraptor', '🦖', { len: 2, kg: 15 }], ['Stegosaurus', '🦕', { len: 9, kg: 5000 }],
+      ['Diplodocus', '🦕', { len: 26, kg: 15000 }], ['Triceratops', '🦕', { len: 9, kg: 8000 }], ['Argentinosaurus', '🦕', { len: 35, kg: 70000 }],
+      ['Compsognathus', '🦖', { len: 1, kg: 3 }], ['Ankylosaurus', '🦕', { len: 7, kg: 6000 }]] },
+    { id: 'hearts', subj: 'the body', group: 'nature', kids: 'animals', kidsAsk: ['bpm'], ask: ['bpm'], items: [
+      ['Elephant', '🐘', { bpm: 30 }], ['Grown-up', '🧍', { bpm: 70 }], ['Cat', '🐈', { bpm: 150 }], ['Rabbit', '🐇', { bpm: 200 }], ['Mouse', '🐁', { bpm: 600 }],
+      ['Hummingbird', '🐦', { bpm: 1200 }], ['Dog', '🐕', { bpm: 100 }], ['Horse', '🐎', { bpm: 40 }], ['Newborn baby', '👶', { bpm: 140 }]] },
+    { id: 'broods', subj: 'animals', group: 'nature', ask: ['eggs'], items: [
+      ['Elephant', '🐘', { eggs: 1 }], ['Cat', '🐈', { eggs: 4 }], ['Pig', '🐖', { eggs: 11 }], ['Frog', '🐸', { eggs: 2000 }], ['Sea turtle', '🐢', { eggs: 100 }],
+      ['Cod', '🐟', { eggs: 5000000 }], ['Chicken (a clutch)', '🐔', { eggs: 10 }], ['Ostrich (a clutch)', '🐦', { eggs: 15 }], ['Queen bee (in a day)', '🐝', { eggs: 1500 }]] },
+    // ---------- Food ----------
+    { id: 'fruit', subj: 'fruit', noun: 'fruit', group: 'everyday', kids: 'world', kidsAsk: ['g'], ask: ['g', 'vitc'], items: [
+      ['Watermelon', '🍉', { g: 7000 }], ['Pineapple', '🍍', { g: 1500, vitc: 48 }], ['Coconut', '🥥', { g: 1400, vitc: 3 }], ['Apple', '🍎', { g: 180, vitc: 5 }],
+      ['Banana', '🍌', { g: 120, vitc: 9 }], ['Orange', '🍊', { g: 150, vitc: 53 }], ['Grape', '🍇', { g: 5, vitc: 3 }], ['Strawberry', '🍓', { g: 12, vitc: 59 }],
+      ['Blueberry', '🫐', { g: 1.5, vitc: 10 }], ['Lemon', '🍋', { g: 100, vitc: 53 }], ['Kiwi', '🥝', { g: 75, vitc: 93 }], ['Cherry', '🍒', { g: 8, vitc: 7 }],
+      ['Mango', '🥭', { g: 300, vitc: 36 }], ['Red pepper', '🫑', { vitc: 128 }], ['Melon', '🍈', { g: 1200, vitc: 37 }]] },
+    { id: 'veg', subj: 'vegetables', noun: 'vegetable', group: 'everyday', kids: 'grow', kidsAsk: ['g', 'grow'], ask: ['g', 'grow'], items: [
+      ['Pumpkin', '🎃', { g: 4000, grow: 110 }], ['Potato', '🥔', { g: 200, grow: 100 }], ['Carrot', '🥕', { g: 70, grow: 75 }], ['Onion', '🧅', { g: 150, grow: 120 }],
+      ['Garlic bulb', '🧄', { g: 50, grow: 240 }], ['Lettuce', '🥬', { g: 400, grow: 50 }], ['Pea pod', '🫛', { g: 5, grow: 65 }], ['Cress', '🌱', { grow: 7 }],
+      ['Radish', '🌱', { g: 15, grow: 25 }], ['Sweetcorn cob', '🌽', { g: 250, grow: 90 }], ['Apple tree (first apples)', '🍎', { grow: 1460 }], ['Tomato', '🍅', { g: 120, grow: 80 }]] },
+    { id: 'sugar', subj: 'food and drink', group: 'everyday', ask: ['sugar'], items: [
+      ['A can of cola', '🥤', { sugar: 35 }], ['A glass of orange juice', '🧃', { sugar: 18 }], ['An apple', '🍎', { sugar: 19 }], ['A Mars bar', '🍫', { sugar: 30 }],
+      ['A slice of white bread', '🍞', { sugar: 1.5 }], ['A tablespoon of ketchup', '🍅', { sugar: 4 }], ['A doughnut', '🍩', { sugar: 15 }],
+      ['A bowl of cornflakes', '🥣', { sugar: 3 }], ['A banana', '🍌', { sugar: 14 }], ['A carrot', '🥕', { sugar: 3 }], ['A milkshake', '🥤', { sugar: 60 }]] },
+    { id: 'cook', subj: 'food and drink', group: 'everyday', ask: ['cook'], items: [
+      ['Toast', '🍞', { cook: 3 }], ['Pancake', '🥞', { cook: 2 }], ['Pasta', '🍝', { cook: 10 }], ['Jacket potato (in the oven)', '🥔', { cook: 60 }],
+      ['Roast chicken', '🍗', { cook: 90 }], ['Christmas turkey', '🦃', { cook: 240 }], ['A loaf of bread (baking)', '🍞', { cook: 35 }], ['Porridge', '🥣', { cook: 5 }],
+      ['Brown rice', '🍚', { cook: 25 }], ['Fried egg', '🍳', { cook: 3.5 }]] },
+    { id: 'prices', subj: 'money', group: 'everyday', ask: ['price'], items: [
+      ['A pint of milk', '🥛', { price: 0.95 }], ['A loaf of bread', '🍞', { price: 1.4 }], ['A cinema ticket', '🎬', { price: 11 }], ['A pair of trainers', '👟', { price: 70 }],
+      ['A smartphone', '📱', { price: 700 }], ['A family car', '🚗', { price: 25000 }], ['An average UK house', '🏠', { price: 290000 }], ['A takeaway pizza', '🍕', { price: 15 }],
+      ['A cup of coffee', '☕', { price: 3.5 }], ['A first class stamp', '✉️', { price: 1.7 }], ['A new bike', '🚲', { price: 400 }], ['A box of matches', '🔥', { price: 0.3 }]] },
+    { id: 'keeps', subj: 'food and drink', group: 'everyday', ask: ['keeps'], items: [
+      ['Fresh fish', '🐟', { keeps: 2 }], ['Milk', '🥛', { keeps: 7 }], ['Yoghurt', '🥣', { keeps: 14 }], ['Eggs', '🥚', { keeps: 28 }], ['Hard cheese', '🧀', { keeps: 60 }],
+      ['Frozen peas', '🫛', { keeps: 365 }], ['Tinned beans', '🥫', { keeps: 730 }], ['Honey', '🍯', { keeps: 3650 }], ['Fresh strawberries', '🍓', { keeps: 4 }], ['Dried pasta', '🍝', { keeps: 1100 }]] },
+    // ---------- Getting about ----------
+    { id: 'vehicles', subj: 'vehicles', noun: 'vehicle', group: 'everyday', kids: 'world', kidsAsk: ['speed', 'len'], ask: ['speed', 'pass', 'len', 'kg'], items: [
+      ['Bicycle', '🚲', { speed: 30, pass: 1, len: 1.8, kg: 12 }], ['Kick scooter', '🛴', { speed: 15, pass: 1, len: 0.9, kg: 4 }], ['Motorbike', '🏍️', { speed: 200, pass: 2, len: 2.2, kg: 200 }],
+      ['Car', '🚗', { speed: 180, pass: 5, len: 4.5, kg: 1500 }], ['Double-decker bus', '🚌', { speed: 90, pass: 80, len: 11, kg: 12000 }], ['Tractor', '🚜', { speed: 40, pass: 1, len: 4, kg: 5000 }],
+      ['High-speed train', '🚄', { speed: 320, pass: 750, len: 400, kg: 400000 }], ['Jumbo jet', '✈️', { speed: 920, pass: 400, len: 70, kg: 400000 }], ['Space rocket', '🚀', { speed: 28000, pass: 3, len: 110, kg: 2900000 }],
+      ['Cruise ship', '🛳️', { speed: 40, pass: 6000, len: 360, kg: 100000000 }], ['Helicopter', '🚁', { speed: 260, pass: 6, len: 15, kg: 3000 }], ['Lorry', '🚚', { speed: 90, pass: 2, len: 16.5, kg: 40000 }]] },
+    { id: 'trips', subj: 'travel', group: 'everyday', ask: ['trip'], items: [
+      ['London to Paris by train', '🚄', { trip: 140 }], ['London to Edinburgh by train', '🚆', { trip: 270 }], ['London to New York by plane', '✈️', { trip: 480 }],
+      ['London to Sydney by plane', '✈️', { trip: 1320 }], ['Earth to the Moon (Apollo)', '🚀', { trip: 4320 }], ['Earth to Mars', '🚀', { trip: 300000 }],
+      ['Crossing the Channel by ferry', '⛴️', { trip: 90 }], ['A bus across London', '🚌', { trip: 60 }], ['Walking a mile', '🚶', { trip: 20 }], ['Sailing round the world (fastest)', '⛵', { trip: 57600 }]] },
+    // ---------- Sport ----------
+    { id: 'teams', subj: 'sport', group: 'sport', ask: ['team'], items: [
+      ['Tennis (singles)', '🎾', { team: 1 }], ['Beach volleyball', '🏐', { team: 2 }], ['Basketball', '🏀', { team: 5 }], ['Ice hockey', '🏒', { team: 6 }],
+      ['Netball', '🥅', { team: 7 }], ['Baseball', '⚾', { team: 9 }], ['Football', '⚽', { team: 11 }], ['Rugby union', '🏉', { team: 15 }], ['Australian rules football', '🏉', { team: 18 }]] },
+    { id: 'matches', subj: 'sport', group: 'sport', ask: ['match'], items: [
+      ['A boxing round', '🥊', { match: 3 }], ['A basketball game (NBA)', '🏀', { match: 48 }], ['A rugby match', '🏉', { match: 80 }], ['A football match', '⚽', { match: 90 }],
+      ['A round of golf', '⛳', { match: 270 }], ['A Test cricket match', '🏏', { match: 7200 }], ['The Tour de France', '🚴', { match: 33120 }], ['An ice hockey game', '🏒', { match: 60 }],
+      ['A Grand National race', '🐎', { match: 9 }], ['A 100 m sprint', '🏃', { match: 0.16 }]] },
+    { id: 'balls', subj: 'sport', group: 'sport', kids: 'world', kidsAsk: ['g'], ask: ['g'], items: [
+      ['Table tennis ball', '🏓', { g: 2.7 }], ['Golf ball', '⛳', { g: 46 }], ['Tennis ball', '🎾', { g: 58 }], ['Cricket ball', '🏏', { g: 160 }], ['Football', '⚽', { g: 430 }],
+      ['Basketball', '🏀', { g: 620 }], ['Bowling ball', '🎳', { g: 7000 }], ['Shuttlecock', '🏸', { g: 5 }], ['Rugby ball', '🏉', { g: 440 }]] },
+    { id: 'races', subj: 'sport', group: 'sport', ask: ['race'], items: [
+      ['100 m sprint', '🏃', { race: 100 }], ['400 m', '🏃', { race: 400 }], ['The mile', '🏃', { race: 1609 }], ['A parkrun', '🏃', { race: 5000 }], ['A marathon', '🏃', { race: 42195 }],
+      ['The Tour de France', '🚴', { race: 3400000 }], ['The Boat Race', '🚣', { race: 6800 }], ['Swimming the Channel', '🏊', { race: 33000 }], ['Olympic triathlon', '🏊', { race: 51500 }]] },
+    // ---------- Music ----------
+    { id: 'instruments', subj: 'music', noun: 'instrument', group: 'everyday', kids: 'world', kidsAsk: ['len'], ask: [{ k: 'len', q: 'Which instrument is biggest?', top: 'Biggest', bottom: 'Smallest', basis: 'Typical length or height.' }, 'strings'], items: [
+      ['Triangle', '🔺', { len: 0.2 }], ['Recorder', '🪈', { len: 0.32 }], ['Violin', '🎻', { len: 0.6, strings: 4 }], ['Guitar', '🎸', { len: 1, strings: 6 }],
+      ['Cello', '🎻', { len: 1.25, strings: 4 }], ['Double bass', '🎻', { len: 1.8, strings: 4 }], ['Grand piano', '🎹', { len: 2.7, strings: 230 }], ['Harp', '🪕', { len: 1.8, strings: 47 }],
+      ['Ukulele', '🪕', { len: 0.55, strings: 4 }], ['Banjo', '🪕', { len: 0.95, strings: 5 }], ['12-string guitar', '🎸', { strings: 12 }], ['Church organ', '🎹', { len: 10 }]] },
+    { id: 'noise', subj: 'sound', group: 'everyday', ask: ['loud'], items: [
+      ['A whisper', '🤫', { loud: 30 }], ['Normal talking', '🗣️', { loud: 60 }], ['A vacuum cleaner', '🧹', { loud: 75 }], ['A busy road', '🚗', { loud: 85 }],
+      ['A rock concert', '🎸', { loud: 110 }], ['A jet taking off nearby', '✈️', { loud: 140 }], ['Leaves rustling', '🍂', { loud: 20 }], ['A dog barking', '🐕', { loud: 90 }], ['A ticking clock', '⏰', { loud: 40 }]] },
+    // ---------- Home and things ----------
+    { id: 'thick', subj: 'household things', group: 'everyday', ask: ['thick'], items: [
+      ['A sheet of paper', '📄', { thick: 0.1 }], ['A bank card', '💳', { thick: 0.76 }], ['A £1 coin', '🪙', { thick: 2.8 }], ['A smartphone', '📱', { thick: 8 }],
+      ['A brick', '🧱', { thick: 65 }], ['A front door', '🚪', { thick: 44 }], ['A mattress', '🛏️', { thick: 250 }], ['A paperback book', '📕', { thick: 25 }], ['A hair', '🧑', { thick: 0.07 }]] },
+    { id: 'lights', subj: 'household things', group: 'everyday', ask: ['watts'], items: [
+      ['A match', '🔥', { watts: 0.005 }], ['A tea light', '🕯️', { watts: 4 }], ['A dinner candle', '🕯️', { watts: 8 }], ['An old-style light bulb', '💡', { watts: 1000 }],
+      ['An energy-saving bulb', '💡', { watts: 8000 }], ['An LED bulb', '💡', { watts: 25000 }]] },
+    { id: 'litter', subj: 'nature', group: 'everyday', ask: ['rot'], items: [
+      ['A newspaper', '📰', { rot: 0.12 }], ['An apple core', '🍎', { rot: 0.17 }], ['A woolly sock', '🧦', { rot: 3 }], ['A plastic bag', '🛍️', { rot: 20 }],
+      ['A foam cup', '🥤', { rot: 50 }], ['A drinks can', '🥫', { rot: 200 }], ['A plastic bottle', '🧴', { rot: 450 }], ['A glass bottle', '🍾', { rot: 1000000 }]] },
+    { id: 'storage', subj: 'technology', group: 'everyday', ask: ['data'], items: [
+      ['A floppy disk', '💾', { data: 1.44 }], ['A CD', '💿', { data: 700 }], ['A DVD', '📀', { data: 4700 }], ['A Blu-ray', '📀', { data: 25000 }],
+      ['A typical phone', '📱', { data: 128000 }], ['A typical laptop', '💻', { data: 1000000 }], ['A USB stick', '🔌', { data: 64000 }], ['A 1980s home computer\'s memory', '🖥️', { data: 0.064 }]] },
+    { id: 'screens', subj: 'technology', group: 'everyday', ask: ['screen'], items: [
+      ['A smartwatch', '⌚', { screen: 1.8 }], ['A phone', '📱', { screen: 6.1 }], ['A tablet', '📲', { screen: 11 }], ['A laptop', '💻', { screen: 14 }],
+      ['A living-room TV', '📺', { screen: 55 }], ['An IMAX cinema screen', '🎬', { screen: 1000 }], ['A games console handheld', '🎮', { screen: 7 }], ['A car dashboard screen', '🚗', { screen: 12 }]] },
+    // ---------- Nature ----------
+    { id: 'winds', subj: 'weather', group: 'nature', ask: ['wind'], items: [
+      ['A light breeze', '🍃', { wind: 10 }], ['A strong breeze', '🌬️', { wind: 45 }], ['A gale', '🌬️', { wind: 70 }], ['A hurricane', '🌀', { wind: 180 }],
+      ['The strongest tornado', '🌪️', { wind: 480 }], ['A calm day', '☀️', { wind: 2 }]] },
+    { id: 'light', subj: 'weather', group: 'nature', ask: ['lux'], items: [
+      ['A candle (close up)', '🕯️', { lux: 10 }], ['A full moon night', '🌕', { lux: 0.2 }], ['A street light', '🌃', { lux: 20 }], ['A living room', '🛋️', { lux: 150 }],
+      ['An office', '🏢', { lux: 500 }], ['A cloudy day', '☁️', { lux: 2000 }], ['A sunny day', '☀️', { lux: 100000 }]] },
+    { id: 'minerals', subj: 'science', group: 'science', ask: ['hard'], items: [
+      ['Talc', '🧂', { hard: 1 }], ['A fingernail', '💅', { hard: 2.5 }], ['A copper coin', '🪙', { hard: 3.5 }], ['Glass', '🪟', { hard: 5.5 }], ['Quartz', '🔮', { hard: 7 }],
+      ['Sapphire', '💎', { hard: 9 }], ['Diamond', '💎', { hard: 10 }]] },
+    { id: 'trees', subj: 'plants', noun: 'tree', group: 'nature', kids: 'grow', kidsAsk: ['age'], ask: ['age'], items: [
+      ['Bristlecone pine', '🌲', { age: 5000 }], ['Yew', '🌲', { age: 3000 }], ['Oak', '🌳', { age: 1000 }], ['Apple tree', '🍎', { age: 100 }], ['Silver birch', '🌳', { age: 80 }],
+      ['Cherry tree', '🌸', { age: 40 }], ['Giant sequoia', '🌲', { age: 3200 }], ['Palm tree', '🌴', { age: 80 }]] },
+    { id: 'seeds', subj: 'plants', noun: 'seed', group: 'nature', kids: 'grow', kidsAsk: ['size'], ask: ['size'], items: [
+      ['Poppy seed', '🌱', { size: 1 }], ['Sesame seed', '🌱', { size: 3 }], ['Apple pip', '🍎', { size: 7 }], ['Pumpkin seed', '🎃', { size: 15 }], ['Acorn', '🌰', { size: 25 }],
+      ['Avocado stone', '🥑', { size: 50 }], ['Coconut', '🥥', { size: 250 }], ['Sunflower seed', '🌻', { size: 10 }], ['Conker', '🌰', { size: 30 }]] },
+    { id: 'flowers', subj: 'plants', noun: 'flower', group: 'nature', kids: 'grow', kidsAsk: ['size'], ask: [{ k: 'size', q: 'Which flower is biggest?', basis: 'Typical size of one flower, across.' }], items: [
+      ['Daisy', '🌼', { size: 20 }], ['Tulip', '🌷', { size: 70 }], ['Sunflower', '🌻', { size: 300 }], ['Rafflesia', '🌺', { size: 1000 }], ['Rose', '🌹', { size: 90 }],
+      ['Lily', '🪷', { size: 150 }], ['Forget-me-not', '🌸', { size: 8 }]] },
+    // ---------- Measures and numbers ----------
+    { id: 'u-time', subj: 'units', group: 'everyday', kids: 'world', kidsAsk: ['unit'], ask: [{ k: 'unit', q: 'Which is the longest time?', top: 'Longest', bottom: 'Shortest', fmt: 'span' }], items: [
+      ['A second', '⏱️', { unit: 1 / 60 }], ['A minute', '⏱️', { unit: 1 }], ['An hour', '🕐', { unit: 60 }], ['A day', '📅', { unit: 1440 }], ['A week', '📅', { unit: 10080 }],
+      ['A fortnight', '📅', { unit: 20160 }], ['A year', '🎆', { unit: 525600 }], ['A decade', '🔟', { unit: 5256000 }], ['A century', '💯', { unit: 52560000 }], ['A millennium', '🏛️', { unit: 525600000 }]] },
+    { id: 'u-len', subj: 'units', group: 'everyday', ask: [{ k: 'unit', q: 'Which length is longest?', fmt: 'm', basis: 'By definition.' }], items: [
+      ['A millimetre', '📏', { unit: 0.001 }], ['A centimetre', '📏', { unit: 0.01 }], ['An inch', '📏', { unit: 0.0254 }], ['A foot', '🦶', { unit: 0.3048 }], ['A yard', '📏', { unit: 0.9144 }],
+      ['A kilometre', '🛣️', { unit: 1000 }], ['A mile', '🛣️', { unit: 1609 }], ['A marathon', '🏃', { unit: 42195 }]] },
+    { id: 'u-weight', subj: 'units', group: 'everyday', ask: [{ k: 'unit', q: 'Which unit of weight is heaviest?', top: 'Heaviest', bottom: 'Lightest', fmt: 'g', basis: 'By definition.' }], items: [
+      ['A gram', '⚖️', { unit: 1 }], ['An ounce', '⚖️', { unit: 28.35 }], ['A pound (weight)', '⚖️', { unit: 453.6 }], ['A kilogram', '⚖️', { unit: 1000 }], ['A stone', '🪨', { unit: 6350 }], ['A tonne', '🏗️', { unit: 1000000 }]] },
+    { id: 'u-vol', subj: 'units', group: 'everyday', ask: [{ k: 'unit', q: 'Which measure holds the most?', top: 'Most', bottom: 'Least', fmt: 'ml', basis: 'By definition (UK measures).' }], items: [
+      ['A teaspoon', '🥄', { unit: 5 }], ['A tablespoon', '🥄', { unit: 15 }], ['A cup', '☕', { unit: 250 }], ['A pint', '🍺', { unit: 568 }], ['A litre', '🧃', { unit: 1000 }], ['A gallon', '🪣', { unit: 4546 }], ['A bath', '🛁', { unit: 80000 }]] },
+    { id: 'u-num', subj: 'units', group: 'everyday', ask: [{ k: 'unit', q: 'Which number is biggest?', top: 'Biggest', bottom: 'Smallest', fmt: 'big', basis: 'By definition.' }], items: [
+      ['A pair', '👟', { unit: 2 }], ['A dozen', '🥚', { unit: 12 }], ['A score', '🔢', { unit: 20 }], ['A gross', '📦', { unit: 144 }], ['A thousand', '🔢', { unit: 1000 }],
+      ['A million', '🔢', { unit: 1e6 }], ['A billion', '🔢', { unit: 1e9 }], ['A googol', '🔢', { unit: 1e100 }], ['A baker\'s dozen', '🍞', { unit: 13 }]] },
+    { id: 'often', subj: 'time', group: 'everyday', ask: ['often'], items: [
+      ['The football World Cup', '⚽', { often: 0.25 }], ['Your birthday', '🎂', { often: 1 }], ['A full moon', '🌕', { often: 12.4 }], ['A weekend', '🛋️', { often: 52 }],
+      ['A sunrise', '🌅', { often: 365 }], ['A blink', '👁️', { often: 5000000 }], ['A heartbeat', '❤️', { often: 37000000 }], ['A General Election', '🗳️', { often: 0.2 }], ['A lunchtime', '🥪', { often: 365 }]] },
+    { id: 'dates', subj: 'calendar', group: 'everyday', ask: ['when'], items: [
+      ['Burns Night', '🏴', { when: 25 }], ['Valentine\'s Day', '💘', { when: 45 }], ['St Patrick\'s Day', '☘️', { when: 76 }], ['April Fools\' Day', '🤡', { when: 91 }],
+      ['The longest day', '☀️', { when: 172 }], ['Halloween', '🎃', { when: 304 }], ['Bonfire Night', '🎆', { when: 309 }], ['Christmas Day', '🎄', { when: 359 }],
+      ['New Year\'s Eve', '🥂', { when: 365 }], ['St George\'s Day', '🏴', { when: 113 }], ['Remembrance Day', '🌺', { when: 315 }]] },
+    // ---------- Places ----------
+    { id: 'uk-north', subj: 'UK places', group: 'places', ask: ['north'], items: [
+      ['Plymouth', '⚓', { north: 50.4 }], ['London', '🏙️', { north: 51.5 }], ['Birmingham', '🏙️', { north: 52.5 }], ['Manchester', '🏙️', { north: 53.5 }], ['Newcastle', '🌉', { north: 55 }],
+      ['Edinburgh', '🏰', { north: 55.95 }], ['Aberdeen', '🏙️', { north: 57.15 }], ['Lerwick (Shetland)', '🌊', { north: 60.15 }], ['Brighton', '🎡', { north: 50.8 }], ['York', '🏰', { north: 54 }],
+      ['Belfast', '🏙️', { north: 54.6 }], ['Cardiff', '🏴', { north: 51.5 }]] },
+    { id: 'uk-pop', subj: 'UK places', group: 'places', ask: ['pop'], items: [
+      ['London', '🏙️', { pop: 9000000 }], ['Birmingham', '🏙️', { pop: 1150000 }], ['Leeds', '🏙️', { pop: 800000 }], ['Glasgow', '🏙️', { pop: 630000 }], ['Cardiff', '🏴', { pop: 370000 }],
+      ['Brighton', '🎡', { pop: 280000 }], ['York', '🏰', { pop: 200000 }], ['Oxford', '🎓', { pop: 160000 }], ['Bath', '🛁', { pop: 100000 }], ['Inverness', '🏔️', { pop: 50000 }], ['St Davids', '⛪', { pop: 1800 }]] },
+    // ===== Batch 2 =====
+    { id: 'jumpers', subj: 'animals', group: 'nature', kids: 'animals', kidsAsk: ['jump'], ask: ['jump'], items: [
+      ['Flea', '🪳', { jump: 0.2 }], ['Frog', '🐸', { jump: 0.6 }], ['Cat', '🐈', { jump: 1.5 }], ['Best human high jumper', '🏃', { jump: 2.45 }], ['Kangaroo', '🦘', { jump: 3 }],
+      ['Puma', '🐆', { jump: 5.5 }], ['Rabbit', '🐇', { jump: 0.9 }]] },
+    { id: 'teeth', subj: 'animals', group: 'nature', ask: ['teeth'], items: [
+      ['Grown-up', '🧍', { teeth: 32 }], ['Child', '🧒', { teeth: 20 }], ['Dog', '🐕', { teeth: 42 }], ['Cat', '🐈', { teeth: 30 }], ['Pig', '🐖', { teeth: 44 }],
+      ['Crocodile', '🐊', { teeth: 66 }], ['Garden snail', '🐌', { teeth: 14000 }], ['Dolphin', '🐬', { teeth: 90 }], ['Elephant', '🐘', { teeth: 26 }], ['Great white shark', '🦈', { teeth: 300 }]] },
+    { id: 'brains', subj: 'the body', group: 'nature', ask: ['brain'], items: [
+      ['Sperm whale', '🐋', { brain: 8 }], ['Elephant', '🐘', { brain: 5 }], ['Human', '🧠', { brain: 1.4 }], ['Chimpanzee', '🐒', { brain: 0.4 }], ['Dog', '🐕', { brain: 0.08 }],
+      ['Cat', '🐈', { brain: 0.03 }], ['Mouse', '🐁', { brain: 0.0004 }], ['Horse', '🐎', { brain: 0.6 }]] },
+    { id: 'bigcats', subj: 'wild animals', noun: 'big cat', group: 'nature', ask: ['kg'], items: [
+      ['Tiger', '🐅', { kg: 220 }], ['Lion', '🦁', { kg: 190 }], ['Jaguar', '🐆', { kg: 100 }], ['Leopard', '🐆', { kg: 60 }], ['Cheetah', '🐆', { kg: 50 }],
+      ['Snow leopard', '🐆', { kg: 45 }], ['Lynx', '🐈', { kg: 20 }], ['Pet cat', '🐈', { kg: 4 }]] },
+    { id: 'apes', subj: 'wild animals', noun: 'primate', group: 'nature', ask: ['kg'], items: [
+      ['Gorilla', '🦍', { kg: 160 }], ['Orangutan', '🦧', { kg: 80 }], ['Human', '🧍', { kg: 70 }], ['Chimpanzee', '🐒', { kg: 50 }], ['Gibbon', '🐒', { kg: 6 }],
+      ['Ring-tailed lemur', '🐒', { kg: 2.5 }], ['Marmoset', '🐒', { kg: 0.35 }]] },
+    { id: 'snakes', subj: 'reptiles', noun: 'snake', group: 'nature', ask: ['len'], items: [
+      ['Reticulated python', '🐍', { len: 7 }], ['Anaconda', '🐍', { len: 6 }], ['King cobra', '🐍', { len: 4 }], ['Black mamba', '🐍', { len: 2.5 }], ['Corn snake', '🐍', { len: 1.4 }],
+      ['Adder', '🐍', { len: 0.65 }], ['Grass snake', '🐍', { len: 1 }], ['Thread snake', '🐍', { len: 0.1 }]] },
+    { id: 'whales', subj: 'sea creatures', noun: 'whale', group: 'nature', ask: ['len'], items: [
+      ['Blue whale', '🐋', { len: 30 }], ['Fin whale', '🐋', { len: 22 }], ['Sperm whale', '🐋', { len: 16 }], ['Humpback whale', '🐋', { len: 15 }], ['Orca', '🐳', { len: 8 }],
+      ['Beluga', '🐳', { len: 4.5 }], ['Bottlenose dolphin', '🐬', { len: 3 }], ['Harbour porpoise', '🐬', { len: 1.6 }]] },
+    { id: 'dogs', subj: 'pets', noun: 'dog breed', group: 'nature', kids: 'animals', kidsAsk: ['kg'], ask: ['kg'], items: [
+      ['Chihuahua', '🐕', { kg: 2.5 }], ['Pug', '🐕', { kg: 7 }], ['Beagle', '🐕', { kg: 11 }], ['Labrador', '🦮', { kg: 30 }], ['Great Dane', '🐕', { kg: 65 }],
+      ['Dachshund', '🌭', { kg: 9 }], ['St Bernard', '🐕', { kg: 75 }], ['Jack Russell', '🐕', { kg: 6 }], ['Border collie', '🐕', { kg: 18 }]] },
+    { id: 'eggs', subj: 'birds', group: 'nature', kids: 'animals', kidsAsk: ['eggw'], ask: ['eggw'], items: [
+      ['Hummingbird', '🐦', { eggw: 0.5 }], ['Quail', '🐦', { eggw: 10 }], ['Hen', '🐔', { eggw: 60 }], ['Duck', '🦆', { eggw: 70 }], ['Goose', '🪿', { eggw: 150 }],
+      ['Emu', '🐦', { eggw: 600 }], ['Ostrich', '🐦', { eggw: 1400 }], ['Robin', '🐦', { eggw: 3 }], ['Swan', '🦢', { eggw: 340 }]] },
+    { id: 'wheels', subj: 'vehicles', group: 'everyday', kids: 'world', kidsAsk: ['wheels'], ask: ['wheels'], items: [
+      ['Unicycle', '🚲', { wheels: 1 }], ['Bicycle', '🚲', { wheels: 2 }], ['Tricycle', '🚲', { wheels: 3 }], ['Car', '🚗', { wheels: 4 }], ['Bus', '🚌', { wheels: 6 }],
+      ['Big lorry', '🚚', { wheels: 18 }], ['Wheelbarrow', '🛒', { wheels: 1 }], ['Skateboard', '🛹', { wheels: 4 }], ['Jumbo jet', '✈️', { wheels: 18 }]] },
+    { id: 'colds', subj: 'weather', group: 'nature', kids: 'world', kidsAsk: ['cold'], ask: ['cold'], items: [
+      ['Inside a fridge', '🧊', { cold: 4 }], ['A freezer', '❄️', { cold: -18 }], ['Top of Mount Everest', '🏔️', { cold: -36 }], ['Dry ice', '🧊', { cold: -78 }],
+      ['Liquid nitrogen', '🧪', { cold: -196 }], ['The coldest possible temperature', '🥶', { cold: -273 }], ['A snowy day', '⛄', { cold: 0 }], ['A warm bath', '🛁', { cold: 38 }], ['Antarctica in winter', '🐧', { cold: -60 }]] },
+    { id: 'papers', subj: 'household things', group: 'everyday', ask: ['paper'], items: [
+      ['A6 (postcard)', '📄', { paper: 156 }], ['A5', '📄', { paper: 311 }], ['A4', '📄', { paper: 624 }], ['A3', '📄', { paper: 1247 }], ['A2', '📄', { paper: 2495 }],
+      ['A1', '📄', { paper: 4990 }], ['A0', '📄', { paper: 9999 }]] },
+    { id: 'watery', subj: 'food and drink', group: 'everyday', ask: ['water'], items: [
+      ['Cucumber', '🥒', { water: 96 }], ['Watermelon', '🍉', { water: 92 }], ['Apple', '🍎', { water: 86 }], ['Banana', '🍌', { water: 75 }], ['Bread', '🍞', { water: 36 }],
+      ['Cheddar cheese', '🧀', { water: 37 }], ['Honey', '🍯', { water: 17 }], ['Peanuts', '🥜', { water: 6 }], ['Raisins', '🍇', { water: 15 }], ['Milk', '🥛', { water: 87 }]] },
+    { id: 'bones', subj: 'the body', group: 'science', ask: ['bone'], items: [
+      ['Thigh bone (femur)', '🦴', { bone: 48 }], ['Shin bone (tibia)', '🦴', { bone: 40 }], ['Upper arm bone', '💪', { bone: 36 }], ['A rib', '🦴', { bone: 24 }],
+      ['A finger bone', '☝️', { bone: 3 }], ['The stirrup bone (ear)', '👂', { bone: 0.3 }], ['Collarbone', '🦴', { bone: 15 }], ['Kneecap', '🦵', { bone: 5 }]] },
+    { id: 'bodycount', subj: 'the body', group: 'science', ask: ['body'], items: [
+      ['Lungs', '🫁', { body: 2 }], ['Teeth', '🦷', { body: 32 }], ['Bones', '🦴', { body: 206 }], ['Muscles', '💪', { body: 600 }], ['Hairs on your head', '💇', { body: 100000 }],
+      ['Hearts', '❤️', { body: 1 }], ['Fingers and thumbs', '🖐️', { body: 10 }], ['Taste buds', '👅', { body: 8000 }], ['Blood cells', '🩸', { body: 30000000000000 }]] },
+    { id: 'pitches', subj: 'sport', group: 'sport', ask: ['pitch'], items: [
+      ['A table tennis table', '🏓', { pitch: 2.74 }], ['A snooker table', '🎱', { pitch: 3.6 }], ['A badminton court', '🏸', { pitch: 13.4 }], ['A tennis court', '🎾', { pitch: 23.8 }],
+      ['A football pitch', '⚽', { pitch: 105 }], ['A golf hole (par 4)', '⛳', { pitch: 400 }], ['A cricket pitch (wicket to wicket)', '🏏', { pitch: 20.1 }], ['A swimming pool (Olympic)', '🏊', { pitch: 50 }]] },
+    { id: 'heights', subj: 'sport', group: 'sport', ask: ['high'], items: [
+      ['A football crossbar', '⚽', { high: 2.44 }], ['A basketball hoop', '🏀', { high: 3.05 }], ['The pole vault world record', '🏃', { high: 6.26 }], ['An Olympic diving platform', '🏊', { high: 10 }],
+      ['A cliff diving platform', '🌊', { high: 27 }], ['A tennis net (middle)', '🎾', { high: 0.91 }], ['A netball hoop', '🥅', { high: 3.05 }]] },
+    { id: 'hotcities', subj: 'world places', group: 'places', ask: ['hot'], items: [
+      ['Reykjavik', '🇮🇸', { hot: 14 }], ['Edinburgh', '🏰', { hot: 19 }], ['London', '🏙️', { hot: 23 }], ['Rome', '🏛️', { hot: 31 }], ['Cairo', '🐫', { hot: 35 }],
+      ['Dubai', '🏙️', { hot: 41 }], ['Death Valley', '🌵', { hot: 47 }], ['Oslo', '🇳🇴', { hot: 22 }], ['Madrid', '🇪🇸', { hot: 32 }]] },
+    { id: 'rainy', subj: 'world places', group: 'places', ask: ['rain'], items: [
+      ['Cairo', '🐫', { rain: 25 }], ['London', '🏙️', { rain: 600 }], ['Manchester', '☔', { rain: 870 }], ['Fort William', '🏔️', { rain: 2000 }], ['Mumbai', '🇮🇳', { rain: 2200 }],
+      ['Cherrapunji (India)', '🌧️', { rain: 11800 }], ['Dubai', '🏙️', { rain: 100 }], ['Las Vegas', '🎰', { rain: 110 }], ['Singapore', '🇸🇬', { rain: 2500 }]] },
+    { id: 'islands', subj: 'UK places', noun: 'island', group: 'places', ask: [{ k: 'area', q: 'Which British or Irish island is biggest?' }], items: [
+      ['Lundy', '🏝️', { area: 4.5 }], ['Jersey', '🏝️', { area: 120 }], ['Isle of Wight', '🏝️', { area: 380 }], ['Isle of Man', '🏝️', { area: 572 }], ['Anglesey', '🏝️', { area: 714 }],
+      ['Skye', '🏝️', { area: 1656 }], ['Ireland', '☘️', { area: 84400 }], ['Great Britain', '🇬🇧', { area: 209000 }], ['Lewis and Harris', '🏝️', { area: 2179 }]] },
+    { id: 'stadiums', subj: 'sport', group: 'sport', ask: ['seats'], items: [
+      ['Wembley Stadium', '🏟️', { seats: 90000 }], ['Old Trafford', '🏟️', { seats: 74000 }], ['Anfield', '🏟️', { seats: 61000 }], ['Lord\'s Cricket Ground', '🏏', { seats: 31000 }],
+      ['Wimbledon Centre Court', '🎾', { seats: 15000 }], ['The Royal Albert Hall', '🎻', { seats: 5300 }], ['The O2 Arena', '🎤', { seats: 20000 }], ['A local cinema screen', '🎬', { seats: 200 }]] },
+    { id: 'oceans', subj: 'world places', group: 'places', ask: ['ocean'], items: [
+      ['Pacific', '🌊', { ocean: 165000000 }], ['Atlantic', '🌊', { ocean: 106000000 }], ['Indian', '🌊', { ocean: 70000000 }], ['Southern', '🌊', { ocean: 21000000 }],
+      ['Arctic', '🧊', { ocean: 15000000 }], ['Mediterranean Sea', '🌊', { ocean: 2500000 }], ['North Sea', '🌊', { ocean: 570000 }]] },
+    { id: 'firsts', subj: 'history', group: 'history', ask: ['ago'], items: [
+      ['People first using fire', '🔥', { ago: 1000000 }], ['The first farming', '🌾', { ago: 12000 }], ['The first writing', '✍️', { ago: 5200 }], ['The Romans arriving in Britain', '🏛️', { ago: 1983 }],
+      ['The first printed book in Europe', '📖', { ago: 570 }], ['The first powered flight', '✈️', { ago: 123 }], ['The first Moon landing', '🌕', { ago: 57 }], ['The first iPhone', '📱', { ago: 19 }],
+      ['The first cave paintings', '🎨', { ago: 40000 }], ['The first steam train', '🚂', { ago: 222 }]] },
+    { id: 'speeds', subj: 'science', group: 'science', kids: 'world', kidsAsk: ['fast'], ask: ['fast'], items: [
+      ['A snail', '🐌', { fast: 0.05 }], ['Walking', '🚶', { fast: 5 }], ['The fastest sprinter', '🏃', { fast: 44 }], ['A cheetah', '🐆', { fast: 110 }], ['A racing car', '🏎️', { fast: 350 }],
+      ['A jumbo jet', '✈️', { fast: 920 }], ['Sound', '🔊', { fast: 1235 }], ['A rifle bullet', '💥', { fast: 3000 }], ['The Earth going round the Sun', '🌍', { fast: 107000 }], ['Light', '💡', { fast: 1080000000 }]] },
+    { id: 'scale', subj: 'science', group: 'science', ask: ['scale'], items: [
+      ['A grain of sand', '⏳', { scale: 0.5 }], ['An ant', '🐜', { scale: 4 }], ['A mouse', '🐁', { scale: 80 }], ['A person', '🧍', { scale: 1700 }], ['A blue whale', '🐋', { scale: 30000 }],
+      ['Big Ben', '🕰️', { scale: 96000 }], ['Mount Everest', '🏔️', { scale: 8849000 }], ['A germ (bacterium)', '🦠', { scale: 0.002 }], ['A human hair (width)', '🧑', { scale: 0.07 }]] },
+    { id: 'sky', subj: 'the sky', group: 'science', kids: 'space', kidsAsk: ['alt'], ask: ['alt'], items: [
+      ['A kite', '🪁', { alt: 50 }], ['A flock of geese', '🪿', { alt: 1000 }], ['A jumbo jet', '✈️', { alt: 11000 }], ['A weather balloon', '🎈', { alt: 35000 }],
+      ['The Space Station', '🛰️', { alt: 400000 }], ['A helicopter', '🚁', { alt: 3000 }], ['A rain cloud', '🌧️', { alt: 2000 }], ['A paper plane', '✈️', { alt: 5 }]] },
+    { id: 'roman', subj: 'maths', group: 'everyday', ask: [{ k: 'num', q: 'Which Roman numeral is biggest?', basis: 'I = 1, V = 5, X = 10, L = 50, C = 100, D = 500, M = 1,000.', fmt: 'n', tier: 'known' }], items: [
+      ['IV', 'Ⅳ', { num: 4 }], ['IX', 'Ⅸ', { num: 9 }], ['XII', 'Ⅻ', { num: 12 }], ['XL', '🔢', { num: 40 }], ['L', 'Ⅼ', { num: 50 }], ['XC', '🔢', { num: 90 }],
+      ['CD', '🔢', { num: 400 }], ['M', 'Ⅿ', { num: 1000 }], ['MMXXVI', '🔢', { num: 2026 }], ['C', 'Ⅽ', { num: 100 }]] },
+    { id: 'fractions', subj: 'maths', group: 'everyday', ask: [{ k: 'num', q: 'Which is the biggest amount?', basis: 'Fractions and decimals.', fmt: 'dec' }], items: [
+      ['An eighth', '🍕', { num: 0.125 }], ['A quarter', '🍕', { num: 0.25 }], ['A third', '🍕', { num: 0.333 }], ['A half', '🍕', { num: 0.5 }], ['Two thirds', '🍕', { num: 0.667 }],
+      ['0.9', '🔢', { num: 0.9 }], ['One and a half', '🍕', { num: 1.5 }], ['0.05', '🔢', { num: 0.05 }], ['Three quarters', '🍕', { num: 0.75 }]] },
+    { id: 'percents', subj: 'maths', group: 'everyday', ask: [{ k: 'num', q: 'Which works out biggest?', basis: 'Mental maths.', fmt: 'n' }], items: [
+      ['10% of 300', '🧮', { num: 30 }], ['Half of 50', '🧮', { num: 25 }], ['A quarter of 200', '🧮', { num: 50 }], ['20% of 400', '🧮', { num: 80 }], ['Three quarters of 160', '🧮', { num: 120 }],
+      ['10% of 2,000', '🧮', { num: 200 }], ['Double 7', '🧮', { num: 14 }], ['A third of 900', '🧮', { num: 300 }], ['1% of 500', '🧮', { num: 5 }]] },
+    { id: 'powers', subj: 'maths', group: 'everyday', ask: [{ k: 'num', q: 'Which power is biggest?', basis: 'Powers: 2⁵ means 2 × 2 × 2 × 2 × 2.', fmt: 'n', tier: 'known' }], items: [
+      ['3²', '🔢', { num: 9 }], ['5²', '🔢', { num: 25 }], ['2⁵', '🔢', { num: 32 }], ['7²', '🔢', { num: 49 }], ['10²', '🔢', { num: 100 }], ['2¹⁰', '🔢', { num: 1024 }],
+      ['10³', '🔢', { num: 1000 }], ['2³', '🔢', { num: 8 }], ['4³', '🔢', { num: 64 }]] },
+    { id: 'drinks', subj: 'food and drink', group: 'everyday', ask: ['kcal'], items: [
+      ['A black coffee', '☕', { kcal: 2 }], ['A cup of tea with milk', '🍵', { kcal: 15 }], ['A glass of orange juice', '🧃', { kcal: 90 }], ['A can of cola', '🥤', { kcal: 139 }],
+      ['A pint of lager', '🍺', { kcal: 200 }], ['A hot chocolate', '☕', { kcal: 250 }], ['A milkshake', '🥤', { kcal: 450 }], ['A glass of wine', '🍷', { kcal: 160 }]] },
+    { id: 'aircraft', subj: 'vehicles', group: 'everyday', ask: ['wingspan'], items: [
+      ['A drone', '🛸', { wingspan: 0.3 }], ['A hang glider', '🪂', { wingspan: 10 }], ['A Spitfire', '✈️', { wingspan: 11.2 }], ['Concorde', '✈️', { wingspan: 25.6 }],
+      ['A Boeing 747 jumbo jet', '✈️', { wingspan: 64 }], ['An Airbus A380', '✈️', { wingspan: 80 }], ['A paper plane', '✈️', { wingspan: 0.15 }], ['The Wright brothers\' Flyer', '✈️', { wingspan: 12.3 }]] },
+    { id: 'boats', subj: 'boats', noun: 'boat', group: 'everyday', kids: 'world', kidsAsk: ['len'], ask: ['len'], items: [
+      ['A canoe', '🛶', { len: 5 }], ['A narrowboat', '🚤', { len: 21 }], ['The Titanic', '🚢', { len: 269 }], ['A giant cruise ship', '🛳️', { len: 362 }],
+      ['A pedalo', '🚤', { len: 2.5 }], ['A lifeboat', '🚤', { len: 16 }], ['A Thames riverboat', '⛴️', { len: 40 }], ['A surfboard', '🏄', { len: 2 }]] },
+    { id: 'ukmtns', subj: 'UK places', group: 'places', ask: ['mtn'], items: [
+      ['Ben Nevis', '🏔️', { mtn: 1345 }], ['Snowdon (Yr Wyddfa)', '🏔️', { mtn: 1085 }], ['Scafell Pike', '⛰️', { mtn: 978 }], ['Pen y Fan', '⛰️', { mtn: 886 }],
+      ['Arthur\'s Seat', '⛰️', { mtn: 251 }], ['Box Hill', '⛰️', { mtn: 224 }], ['Slieve Donard', '⛰️', { mtn: 850 }], ['Mount Everest', '🏔️', { mtn: 8849 }], ['Mont Blanc', '🏔️', { mtn: 4806 }]] },
+    // ===== Batch 3 =====
+    { id: 'kitchen', subj: 'household things', group: 'everyday', ask: ['kgHome'], items: [
+      ['A teaspoon', '🥄', { kgHome: 0.025 }], ['A mug', '☕', { kgHome: 0.35 }], ['A kettle', '🫖', { kgHome: 1.2 }], ['A microwave', '📦', { kgHome: 12 }],
+      ['A washing machine', '🧺', { kgHome: 70 }], ['An upright piano', '🎹', { kgHome: 250 }], ['A laptop', '💻', { kgHome: 1.5 }], ['A sofa', '🛋️', { kgHome: 50 }], ['A pillow', '🛏️', { kgHome: 0.8 }]] },
+    { id: 'lasting', subj: 'household things', group: 'everyday', ask: ['lasts'], items: [
+      ['A toothbrush', '🪥', { lasts: 0.25 }], ['A pair of trainers', '👟', { lasts: 1 }], ['A phone', '📱', { lasts: 3 }], ['A mattress', '🛏️', { lasts: 8 }], ['A car', '🚗', { lasts: 14 }],
+      ['A house', '🏠', { lasts: 100 }], ['A stone castle', '🏰', { lasts: 900 }], ['A pencil', '✏️', { lasts: 0.5 }]] },
+    { id: 'throws', subj: 'sport', group: 'sport', ask: ['rec'], items: [
+      ['Long jump', '🏃', { rec: 8.95 }], ['Triple jump', '🏃', { rec: 18.3 }], ['Shot put', '🏋️', { rec: 23.6 }], ['Discus', '🥏', { rec: 74 }], ['Hammer', '🔨', { rec: 86.7 }],
+      ['Javelin', '🎯', { rec: 98.5 }], ['High jump', '🏃', { rec: 2.45 }], ['Pole vault', '🏃', { rec: 6.26 }]] },
+    { id: 'ballspeed', subj: 'sport', group: 'sport', ask: ['shot'], items: [
+      ['A badminton smash', '🏸', { shot: 490 }], ['A golf drive', '⛳', { shot: 340 }], ['A tennis serve', '🎾', { shot: 263 }], ['A baseball pitch', '⚾', { shot: 170 }],
+      ['A cricket ball (bowled)', '🏏', { shot: 161 }], ['A football shot', '⚽', { shot: 210 }], ['A table tennis smash', '🏓', { shot: 112 }], ['A netball pass', '🥅', { shot: 60 }]] },
+    { id: 'megacities', subj: 'world places', group: 'places', ask: ['metro'], items: [
+      ['Tokyo', '🗼', { metro: 37000000 }], ['Delhi', '🇮🇳', { metro: 33000000 }], ['New York', '🗽', { metro: 19000000 }], ['London', '🏙️', { metro: 14000000 }],
+      ['Sydney', '🇦🇺', { metro: 5300000 }], ['Dublin', '☘️', { metro: 1450000 }], ['Reykjavik', '🇮🇸', { metro: 240000 }], ['Paris', '🗼', { metro: 11000000 }], ['Lagos', '🇳🇬', { metro: 16000000 }]] },
+    { id: 'languages', subj: 'languages', group: 'people', ask: ['speakers'], items: [
+      ['English', '🇬🇧', { speakers: 1500000000 }], ['Spanish', '🇪🇸', { speakers: 560000000 }], ['French', '🇫🇷', { speakers: 310000000 }], ['German', '🇩🇪', { speakers: 135000000 }],
+      ['Welsh', '🏴', { speakers: 900000 }], ['Scottish Gaelic', '🏴', { speakers: 70000 }], ['Mandarin Chinese', '🇨🇳', { speakers: 1100000000 }], ['Italian', '🇮🇹', { speakers: 68000000 }]] },
+    { id: 'books', subj: 'books', group: 'pop', ask: ['words'], items: [
+      ['The Very Hungry Caterpillar', '🐛', { words: 224 }], ['The Gruffalo', '👹', { words: 700 }], ['Harry Potter and the Philosopher\'s Stone', '⚡', { words: 77000 }],
+      ['The Hobbit', '💍', { words: 95000 }], ['War and Peace', '📚', { words: 587000 }], ['The Cat in the Hat', '🐱', { words: 1600 }], ['Charlie and the Chocolate Factory', '🍫', { words: 30000 }]] },
+    { id: 'boards', subj: 'games', group: 'everyday', ask: ['squares'], items: [
+      ['Noughts and crosses', '⭕', { squares: 9 }], ['Monopoly', '🎩', { squares: 40 }], ['Connect 4', '🔴', { squares: 42 }], ['A chessboard', '♟️', { squares: 64 }],
+      ['Snakes and ladders', '🐍', { squares: 100 }], ['Scrabble', '🔤', { squares: 225 }], ['A Go board', '⚫', { squares: 361 }], ['Ludo (track)', '🎲', { squares: 52 }]] },
+    { id: 'sets', subj: 'games', group: 'everyday', ask: ['pieces'], items: [
+      ['A chess set', '♟️', { pieces: 32 }], ['A set of dominoes', '🁫', { pieces: 28 }], ['A pack of cards', '🃏', { pieces: 52 }], ['A Jenga set', '🧱', { pieces: 54 }],
+      ['An Uno pack', '🃏', { pieces: 108 }], ['A Scrabble set (tiles)', '🔤', { pieces: 100 }], ['A pair of dice', '🎲', { pieces: 2 }], ['A Connect 4 set (counters)', '🔴', { pieces: 42 }]] },
+    { id: 'growing', subj: 'nature', group: 'nature', kids: 'grow', kidsAsk: ['growth'], ask: ['growth'], items: [
+      ['A fingernail', '💅', { growth: 0.01 }], ['Hair on your head', '💇', { growth: 0.04 }], ['Bamboo', '🎋', { growth: 90 }], ['Grass in spring', '🌱', { growth: 0.5 }],
+      ['A sunflower in summer', '🌻', { growth: 3 }], ['A growing child', '🧒', { growth: 0.016 }], ['An oak tree', '🌳', { growth: 0.1 }]] },
+    { id: 'worldpop', subj: 'animals', group: 'nature', ask: ['world'], items: [
+      ['Ants', '🐜', { world: 20000000000000000 }], ['Chickens', '🐔', { world: 25000000000 }], ['People', '🧑', { world: 8100000000 }], ['Cows', '🐄', { world: 1000000000 }],
+      ['Pet cats', '🐈', { world: 370000000 }], ['Elephants', '🐘', { world: 420000 }], ['Tigers (wild)', '🐅', { world: 5500 }], ['Giant pandas (wild)', '🐼', { world: 1900 }], ['Dogs', '🐕', { world: 900000000 }]] },
+    { id: 'u-area', subj: 'units', group: 'everyday', ask: ['areaU'], items: [
+      ['A sheet of A4 paper', '📄', { areaU: 0.0624 }], ['A square metre', '⬛', { areaU: 1 }], ['A tennis court', '🎾', { areaU: 261 }], ['An acre', '🌾', { areaU: 4047 }],
+      ['A hectare', '🌾', { areaU: 10000 }], ['A square kilometre', '🗺️', { areaU: 1000000 }], ['A square mile', '🗺️', { areaU: 2590000 }], ['A postage stamp', '✉️', { areaU: 0.0006 }]] },
+    { id: 'u-data', subj: 'units', group: 'everyday', ask: [{ k: 'dataU', fmt: 'n' }], items: [
+      ['A bit', '💾', { dataU: 0.125 }], ['A byte', '💾', { dataU: 1 }], ['A kilobyte', '💾', { dataU: 1e3 }], ['A megabyte', '💾', { dataU: 1e6 }], ['A gigabyte', '💾', { dataU: 1e9 }],
+      ['A terabyte', '💾', { dataU: 1e12 }], ['A petabyte', '💾', { dataU: 1e15 }]] },
+    { id: 'newborns', subj: 'animals', group: 'nature', kids: 'animals', kidsAsk: ['baby'], ask: ['baby'], items: [
+      ['Kangaroo (joey)', '🦘', { baby: 0.001 }], ['Kitten', '🐈', { baby: 0.1 }], ['Puppy', '🐕', { baby: 0.4 }], ['Human baby', '👶', { baby: 3.5 }], ['Calf', '🐄', { baby: 40 }],
+      ['Baby elephant', '🐘', { baby: 100 }], ['Baby blue whale', '🐋', { baby: 2500 }], ['Giant panda cub', '🐼', { baby: 0.12 }], ['Foal', '🐎', { baby: 50 }]] },
+    { id: 'dailyacts', subj: 'the body', group: 'science', ask: ['daily'], items: [
+      ['Heartbeats', '❤️', { daily: 100000 }], ['Breaths', '🌬️', { daily: 22000 }], ['Steps', '👣', { daily: 7000 }], ['Swallows', '😋', { daily: 700 }],
+      ['Laughs', '😂', { daily: 17 }], ['Yawns', '🥱', { daily: 6 }], ['Blinks', '👁️', { daily: 15000 }]] },
+    { id: 'films', subj: 'films', group: 'film', ask: ['film'], items: [
+      ['Toy Story', '🤠', { film: 81 }], ['Frozen', '❄️', { film: 102 }], ['The Lion King (1994)', '🦁', { film: 88 }], ['Titanic', '🚢', { film: 194 }],
+      ['The Lord of the Rings: The Return of the King', '💍', { film: 201 }], ['Oppenheimer', '💣', { film: 180 }], ['Paddington', '🐻', { film: 95 }], ['Avatar', '🌿', { film: 162 }], ['The Gruffalo (TV)', '👹', { film: 27 }]] },
+    { id: 'bodytemp', subj: 'the body', group: 'nature', ask: ['temp'], items: [
+      ['A chicken', '🐔', { temp: 41.5 }], ['A human', '🧍', { temp: 37 }], ['A dog', '🐕', { temp: 38.5 }], ['A goat', '🐐', { temp: 39.5 }], ['A hibernating hedgehog', '🦔', { temp: 6 }],
+      ['A koala', '🐨', { temp: 36 }], ['A sloth', '🦥', { temp: 32 }], ['A hummingbird', '🐦', { temp: 40 }]] },
+    // ===== Batch 4 =====
+    { id: 'reptiles', subj: 'reptiles', noun: 'reptile', group: 'nature', ask: ['life'], items: [
+      ['Giant tortoise', '🐢', { life: 150 }], ['Tuatara', '🦎', { life: 100 }], ['Crocodile', '🐊', { life: 70 }], ['Python', '🐍', { life: 25 }], ['Komodo dragon', '🦎', { life: 30 }],
+      ['Iguana', '🦎', { life: 15 }], ['Chameleon', '🦎', { life: 5 }], ['Leopard gecko', '🦎', { life: 18 }]] },
+    { id: 'fish', subj: 'sea creatures', noun: 'fish', group: 'nature', kids: 'animals', kidsAsk: ['len'], ask: ['len'], items: [
+      ['Whale shark', '🦈', { len: 12 }], ['Great white shark', '🦈', { len: 5 }], ['Swordfish', '🐟', { len: 3 }], ['Bluefin tuna', '🐟', { len: 2.5 }], ['Salmon', '🐟', { len: 0.8 }],
+      ['Trout', '🐟', { len: 0.5 }], ['Goldfish', '🐠', { len: 0.15 }], ['Guppy', '🐟', { len: 0.04 }], ['Cod', '🐟', { len: 1 }]] },
+    { id: 'density', subj: 'science', group: 'science', ask: ['dens'], items: [
+      ['Cork', '🍾', { dens: 0.24 }], ['Wood (pine)', '🪵', { dens: 0.5 }], ['Ice', '🧊', { dens: 0.92 }], ['Aluminium', '🥫', { dens: 2.7 }], ['Iron', '⚙️', { dens: 7.9 }],
+      ['Lead', '🔩', { dens: 11.3 }], ['Gold', '🥇', { dens: 19.3 }], ['Polystyrene', '📦', { dens: 0.03 }], ['Glass', '🪟', { dens: 2.5 }]] },
+    { id: 'organs', subj: 'the body', group: 'science', ask: ['organ'], items: [
+      ['Skin', '🧍', { organ: 4 }], ['Liver', '🫀', { organ: 1.5 }], ['Brain', '🧠', { organ: 1.4 }], ['Heart', '❤️', { organ: 0.3 }], ['A kidney', '🫘', { organ: 0.15 }],
+      ['An eyeball', '👁️', { organ: 0.0075 }], ['Both lungs', '🫁', { organ: 1.3 }]] },
+    { id: 'swimmers', subj: 'animals', group: 'nature', kids: 'animals', kidsAsk: ['swim'], ask: ['swim'], items: [
+      ['Sailfish', '🐟', { swim: 110 }], ['Dolphin', '🐬', { swim: 37 }], ['Great white shark', '🦈', { swim: 40 }], ['Olympic swimmer', '🏊', { swim: 8.6 }], ['Otter', '🦦', { swim: 11 }],
+      ['Duck (paddling)', '🦆', { swim: 3 }], ['Seahorse', '🐠', { swim: 0.01 }], ['Penguin', '🐧', { swim: 25 }]] },
+    { id: 'art', subj: 'art', group: 'everyday', ask: ['art'], items: [
+      ['The Mona Lisa', '🖼️', { art: 0.77 }], ['A postcard', '🖼️', { art: 0.15 }], ['Michelangelo\'s David', '🗿', { art: 5.2 }], ['Christ the Redeemer', '🗿', { art: 30 }],
+      ['The Angel of the North (wings)', '👼', { art: 54 }], ['The Bayeux Tapestry', '🧵', { art: 70 }], ['The Statue of Liberty', '🗽', { art: 93 }], ['Van Gogh\'s Sunflowers', '🌻', { art: 0.92 }]] },
+    { id: 'bands', subj: 'music', group: 'everyday', kids: 'world', kidsAsk: ['band'], ask: ['band'], items: [
+      ['A solo singer', '🎤', { band: 1 }], ['A duet', '🎶', { band: 2 }], ['A trio', '🎶', { band: 3 }], ['A string quartet', '🎻', { band: 4 }], ['A brass band', '🎺', { band: 25 }],
+      ['A symphony orchestra', '🎼', { band: 80 }], ['A pop band', '🎸', { band: 5 }], ['A big band', '🎷', { band: 17 }]] },
+    { id: 'shapes', subj: 'maths', group: 'everyday', ask: ['sides'], items: [
+      ['Triangle', '🔺', { sides: 3 }], ['Square', '🟥', { sides: 4 }], ['Pentagon', '⬟', { sides: 5 }], ['Hexagon', '⬢', { sides: 6 }], ['Octagon', '🛑', { sides: 8 }],
+      ['Decagon', '🔟', { sides: 10 }], ['Dodecagon', '🔵', { sides: 12 }], ['A 50p coin (heptagon)', '🪙', { sides: 7 }]] },
+    { id: 'waterfalls', subj: 'world places', group: 'places', ask: ['falls'], items: [
+      ['Angel Falls', '💧', { falls: 979 }], ['Yosemite Falls', '💧', { falls: 739 }], ['Victoria Falls', '💧', { falls: 108 }], ['Niagara Falls', '💧', { falls: 51 }],
+      ['Eas a\' Chual Aluinn (Scotland)', '💧', { falls: 200 }], ['Pistyll Rhaeadr (Wales)', '💧', { falls: 80 }], ['Iguazu Falls', '💧', { falls: 82 }]] },
+    { id: 'lakes', subj: 'world places', group: 'places', ask: ['lakeDeep'], items: [
+      ['Lake Baikal', '🌊', { lakeDeep: 1642 }], ['Loch Ness', '🌊', { lakeDeep: 230 }], ['Loch Morar', '🌊', { lakeDeep: 310 }], ['Windermere', '🌊', { lakeDeep: 67 }],
+      ['Lough Neagh', '🌊', { lakeDeep: 25 }], ['Lake Superior', '🌊', { lakeDeep: 406 }], ['Lake Geneva', '🌊', { lakeDeep: 310 }], ['Lake Tanganyika', '🌊', { lakeDeep: 1470 }]] },
+    { id: 'deserts', subj: 'world places', group: 'places', ask: ['desert'], items: [
+      ['Sahara', '🏜️', { desert: 9200000 }], ['Arabian Desert', '🏜️', { desert: 2300000 }], ['Gobi', '🏜️', { desert: 1300000 }], ['Kalahari', '🏜️', { desert: 900000 }],
+      ['Atacama', '🏜️', { desert: 105000 }], ['Antarctica', '🧊', { desert: 14000000 }], ['Mojave', '🌵', { desert: 124000 }]] },
+    { id: 'wingbeats', subj: 'animals', group: 'nature', kids: 'animals', kidsAsk: ['flap'], ask: ['flap'], items: [
+      ['Mosquito', '🦟', { flap: 600 }], ['Honeybee', '🐝', { flap: 230 }], ['Housefly', '🪰', { flap: 200 }], ['Hummingbird', '🐦', { flap: 50 }], ['Dragonfly', '🐉', { flap: 30 }],
+      ['Butterfly', '🦋', { flap: 10 }], ['Pigeon', '🕊️', { flap: 5 }], ['Albatross', '🐦', { flap: 0.5 }]] },
+    { id: 'hatching', subj: 'birds', group: 'nature', kids: 'animals', kidsAsk: ['hatch'], ask: ['hatch'], items: [
+      ['Robin', '🐦', { hatch: 13 }], ['Chicken', '🐔', { hatch: 21 }], ['Duck', '🦆', { hatch: 28 }], ['Ostrich', '🐦', { hatch: 42 }], ['Emperor penguin', '🐧', { hatch: 65 }],
+      ['Crocodile', '🐊', { hatch: 90 }], ['Albatross', '🐦', { hatch: 75 }], ['Swan', '🦢', { hatch: 36 }]] },
+    { id: 'longs', subj: 'world places', group: 'places', ask: ['longthings'], items: [
+      ['The Great Wall of China', '🧱', { longthings: 21000000 }], ['The River Nile', '🌊', { longthings: 6650000 }], ['The Channel Tunnel', '🚇', { longthings: 50000 }],
+      ['The M25', '🛣️', { longthings: 188000 }], ['Hadrian\'s Wall', '🧱', { longthings: 117000 }], ['The River Thames', '🌊', { longthings: 346000 }], ['Brighton Pier', '🎡', { longthings: 524 }],
+      ['A football pitch', '⚽', { longthings: 105 }]] },
+    { id: 'ukbuilt', subj: 'history', group: 'history', ask: ['built'], items: [
+      ['Stonehenge', '🗿', { built: -3000 }], ['Hadrian\'s Wall', '🧱', { built: 122 }], ['The Tower of London', '🏰', { built: 1078 }], ['Big Ben', '🕰️', { built: 1859 }],
+      ['Blackpool Tower', '🗼', { built: 1894 }], ['The London Eye', '🎡', { built: 2000 }], ['Durham Cathedral', '⛪', { built: 1133 }], ['The Forth Bridge', '🌉', { built: 1890 }],
+      ['Buckingham Palace', '👑', { built: 1703 }], ['The Shard', '🏙️', { built: 2012 }]] },
+    { id: 'landmarks', subj: 'landmarks', group: 'places', ask: ['landmark'], items: [
+      ['The Shard', '🏙️', { landmark: 310 }], ['One Canada Square', '🏢', { landmark: 235 }], ['The BT Tower', '📡', { landmark: 177 }], ['Blackpool Tower', '🗼', { landmark: 158 }],
+      ['Big Ben', '🕰️', { landmark: 96 }], ['Nelson\'s Column', '🗽', { landmark: 52 }], ['The Angel of the North', '👼', { landmark: 20 }], ['The Eiffel Tower', '🗼', { landmark: 330 }],
+      ['The Burj Khalifa', '🏙️', { landmark: 828 }], ['The London Eye', '🎡', { landmark: 135 }]] }
+  ];
+  // Every pool × measure becomes a question. from: the first daily puzzle that may use it (past puzzles stay as played).
+  function factbankCats(from) {
+    const out = [];
+    for (const p of FB_POOLS) {
+      for (const a of p.ask) {
+        const spec = typeof a === 'string' ? { k: a } : a, M = FB_M[spec.k];
+        const items = p.items.filter(it => it[2][spec.k] != null).map(it => [it[0], it[2][spec.k]]);
+        if (items.length < 4) continue;
+        const q = (spec.q || M.q).replace('{n}', p.noun || 'one');
+        const fmtKey = spec.fmt !== undefined ? spec.fmt : M.fmt;
+        out.push({ q, t: 'fb-' + p.id + '-' + spec.k, fam: 'fb-' + p.id + '-' + spec.k, group: p.group, subj: p.subj, measure: M.m, from,
+          top: spec.top || M.top, bottom: spec.bottom || M.bottom, asc: !!(spec.asc != null ? spec.asc : M.asc), level: 1, tier: spec.tier || M.tier || 'guess',
+          fmt: fmtKey ? FB_FMT[fmtKey] : (v => ''), basis: spec.basis || M.basis,
+          ...(M.gapAbs != null ? { gapAbs: M.gapAbs } : { gapRel: M.gap }), items });
+      }
+    }
+    return out;
+  }
+
+  if (typeof factbankCats === 'function') factbankCats(FB_FROM).forEach(c => CATS.push(c));
 
   // Largest set each question can field once near-ties are kept apart.
   CATS.forEach(c => {
@@ -1461,6 +2014,19 @@ h1 {
     else if (TIER_GUESS.has(c.t) && !pop) c.tier = c.level <= 2 ? 'guess' : 'spec';
     else if (TIER_GUESS.has(c.t) || TIER_KNOWN.has(c.t)) c.tier = c.level <= 1 ? 'known' : 'spec';
     else c.tier = 'spec';
+  });
+  // Subject and kind of measure for every question, so a run spreads them out (no two space questions or two weight questions close together).
+  const SUBJ_RULES = [[/planet|the Sun\b|Moon|space|astronaut|Earth\b|star\b/i, 'space'], [/dinosaur/i, 'dinosaurs'], [/building|tower|bridge|landmark/i, 'landmarks'],
+    [/animal|whale|pregnan|legs|sleeps|bird|cat\b|dog\b/i, 'animals'], [/country|capital|city|cities|river|peak|mountain|continent|ocean|island|volcano|lake|clocks|furthest north|London/i, 'world places'],
+    [/element|melt|boil|densest|acid|gravity/i, 'science'], [/footballer|Premier League|England|club|World Cup|Olympic|sports star|caps|goals|cricket|tennis/i, 'sport'],
+    [/film|song|album|show|Bond|book|Eurovision|video game|toy|launched|company|theme park|Oscar|episode/i, 'pop culture'],
+    [/born|happened|Roman|emperor|came first|built first|invent/i, 'history'], [/calories|caffeine|hottest to eat|sugar/i, 'food and drink']];
+  const MEASURE_OF = { temp: 'temperature', 'animal-life': 'lifespan', holds: 'volume', far: 'distance', 'landmark-when': 'time ago', 'invention-when': 'time ago',
+    events: 'time ago', ago: 'time ago', born: 'time ago', watts: 'power', caffeine: 'nutrition', calories: 'nutrition', water: 'volume', melt: 'temperature',
+    grow: 'height', chilli: 'heat', legs: 'count', gestation: 'pregnancy', 'distance-london': 'distance', latitude: 'position', elevation: 'height', depth: 'depth' };
+  CATS.forEach(c => {
+    if (!c.subj) { const r = SUBJ_RULES.find(([re]) => re.test(c.q)); c.subj = r ? r[1] : ({ places: 'world places', people: 'history' })[c.group] || c.group; }
+    if (!c.measure) c.measure = MEASURE_OF[c.t] || c.t;
   });
   const BY_GROUP = {};
   CATS.forEach((c, i) => (BY_GROUP[c.group] = BY_GROUP[c.group] || []).push(i));
@@ -2511,7 +3077,7 @@ h1 {
   window.__ordoCats = () => CATS.map((c, i) => ({ i, t: c.t, q: c.q, g: c.group, level: c.level, n: c.items.length, maxN: c.maxN, region: c.region || '', fam: c.fam, tier: c.tier || '',
     ex: c.items.slice(0, 6).map(x => x[0].split('\n')[0]).join(', ') }));
   // Test hook: the planned daily run for puzzle no (count sets).
-  window.__ordoRun = (no, count) => buildRun(no, count || 40).map(t => ({ q: CATS[t.ci].q, t: CATS[t.ci].t, g: CATS[t.ci].group, ci: t.ci, level: CATS[t.ci].level, time: t.time,
+  window.__ordoRun = (no, count) => buildRun(no, count || 40).map(t => ({ q: CATS[t.ci].q, t: CATS[t.ci].t, g: CATS[t.ci].group, subj: CATS[t.ci].subj, measure: CATS[t.ci].measure, ci: t.ci, level: CATS[t.ci].level, time: t.time,
     items: t.correct.map(it => [it.name, it.v, CATS[t.ci].fmt ? CATS[t.ci].fmt(it.v) : String(it.v)]) }));
   // Rebuild a logged set ("d6", 3) for the difficulty model. Cached per run, as building one takes a few ms.
   const runCache = {};
@@ -2580,14 +3146,25 @@ h1 {
   }
   document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themePick)));
   setTheme((() => { try { return localStorage.getItem('ordo.theme') || 'auto'; } catch { return 'auto'; } })());
-  function buildRun(no, count, day = no) {
+  // From puzzle 11 (31 Oct 2026): no question type twice in a run, the same subject at least 8 sets apart, the same kind of measure
+  // at least 6 apart (weight 10, as so many things can be weighed), and the types that opened the last two days' puzzles are avoided. Earlier puzzles keep their old rules.
+  const RULES3_FROM = 11;
+  const openers = {};
+  function openersOf(d) {
+    if (d < RULES3_FROM) return [];
+    if (!openers[d]) { const keep = runFactor; runFactor = 1; openers[d] = buildRun(d, 15, d, { cross: false }).map(t => CATS[t.ci].t); runFactor = keep; }
+    return openers[d];
+  }
+  function buildRun(no, count, day = no, opts = {}) {
+    const v3 = day >= RULES3_FROM;
+    const avoid = new Set(v3 && opts.cross !== false && isFinite(day) && no === day ? [...openersOf(day - 1), ...openersOf(day - 2)] : []);
     const prev = rand;
     rand = seeded(no * 104729 + 7);
     const pick = a => a[Math.floor(rand() * a.length)];
     // Mostly questions anyone can reason out. Widely known pop culture and history: a small share, and not before set 6.
     // Specialist questions never appear. Later sets get harder through closer values (tight), not obscure facts.
     const base = CATS.map((c, i) => i).filter(i => CATS[i].group !== 'gotcha' && !CATS[i].region && CATS[i].tier !== 'spec' && !(CATS[i].from > day));
-    const turns = [], used = {};
+    const turns = [], used = {}, subjAt = {}, measAt = {}, usedQ = new Set();
     let lastT = null, lastG = null, lastCi = -1;
     const shown = new Set();
     for (let i = 0; i < count; i++) {
@@ -2596,7 +3173,11 @@ h1 {
       let pool = base.filter(ci => CATS[ci].maxN >= sp.n && CATS[ci].level <= Math.min(2, sp.lv) && ci !== lastCi
         && CATS[ci].tier === (wantKnown ? 'known' : 'guess'));
       if (!pool.length) pool = base.filter(ci => CATS[ci].maxN >= sp.n && CATS[ci].tier === 'guess' && ci !== lastCi);
-      const cost = ci => (used[CATS[ci].t] || 0) * 10 + (CATS[ci].t === lastT ? 100 : 0) + (CATS[ci].group === lastG ? 3 : 0);
+      const cost = v3 ? ci => {
+        const c = CATS[ci];
+        return (used[c.t] || 0) * 1000 + (usedQ.has(c.q) ? 500 : 0) + (i - (subjAt[c.subj] ?? -99) < 8 ? 200 : 0) + (i - (measAt[c.measure] ?? -99) < (c.measure === 'weight' ? 10 : 6) ? 100 : 0)
+          + (avoid.has(c.t) ? 20 : 0) + (c.group === lastG ? 3 : 0);
+      } : ci => (used[CATS[ci].t] || 0) * 10 + (CATS[ci].t === lastT ? 100 : 0) + (CATS[ci].group === lastG ? 3 : 0);
       let got = null;
       for (let t = 0; t < 30 && !got; t++) {
         const lo = Math.min(...pool.map(cost));
@@ -2617,7 +3198,7 @@ h1 {
       const items = got.set.map(a => ({ name: a[0], v: a[1], idx: cat.items.indexOf(a) }));
       const correct = sortItems(cat, items);
       turns.push({ ci: got.ci, correct, order: scramble(correct), time: sp.time });
-      used[cat.t] = (used[cat.t] || 0) + 1; lastT = cat.t; lastG = cat.group; lastCi = got.ci;
+      used[cat.t] = (used[cat.t] || 0) + 1; lastT = cat.t; lastG = cat.group; lastCi = got.ci; subjAt[cat.subj] = i; measAt[cat.measure] = i; usedQ.add(cat.q);
     }
     rand = prev;
     return turns;
