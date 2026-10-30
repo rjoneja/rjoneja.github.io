@@ -34,7 +34,7 @@
 .fb-badge { display: none; } html.football .fb-badge { display: inline-block; margin-left: 6px; font-size: .9em; line-height: 1; }
 html.football .mark .fb-badge { font-size: 22px; vertical-align: 1px; }
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<script>window.ORDO_PAGE=/^#football/.test(location.hash)?"football":"classic"; if (window.ORDO_PAGE==="football") document.documentElement.classList.add("football");   // arrivals via ordogame.com/football count separately
+<script>window.ORDO_PAGE=/^#football/.test(location.hash)||/[?&]football\b/.test(location.search)?"football":"classic"; if (window.ORDO_PAGE==="football") document.documentElement.classList.add("football");   // arrivals via ordogame.com/football count separately
 
 // Anonymous usage counts for the Ordo dashboard. Runs on ordogame.com only.
 // A random visitor ID (this browser) and session ID (this tab) - no names, no cookies, no IP addresses kept.
@@ -2353,7 +2353,7 @@ h1 {
     // Category links, e.g. ordogame.com/football or #football, open straight into practice for that category.
     const CAT_LINKS = { football: 'sport', sport: 'games', olympics: 'games', pop: 'pop', 'pop-culture': 'pop', people: 'people', places: 'places',
       history: 'history', science: 'science', film: 'film', music: 'music', mix: 'mix' };
-    const want = CAT_LINKS[(location.hash || '').replace(/^#/, '').toLowerCase()];
+    const want = CAT_LINKS[(location.hash || '').replace(/^#/, '').toLowerCase()] || (/[?&]football\b/.test(location.search) ? 'sport' : null);
     if (want) { hud(); return startLadder(want); }
     if (data && data.S && typeof data.S.round === 'number' && data.S.group && data.S.mode !== 'daily') { S = Object.assign(S, data.S); return newRound(); }
     hud();
