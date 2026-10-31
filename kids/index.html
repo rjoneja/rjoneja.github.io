@@ -324,6 +324,7 @@ body.pics .cheer h2 { font-size: 44px; }
       <div class="switch">Read questions aloud when a round starts<button class="toggle" id="autoRead" type="button" aria-pressed="false">Off</button></div>
       <div class="switch">Limit the number of moves (balloons pop with each move)<button class="toggle" id="moveLimit" type="button" aria-pressed="true">On</button></div>
       <div class="switch">Clear the sticker book<button class="toggle" id="resetBtn" type="button">Clear</button></div>
+      <div class="switch">Know a child who'd like this? Send Ordo Kids to a parent or teacher.<button class="toggle" id="sendKids" type="button">Send</button></div>
       <p class="grown-adult">Ordo for grown-ups: a daily game against the clock at <a href="https://ordogame.com/" target="_blank" rel="noopener">ordogame.com</a></p>
       <p>No ads and no sign-up. Progress is saved only on this device. Facts use rounded, typical figures, for example an average adult elephant's weight.</p>
     </div>
@@ -2084,6 +2085,14 @@ body.pics .cheer h2 { font-size: 44px; }
   ar.addEventListener('click', () => { P.autoRead = !P.autoRead; if (P.autoRead) P.sound = true; save(); paintAR(); paintSound(); });
   paintAR();
   let resetArm = false;
+  // A plain invite for grown-ups (never shown to children: it lives behind the 2-second hold).
+  $('sendKids').addEventListener('click', async () => {
+    try { window.ordoTrack && window.ordoTrack('share', 'fr-kids'); } catch {}
+    const url = 'https://ordogame.com/kids/?s=fr', text = 'Ordo Kids: a free picture-first ordering game for ages 4 to 9. Read aloud, no ads, no sign-up.';
+    try { if (navigator.share) { await navigator.share({ title: 'Ordo Kids', text, url }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(text + ' ' + url); $('sendKids').textContent = 'Copied'; setTimeout(() => { $('sendKids').textContent = 'Send'; }, 1800); }
+    catch { window.open('https://wa.me/?text=' + encodeURIComponent(text + '\n' + url), '_blank', 'noopener'); }
+  });
   $('resetBtn').addEventListener('click', () => {
     if (!resetArm) { resetArm = true; $('resetBtn').textContent = 'Tap again to clear'; setTimeout(() => { resetArm = false; $('resetBtn').textContent = 'Clear'; }, 3000); return; }
     P.stickers = []; save(); paintCount(); resetArm = false; $('resetBtn').textContent = 'Cleared';

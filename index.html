@@ -394,6 +394,12 @@ h1 {
 .remind-btn { display: block; text-align: center; text-decoration: none; }
 .remind-done { margin: 0; font-size: 14px; color: var(--muted); }
 .r-pct { margin: -4px 0 0; font-weight: 800; font-size: 17px; color: var(--accent); }
+/* A friend's challenge: their score to beat, on the Start screen and against yours on the results. */
+.r-chal { margin: 0; font-weight: 800; font-size: 17px; }
+.st-chal { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--surface); border: 2px solid var(--accent); font-weight: 800; font-size: 16px; line-height: 1.3; }
+.d-actions.has-img { grid-template-columns: minmax(0, 1fr) auto auto; }
+.r-img { padding-left: 12px; padding-right: 12px; font-size: 20px; line-height: 1; }
+@media (max-width: 359px) { .d-actions.has-img .wa-long { display: none; } .d-actions.has-img { gap: 6px; } }
 .trophy-note { margin: 0; font-size: 13px; color: #4A3F5E; }
 @media (max-height: 700px) { .trophy-note { grid-column: 1; font-size: 12px; line-height: 1.3; align-self: center; } .trophy-ask .trophy-skip { grid-column: 2; justify-self: end; } }
 /* Resuming: the next set stays covered during 3-2-1, so a pause never buys reading time. */
@@ -803,6 +809,7 @@ h1 {
       <li id="stClock">Starts with 3 items and 10 seconds. The clock settles at 7 seconds, and every 5 sets adds an item.</li>
       <li>One go a day. Same puzzle for everyone. Need a break? Pause between sets.</li>
     </ul>
+    <p class="st-chal" id="stChal" hidden></p>
     <button class="btn st-go" id="stGo" type="button">Start</button>
     <button class="st-relax" id="stRelax" type="button" aria-pressed="false"><span class="st-relax-box" aria-hidden="true"></span><span>Relaxed clock 🐢 <small>Twice the time. Own leaderboard.</small></span></button>
     <p class="st-note" id="stNote" hidden></p>
@@ -813,6 +820,7 @@ h1 {
     <h1 id="rTitle">Today</h1>
     <div class="d-score r-score"><b id="rScore">0</b><span>in a row</span></div>
     <p class="r-pct" id="rPct" hidden></p>
+    <p class="r-chal" id="rChal" hidden></p>
     <form class="trophy" id="rNamer" hidden aria-labelledby="rNamerLabel">
       <div class="trophy-icon" aria-hidden="true">🏆</div>
       <h2 class="trophy-head" id="rNamerLabel">You're on the leaderboard!</h2>
@@ -828,8 +836,9 @@ h1 {
     <div class="r-grid" id="rGrid" aria-hidden="true"></div>
     <p class="r-why" id="rWhy"></p>
     <div class="actions d-actions">
-      <a class="btn" id="rWa" href="https://wa.me/" target="_blank" rel="noopener">Share on WhatsApp</a>
+      <a class="btn" id="rWa" href="https://wa.me/" target="_blank" rel="noopener"><span class="wa-long">Share on </span>WhatsApp</a>
       <button class="btn-alt" id="rCopy" type="button">Copy</button>
+      <button class="btn-alt r-img" id="rImg" type="button" aria-label="Share as a picture">🖼️</button>
     </div>
     <textarea class="sharebox" id="rShareText" rows="5" readonly hidden aria-label="Result message"></textarea>
     <div class="install" id="rInstall" hidden>
@@ -840,6 +849,7 @@ h1 {
     <p class="remind-done" id="rRemindDone" hidden>⏰ Reminder added for 8am each day. You can change the time in your calendar.</p>
     <p class="d-rank" id="rRank" hidden></p>
     <button type="button" class="link-btn" id="rBoardLink">See the leaderboard →</button>
+    <button type="button" class="link-btn" id="rFriend">📨 Send Ordo to a friend</button>
     <p class="d-next" id="rNext"></p>
     <button class="btn-alt" id="rPractice" type="button">Free play: as many runs as you like</button>
   </section>
@@ -882,10 +892,12 @@ h1 {
     <div class="picker-head"><h1>About Ordo</h1><button type="button" class="toggle" id="aboutBack">Back</button></div>
     <p>Put things in the right order before the clock runs out. Every 5 sets adds one more thing to sort. A new run every day, the same for everyone.</p>
     <p>Made in London. No ads, no sign-up.</p>
+    <p><button type="button" class="link-btn" id="aboutFriend">📨 Send Ordo to a friend</button></p>
     <p><a class="about-kids" id="kidsLink" href="https://ordogame.com/kids/" target="_blank" rel="noopener">Ordo Kids</a>: a picture-first version for ages 4 to 9.</p>
     <h2 class="sub-h">Your data</h2>
     <p>Your streak and scores are kept on this device. To count players and run the shared top scores, the game sends your daily score with a random ID that isn't linked to you. If you add your name to a board, everyone can see it. We also count anonymous visits, plays and shares, with the kind of device, screen size and rough town (from the internet connection, never GPS), to see how the game is doing. No cookies, no names, no ads.</p>
     <p><a href="/howthisworks/">How Ordo works, in plain English →</a></p>
+    <p><a href="/press/">Press kit: screenshots, logos and facts →</a></p>
     <h2 class="sub-h">Contact</h2>
     <p>Ideas, mistakes or a puzzle you'd like to see: <a href="mailto:hello@ordogame.com">hello@ordogame.com</a></p>
     <h2 class="sub-h">Credits</h2>
@@ -2181,7 +2193,8 @@ h1 {
     track(ok ? 'set' : 'miss', id + ':' + pos + ':' + setKey(t), Math.round((ok ? R.elapsed : R.ceiling) * 1000));
   }
   window.__ordoSetKey = setKey;
-  const tagLink = (text, src) => text.split(BASE).join(BASE + '?s=' + src);
+  // Tag shared links with where they were shared (?s=wa); a challenge link's own ?c=… follows as &c=….
+  const tagLink = (text, src) => text.replace(/https:\/\/ordogame\.com\/(\?)?/g, (m, q) => BASE + '?s=' + src + (q ? '&' : ''));
   const SQ = { warm: '🟩', same: '🟨', cold: '🟥' };
 
   const store = {
@@ -2967,6 +2980,7 @@ h1 {
     if (S.mode === 'run') {
       logSet(true);
       S.cleared++; S.score = S.cleared; hud();
+      chalCheer();
       S.res.push(R.elapsed / R.ceiling);
       S.idx++;
       prog.runLive = { no: S.no, idx: S.idx, res: S.res.slice(), relaxed: S.relaxed }; saveProg();
@@ -3369,6 +3383,10 @@ h1 {
     const y = prog.run[no - 1], yLine = y && !y.left && y.score > 0 ? `Yesterday: ${y.score} in a row${pctLine(y.pct) ? ', ' + pctLine(y.pct).toLowerCase() : ''}. ` : '';
     note.textContent = (held ? `⏸ Paused at ${held.idx} in a row${held.relaxed ? ' (relaxed)' : ''}. Pick it up any time before midnight. ` : yLine) + (n > 1 ? `🔥 You're on a ${n}-day streak.` : '');
     note.hidden = !note.textContent;
+    const ch = prog.ch, sc = $('stChal');
+    sc.textContent = ch && ch.no === no ? `🎯 ${who(ch, true)} got ${ch.score} in a row today${ch.relaxed ? ' on the relaxed clock 🐢' : ''}. Can you beat it?`
+      : ch && ch.no < no && ch.seen === no ? "That challenge was for an earlier puzzle. Today's is a new one: have a go." : '';
+    sc.hidden = !sc.textContent;
     api(`/api/cdboard?day=${no}`).then(b => {
       if (!b || !b.players || b.players < SHOW_COUNT || $('start').hidden) return;
       note.textContent = (note.textContent ? note.textContent + ' ' : '') + `${n0(b.players)} people have played today.`;
@@ -3503,8 +3521,130 @@ h1 {
   // What ended the run: the clock (old rules) or the size of the sets with their clock (current rules).
   const beatenBy = rec => rec.v === 2 ? `Beaten by the ${rec.n}-item sets (${rec.clock} seconds)` : `Beaten by the ${rec.clock}-second clock`;
   function runShare(no, rec) {
+    const ch = chalFor(no), dare = ch && rec.score > ch.score ? `Beat ${who(ch)}'s ${ch.score}. Your turn 👇` : `Can you beat ${rec.score}? 👇`;
     return [`Ordo${rec.relaxed ? ' 🐢' : ''} · ${runDate(no, true)} · ${rec.score} in a row${fireFor(rec.score)}`, ...runGrid(rec),
-      beatenBy(rec) + (rec.relaxed ? ' (relaxed).' : '.'), ...(rec.pct >= 50 ? [pctLine(rec.pct) + ' 🏅'] : []), BASE].join('\n');
+      beatenBy(rec) + (rec.relaxed ? ' (relaxed).' : '.'), ...(rec.pct >= 50 ? [pctLine(rec.pct) + ' 🏅'] : []), dare, chalLink(no, rec)].join('\n');
+  }
+  // ---------- Challenges ----------
+  // A shared result links to the same day's puzzle with the score to beat: ordogame.com/?c=11.14&n=Sam (r = relaxed clock).
+  // The friend sees it on the Start screen, gets a cheer when they pass it, and a verdict on the results.
+  const nickname = () => prog.name && prog.name !== 'Player' ? prog.name : '';
+  const chalLink = (no, rec) => `${BASE}?c=${no}.${rec.score}${rec.relaxed ? 'r' : ''}` + (nickname() ? '&n=' + encodeURIComponent(nickname()) : '');
+  const chalFor = no => prog.ch && prog.ch.no === no ? prog.ch : null;
+  const who = (ch, cap) => ch.name || (cap ? 'Your friend' : 'your friend');
+  function readChallenge() {
+    let q; try { q = new URLSearchParams(location.search); } catch { return; }
+    const c = q.get('c'); if (c == null) return;
+    const m = /^(\d{1,5})\.(\d{1,3})(r?)$/.exec(c);
+    if (m && +m[1] <= dailyNo()) {
+      const name = (q.get('n') || '').replace(/[<>&"\\/\n\r\t]/g, '').trim().slice(0, 16);
+      prog.ch = { no: +m[1], score: +m[2], relaxed: !!m[3], name: name === 'Player' ? '' : name, seen: dailyNo(), cheered: false };
+      saveProg();
+      track('chal', +m[1] === dailyNo() ? (prog.run[+m[1]] ? 'open-played' : 'open') : 'old');
+    }
+    q.delete('c'); q.delete('n');
+    const rest = q.toString();
+    try { history.replaceState(history.state, '', location.pathname + (rest ? '?' + rest : '') + location.hash); } catch {}
+  }
+  function chalCheer() {
+    const ch = chalFor(S.no);
+    if (!ch || ch.cheered || S.cleared !== ch.score + 1) return;
+    ch.cheered = true; saveProg();
+    toast(`🎯 You've beaten ${who(ch)}'s ${ch.score}!`);
+  }
+  function paintChal(no, rec, fresh) {
+    const ch = chalFor(no), el2 = $('rChal');
+    el2.hidden = !ch;
+    if (!ch) return;
+    const w = who(ch), W = who(ch, true);
+    el2.textContent = rec.score > ch.score ? `🎯 You beat ${w}'s ${ch.score}!` : rec.score === ch.score ? `🎯 Level with ${w} on ${ch.score}.` : `🎯 ${W} wins this one: ${ch.score} to your ${rec.score}.`;
+    if (fresh && !ch.done) { ch.done = true; saveProg(); track('chal', rec.score > ch.score ? 'beat' : rec.score === ch.score ? 'tie' : 'lost'); }
+  }
+  function paintShare(no, rec) {
+    const text = runShare(no, rec);
+    $('rShareText').value = tagLink(text, 'cp');
+    $('rWa').href = 'https://wa.me/?text=' + encodeURIComponent(tagLink(text, 'wa'));
+    cardFor(no, rec);
+  }
+  // ---------- Result as a picture (for Instagram Stories, WhatsApp Status and the like) ----------
+  // Drawn ahead of time so the Share sheet opens straight from the tap (phones insist on that).
+  let card = null;
+  const CARD_SQ = ['#2FB14A', '#FFC82E', '#FF8A2B'];
+  async function cardFor(no, rec) {
+    const key = JSON.stringify([no, rec.score, rec.pct, rec.relaxed, nickname()]);
+    if (card && card.key === key) return card;
+    const mine = card = { key, blob: null };
+    try {
+      try { await Promise.all(['600 100px Fredoka', '800 40px Nunito', '700 40px Nunito'].map(f => document.fonts.load(f))); } catch {}
+      const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const g = cv.getContext('2d'); if (!g) return null;
+      const ink = '#1A1033', muted = '#5D5880', accent = '#B414B4', body = 'Nunito, "Arial Rounded MT Bold", system-ui, sans-serif';
+      g.fillStyle = '#EDF0FF'; g.fillRect(0, 0, W, H);
+      // Logo and wordmark.
+      g.save(); g.translate(W / 2 - 205, 70); g.scale(1.25, 1.25); g.lineJoin = 'round'; g.strokeStyle = ink;
+      const poly = (pts, fill) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fillStyle = fill; g.fill(); g.lineWidth = 5; g.stroke(); };
+      const bar = (x, y, w) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, 13, 6.5) : g.rect(x, y, w, 13); g.fillStyle = '#FFC82E'; g.fill(); g.lineWidth = 4; g.stroke(); };
+      poly([[60, 6], [86, 28], [34, 28]], '#F2353B'); bar(20, 38, 80); bar(28, 55, 64); bar(36, 72, 48); poly([[34, 92], [86, 92], [60, 114]], '#3FB6E8');
+      g.restore();
+      g.fillStyle = ink; g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.font = '600 130px Fredoka, "Arial Rounded MT Bold", system-ui, sans-serif';
+      g.fillText('ordo', W / 2 - 40, 190);
+      g.textAlign = 'center';
+      g.fillStyle = muted; g.font = `700 44px ${body}`;
+      g.fillText(runDate(no) + (rec.relaxed ? ' · relaxed clock 🐢' : ''), W / 2, 300);
+      g.fillStyle = ink; g.font = '600 280px Fredoka, "Arial Rounded MT Bold", system-ui, sans-serif';
+      g.fillText(String(rec.score), W / 2, 590);
+      g.font = `800 60px ${body}`;
+      g.fillText('in a row' + fireFor(rec.score), W / 2, 680);
+      // The grid: one square per set, coloured by how much of the clock it took.
+      const res = (rec.res || []).slice(0, 39).concat(rec.left || rec.paused ? [] : ['x']), per = 10, sz = 70, gap = 14;   // x: the set that beat the clock
+      const rows = Math.max(1, Math.ceil(res.length / per));
+      let y = 740;
+      res.forEach((f, i) => {
+        const r = Math.floor(i / per), c = i % per, inRow = Math.min(per, res.length - r * per);
+        const x = W / 2 - (inRow * sz + (inRow - 1) * gap) / 2 + c * (sz + gap), yy = y + r * (sz + gap);
+        g.beginPath(); g.roundRect ? g.roundRect(x, yy, sz, sz, 14) : g.rect(x, yy, sz, sz);
+        g.fillStyle = f === 'x' ? '#FFFFFF' : CARD_SQ[f < 0.5 ? 0 : f < 0.8 ? 1 : 2]; g.fill(); g.lineWidth = 5; g.strokeStyle = ink; g.stroke();
+        if (f === 'x') { g.save(); g.font = '44px system-ui, sans-serif'; g.textBaseline = 'middle'; g.fillText('⏰', x + sz / 2, yy + sz / 2 + 2); g.restore(); }
+      });
+      y += res.length ? rows * (sz + gap) + 40 : 20;
+      g.fillStyle = muted; g.font = `700 40px ${body}`;
+      if ((rec.res || []).length > 39) { g.fillText(`…and ${rec.res.length - 39} more`, W / 2, y); y += 56; }
+      g.fillText(beatenBy(rec) + '.', W / 2, y); y += 64;
+      if (rec.pct >= 30) { g.fillStyle = accent; g.font = `800 44px ${body}`; g.fillText(pctLine(rec.pct) + (rec.pct >= 50 ? ' 🏅' : ''), W / 2, y); }
+      // Call to action.
+      const py = H - 190, pw = 860, ph = 120;
+      g.beginPath(); g.roundRect ? g.roundRect(W / 2 - pw / 2, py, pw, ph, 60) : g.rect(W / 2 - pw / 2, py, pw, ph);
+      g.fillStyle = accent; g.fill(); g.lineWidth = 6; g.strokeStyle = ink; g.stroke();
+      g.fillStyle = '#FFFFFF'; g.font = `800 50px ${body}`; g.textBaseline = 'middle';
+      g.fillText(`Can you beat ${rec.score}? ordogame.com`, W / 2, py + ph / 2 + 2);
+      const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+      if (card === mine) mine.blob = blob;
+    } catch { if (card === mine) card = null; }
+    return card;
+  }
+  async function shareCard() {
+    const no = dailyNo(), rec = prog.run[no]; if (!rec) return;
+    track('share', 'img-daily');
+    let c = card; if (!c || !c.blob) c = await cardFor(no, rec);
+    if (!c || !c.blob) { toast("Couldn't make the picture."); return; }
+    const file = new File([c.blob], `ordo-${no}.png`, { type: 'image/png' });
+    const text = tagLink(runShare(no, rec), 'img');
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return; } }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+    // No share sheet (most computers): save the picture instead.
+    const a = document.createElement('a'); a.href = URL.createObjectURL(c.blob); a.download = file.name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('Picture saved');
+  }
+  window.__ordoCard = async () => { const no = dailyNo(), rec = prog.run[no]; const c = rec && await cardFor(no, rec); return c && c.blob ? { size: c.blob.size, type: c.blob.type } : null; };
+  // ---------- Send Ordo to a friend: a plain invite, separate from sharing a score ----------
+  async function sendFriend(where) {
+    track('share', 'fr-' + where);
+    const url = BASE + '?s=fr', text = 'Ordo: a quick daily puzzle. Put things in the right order before the clock runs out. Free, no sign-up.';
+    try { if (navigator.share) { await navigator.share({ title: 'Ordo', text, url }); return; } }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(text + ' ' + url); toast('Link copied. Paste it to a friend.'); }
+    catch { window.open('https://wa.me/?text=' + encodeURIComponent(text + '\n' + url), '_blank', 'noopener'); }
   }
   let runTimer = 0;
   // ---------- Add to home screen ----------
@@ -3565,9 +3705,10 @@ h1 {
     $('rGrid').textContent = runGrid(rec).join('\n');
     $('rWhy').textContent = rec.paused ? `Paused at ${rec.score} in a row and not picked up before midnight.` : rec.left ? (rec.v === 2 ? `You left the run on the ${rec.n}-item sets.` : `You left the run at the ${rec.clock}-second clock.`)
       : (rec.v === 2 ? beatenBy(rec) : `Beaten by the ${rec.clock}-second clock` + (rec.n === 4 ? ' on the 4-item sets' : '')) + '.' + (rec.relaxed ? ' Relaxed clock 🐢.' : '');
-    const text = runShare(no, rec);
-    $('rShareText').value = tagLink(text, 'cp'); $('rShareText').hidden = true;
-    $('rWa').href = 'https://wa.me/?text=' + encodeURIComponent(tagLink(text, 'wa'));
+    $('rShareText').hidden = true;
+    paintChal(no, rec, fresh);
+    paintShare(no, rec);
+    $('rImg').hidden = !canCard; $('rImg').parentElement.classList.toggle('has-img', canCard);
     $('rRank').hidden = true; $('rNamer').hidden = true;
     paintInstall(); paintRemind(); $('rRemindDone').hidden = true;
     $('rPct').textContent = pctLine(rec.pct); $('rPct').hidden = !$('rPct').textContent;
@@ -3588,8 +3729,7 @@ h1 {
       rec.pct = res.pct; saveProg();
       if (!$('runDone').hidden) {
         $('rPct').textContent = pctLine(rec.pct); $('rPct').hidden = !$('rPct').textContent;
-        const text = runShare(no, rec);
-        $('rShareText').value = tagLink(text, 'cp'); $('rWa').href = 'https://wa.me/?text=' + encodeURIComponent(tagLink(text, 'wa'));
+        paintShare(no, rec);
       }
     }
     if (!res || $('runDone').hidden || !rec.score) return;
@@ -3631,6 +3771,7 @@ h1 {
     $('rNameIn').blur();
     trophyNamed(name);
     await postName(name, prog.run[dailyNo()] || {}, false);
+    if (prog.run[dailyNo()]) paintShare(dailyNo(), prog.run[dailyNo()]);   // the challenge link now carries the name
   });
   const shareCtx = () => S.mode === 'countdown' ? 'practice' : S.mode === 'run' || S.mode === 'done' ? 'daily' : (S.mode || 'cat');
   $('rWa').addEventListener('click', () => track('share', 'wa-daily'));
@@ -3645,6 +3786,10 @@ h1 {
   });
   $('rBoardLink').addEventListener('click', () => { const rec = prog.run[dailyNo()]; boardRelaxed = !!(rec && rec.relaxed); openBoards('cd', cdBoardTab || 'day'); });
   $('rPractice').addEventListener('click', () => startCountdown());
+  const canCard = (() => { try { const c = document.createElement('canvas'); return !!(c.getContext && c.getContext('2d') && c.toBlob); } catch { return false; } })();
+  $('rImg').addEventListener('click', shareCard);
+  $('rFriend').addEventListener('click', () => sendFriend('results'));
+  $('aboutFriend').addEventListener('click', () => sendFriend('about'));
   $('stGo').addEventListener('click', beginRun);
   function startDaily() {
     const no = dailyNo();
@@ -3973,6 +4118,7 @@ h1 {
     try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(() => {}); } catch {}
     // Old links (#daily, #countdown, challenge links like #qr-…, category links like #football) all land on today's game now.
     if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
+    readChallenge();
     hud();
     goHome();
   }
