@@ -169,6 +169,7 @@ button { font: inherit; color: inherit; }
 .big:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
 .big.blue { background: var(--blue); color: #fff; }
 .big.small { font-size: 22px; padding: 10px 16px; border-radius: 18px; }
+.big.special { background: var(--coral); color: #fff; }
 .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .tile {
   appearance: none; border: 3px solid var(--ink); border-radius: 22px; background: var(--surface); padding: 12px; cursor: pointer;
@@ -303,6 +304,7 @@ body.pics .cheer h2 { font-size: 44px; }
   <!-- Home -->
   <section id="home" class="home" style="display:flex;flex-direction:column;gap:16px">
     <h1 class="hello">Put things in the right order!</h1>
+    <button class="big special" id="specialBtn" type="button" hidden></button>
     <button class="big" id="playBtn" type="button">▶ Play!</button>
     <h2 class="section-h">Or pick a topic</h2>
     <div class="tiles" id="tiles"></div>
@@ -1385,7 +1387,7 @@ body.pics .cheer h2 { font-size: 44px; }
     { id: 'burntime', season: 'bonfire', subj: 'candles and sparklers', group: 'everyday', ask: ['burnT'], items: [
       ['A match', '🔥', { burnT: 0.33 }], ['A sparkler', '✨', { burnT: 1 }], ['A birthday candle', '🎂', { burnT: 10 }], ['A tealight', '🕯️', { burnT: 240 }],
       ['A dinner candle', '🕯️', { burnT: 480 }], ['A big church candle', '⛪', { burnT: 3000 }]] },
-    { id: 'bangs', season: 'bonfire', subj: 'fireworks', group: 'science', ask: [{ k: 'loud', q: 'Which makes the loudest noise?', basis: 'Typical sound level up close, in decibels.' }], items: [
+    { id: 'bangs', kids: 'season', kidsAsk: ['loud'], season: 'bonfire', subj: 'fireworks', group: 'science', ask: [{ k: 'loud', q: 'Which makes the loudest noise?', basis: 'Typical sound level up close, in decibels.' }], items: [
       ['Rustling leaves', '🍂', { loud: 20 }], ['A whisper', '🤫', { loud: 30 }], ['People chatting', '🗣️', { loud: 60 }], ['A barking dog', '🐕', { loud: 90 }],
       ['A firework bang', '🎆', { loud: 150 }]] },
     { id: 'traditions', season: 'bonfire', subj: 'traditions', group: 'people', ask: [{ k: 'firstY', q: 'Which yearly tradition began first?', basis: 'The year it first took place.' }], items: [
@@ -1401,9 +1403,9 @@ body.pics .cheer h2 { font-size: 44px; }
     { id: 'xmasdinner', season: 'christmas', subj: 'Christmas dinner', group: 'everyday', ask: [{ k: 'cook', q: 'Which takes longest to cook for Christmas dinner?' }], items: [
       ['Brussels sprouts', '🥬', { cook: 8 }], ['Pigs in blankets', '🌭', { cook: 30 }], ['Roast potatoes', '🥔', { cook: 60 }], ['A 5 kg turkey', '🦃', { cook: 200 }],
       ['A Christmas pudding (steamed from fresh)', '🍮', { cook: 480 }]] },
-    { id: 'xmasweight', season: 'christmas', subj: 'Christmas food', group: 'everyday', ask: [{ k: 'g', q: 'Which is heaviest on the Christmas table?' }], items: [
+    { id: 'xmasweight', kids: 'season', kidsAsk: ['g'], season: 'christmas', subj: 'Christmas food', group: 'everyday', ask: [{ k: 'g', q: 'Which is heaviest on the Christmas table?' }], items: [
       ['A Brussels sprout', '🥬', { g: 12 }], ['A mince pie', '🥧', { g: 55 }], ['A large Christmas pudding', '🍮', { g: 900 }], ['A turkey for a family', '🦃', { g: 6000 }]] },
-    { id: 'xmasanimals', season: 'christmas', subj: 'Christmas animals', noun: 'Christmas animal', group: 'nature', ask: ['kg'], items: [
+    { id: 'xmasanimals', kids: 'season', kidsAsk: ['kg'], season: 'christmas', subj: 'Christmas animals', noun: 'Christmas animal', group: 'nature', ask: ['kg'], items: [
       ['Robin', '🐦', { kg: 0.018 }], ['Turkey', '🦃', { kg: 9 }], ['Emperor penguin', '🐧', { kg: 30 }], ['Reindeer', '🦌', { kg: 120 }],
       ['Donkey', '🫏', { kg: 250 }], ['Polar bear', '🐻‍❄️', { kg: 450 }]] },
     // New Year, 31 December and 1 January
@@ -1419,7 +1421,7 @@ body.pics .cheer h2 { font-size: 44px; }
       ['Moscow', '🇷🇺', { janHigh: -4 }], ['New York', '🇺🇸', { janHigh: 4 }], ['London', '🇬🇧', { janHigh: 8 }], ['Rome', '🇮🇹', { janHigh: 12 }],
       ['Cairo', '🇪🇬', { janHigh: 19 }], ['Dubai', '🇦🇪', { janHigh: 24 }], ['Sydney', '🇦🇺', { janHigh: 26 }], ['Rio de Janeiro', '🇧🇷', { janHigh: 30 }]] },
     // Easter, Good Friday to Easter Monday
-    { id: 'eastereggs', season: 'easter', subj: 'eggs', group: 'nature', ask: [{ k: 'g', q: 'Which egg is heaviest, chocolate ones included?' }], items: [
+    { id: 'eastereggs', kids: 'season', kidsAsk: ['g'], season: 'easter', subj: 'eggs', group: 'nature', ask: [{ k: 'g', q: 'Which egg is heaviest, chocolate ones included?' }], items: [
       ['A quail\'s egg', '🥚', { g: 10 }], ['A Creme Egg', '🍫', { g: 40 }], ['A goose egg', '🪿', { g: 150 }], ['An emu egg', '🥚', { g: 600 }], ['An ostrich egg', '🥚', { g: 1400 }]] },
     { id: 'springflowers', season: 'easter', subj: 'spring flowers', group: 'nature', ask: [{ k: 'when', q: 'Which usually flowers first in the year?', basis: 'Typical peak flowering in Britain.' }], items: [
       ['Snowdrop', '🤍', { when: 32 }], ['Crocus', '🪻', { when: 60 }], ['Daffodil', '🌼', { when: 80 }], ['Tulip', '🌷', { when: 106 }], ['Bluebell', '🔔', { when: 121 }],
@@ -1434,7 +1436,7 @@ body.pics .cheer h2 { font-size: 44px; }
     { id: 'pancakes', season: 'pancake', subj: 'world food', group: 'everyday', ask: ['panW'], items: [
       ['A blini', '🥞', { panW: 6 }], ['An American pancake', '🥞', { panW: 12 }], ['A French crêpe', '🥞', { panW: 30 }], ['Ethiopian injera', '🫓', { panW: 50 }]] },
     // Valentine's Day, 14 February
-    { id: 'bigheart', season: 'valentine', subj: 'hearts', group: 'nature', ask: ['heart'], items: [
+    { id: 'bigheart', kids: 'season', kidsAsk: ['heart'], season: 'valentine', subj: 'hearts', group: 'nature', ask: ['heart'], items: [
       ['Chicken', '🐔', { heart: 10 }], ['Human', '🧍', { heart: 300 }], ['Horse', '🐎', { heart: 4000 }], ['Giraffe', '🦒', { heart: 11000 }],
       ['Elephant', '🐘', { heart: 20000 }], ['Blue whale', '🐋', { heart: 180000 }]] },
     { id: 'romfilms', season: 'valentine', subj: 'romantic films', group: 'culture', ask: [{ k: 'filmY', q: 'Which love story came out first?' }], items: [
@@ -1448,7 +1450,7 @@ body.pics .cheer h2 { font-size: 44px; }
       ['Loch Morar', '🌊', { lakeDeep: 310 }], ['Loch Ness', '🌊', { lakeDeep: 230 }], ['Loch Lomond', '🌊', { lakeDeep: 190 }], ['Loch Tay', '🌊', { lakeDeep: 150 }],
       ['Loch Awe', '🌊', { lakeDeep: 94 }], ['Loch Leven', '🌊', { lakeDeep: 25 }]] },
     // Chinese New Year
-    { id: 'zodiac', season: 'cny', subj: 'the Chinese zodiac', group: 'people', ask: ['zodiac'], items: [
+    { id: 'zodiac', kids: 'season', kidsAsk: ['zodiac'], season: 'cny', subj: 'the Chinese zodiac', group: 'people', ask: ['zodiac'], items: [
       ['Rat', '🐀', { zodiac: 1 }], ['Ox', '🐂', { zodiac: 2 }], ['Tiger', '🐅', { zodiac: 3 }], ['Rabbit', '🐇', { zodiac: 4 }], ['Dragon', '🐉', { zodiac: 5 }], ['Snake', '🐍', { zodiac: 6 }],
       ['Horse', '🐎', { zodiac: 7 }], ['Goat', '🐐', { zodiac: 8 }], ['Monkey', '🐒', { zodiac: 9 }], ['Rooster', '🐓', { zodiac: 10 }], ['Dog', '🐕', { zodiac: 11 }], ['Pig', '🐖', { zodiac: 12 }]] },
     { id: 'chinainvent', season: 'cny', subj: 'inventions', group: 'people', ask: [{ k: 'firstY', q: 'Which Chinese invention came first?' }], items: [
@@ -1473,9 +1475,18 @@ body.pics .cheer h2 { font-size: 44px; }
       ['Reykjavik', '🇮🇸', { daylight: 21.1 }], ['Oslo', '🇳🇴', { daylight: 18.8 }], ['Edinburgh', '🏴', { daylight: 17.6 }], ['London', '🇬🇧', { daylight: 16.6 }],
       ['Rome', '🇮🇹', { daylight: 15.2 }], ['Cairo', '🇪🇬', { daylight: 14 }], ['Singapore', '🇸🇬', { daylight: 12.2 }], ['Sydney', '🇦🇺', { daylight: 9.9 }]] },
     // Halloween, 31 October
-    { id: 'spooky', season: 'halloween', subj: 'spooky animals', noun: 'Halloween creature', group: 'nature', ask: ['kg'], items: [
+    { id: 'spooky', kids: 'season', kidsAsk: ['kg'], season: 'halloween', subj: 'spooky animals', noun: 'Halloween creature', group: 'nature', ask: ['kg'], items: [
       ['Pipistrelle bat', '🦇', { kg: 0.005 }], ['Vampire bat', '🦇', { kg: 0.035 }], ['Barn owl', '🦉', { kg: 0.3 }], ['Giant fruit bat', '🦇', { kg: 1.2 }],
       ['Black cat', '🐈‍⬛', { kg: 4.5 }], ['Wolf', '🐺', { kg: 40 }]] },
+    // Ordo Kids only (special days)
+    { id: 'kidhot', kids: 'season', kidsAsk: ['heat'], season: 'bonfire', subj: 'fire', group: 'science', ask: [], items: [
+      ['Inside a fridge', '🧊', { heat: 4 }], ['A warm bath', '🛁', { heat: 38 }], ['A cup of tea', '☕', { heat: 70 }], ['A hot oven', '🍞', { heat: 220 }],
+      ['A sparkler', '✨', { heat: 1600 }], ['The Sun', '☀️', { heat: 5500 }]] },
+    { id: 'kidyear', kids: 'season', kidsAsk: ['when'], season: 'newyear', subj: 'calendar', group: 'everyday', ask: [], items: [
+      ['New Year\'s Day', '🎉', { when: 1 }], ['Valentine\'s Day', '❤️', { when: 45 }], ['April Fools\' Day', '🃏', { when: 91 }], ['Midsummer\'s Day', '☀️', { when: 172 }],
+      ['Halloween', '🎃', { when: 304 }], ['Christmas Day', '🎄', { when: 359 }]] },
+    { id: 'springbabies', kids: 'season', kidsAsk: ['baby'], season: 'easter', subj: 'baby animals', group: 'nature', ask: [], items: [
+      ['Chick', '🐣', { baby: 0.04 }], ['Piglet', '🐖', { baby: 1.3 }], ['Lamb', '🐑', { baby: 4 }], ['Calf', '🐄', { baby: 40 }]] },
     { id: 'scaryfilms', season: 'halloween', subj: 'scary films', group: 'culture', ask: [{ k: 'filmY', q: 'Which spooky film came out first?' }], items: [
       ['Psycho', '🔪', { filmY: 1960 }], ['The Exorcist', '😱', { filmY: 1973 }], ['Halloween', '🎃', { filmY: 1978 }], ['Ghostbusters', '👻', { filmY: 1984 }],
       ['Hocus Pocus', '🧙', { filmY: 1993 }], ['Coraline', '🧵', { filmY: 2009 }]] }
@@ -1533,7 +1544,7 @@ body.pics .cheer h2 { font-size: 44px; }
     return out;
   }
 
-  const FB_KIDS = {};
+  const FB_KIDS = {}, SEASON_KIDS = {};
   if (typeof FB_POOLS !== 'undefined') for (const p of FB_POOLS) {
     if (!p.kids) continue;
     for (const k of p.kidsAsk || []) {
@@ -1546,9 +1557,13 @@ body.pics .cheer h2 { font-size: 44px; }
         const pick = abs ? chooseFar(items, n, 1, abs) : chooseFar(items, n, Math.max(1.4, ratio));
         return { q, top: spec.top || M.top, bottom: spec.bottom || M.bottom, asc: !!(spec.asc != null ? spec.asc : M.asc), items: pick, facts: [] };
       });
-      (FB_KIDS[p.kids] = FB_KIDS[p.kids] || []).push(kind);
+      if (p.kids === 'season') [].concat(p.season).forEach(sk => (SEASON_KIDS[sk] = SEASON_KIDS[sk] || []).push(kind));
+      else (FB_KIDS[p.kids] = FB_KIDS[p.kids] || []).push(kind);
     }
   }
+  // Special days (Bonfire Night, Christmas…): a themed game on the home screen, and one themed round in mixed play.
+  const todaySeasons = () => { const d = new Date(); return typeof fbSeasonsOn === 'function' ? fbSeasonsOn(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).filter(k => (SEASON_KIDS[k] || []).length) : []; };
+  const seasonKinds = () => todaySeasons().flatMap(k => SEASON_KIDS[k]);
   const TOPICS = [
     { id: 'animals', em: '🐾', name: 'Animals', sub: 'Big, fast, long, legs', kinds: [
       T('weight', n => ({ q: 'Which animal is heaviest?', top: 'Heaviest', bottom: 'Lightest', asc: false, items: chooseFar(ANIMAL_WEIGHT, n, 1.8), facts: TYPE_FACTS.weight })),
@@ -1693,7 +1708,7 @@ body.pics .cheer h2 { font-size: 44px; }
   const lineKey = t => String(t).toLowerCase().replace(/[‘’]/g, "'").replace(/[–—−]/g, '-').replace(/\s+/g, ' ').trim();
   const VOICE_URL = 'voice/emma';
   // Changes whenever the recordings change (set by the build), so phones never mix an old recording with new timings.
-  const VOICE_V = 'd07fb154';
+  const VOICE_V = 'c4d6db3f';
   const A = { ctx: null, buf: null, map: null, loading: null, srcs: [] };
   function audioCtx() {
     try {
@@ -1753,6 +1768,8 @@ body.pics .cheer h2 { font-size: 44px; }
   }
   // Everything the game can say, for recording. Each entry is [key, words for the recording].
   window.__lineupRound = () => R && { q: R.q, t: R.t, min: R.min, moves: R.moves, correct: R.correct.map(it => it.t) };
+  window.__lineupSeason = () => ({ today: todaySeasons(), kinds: Object.fromEntries(Object.entries(SEASON_KIDS).map(([s, ks]) => [s, ks.map(k => k.t)])) });
+  window.__lineupSeasonGen = (s, n) => (SEASON_KIDS[s] || []).map(k => k(n, 7));
   window.__lineupGen = (id, n, age) => TOPICS.find(t => t.id === id).kinds.map(k => k(n, age));
   window.__lineupVoiceReady = () => !!(A.buf && A.map);
   window.__lineupLines = () => {
@@ -1772,6 +1789,7 @@ body.pics .cheer h2 { font-size: 44px; }
     ['The Sun', 'The Earth', 'The Moon'].forEach(t => add(t));
     SEQS.forEach(s => { add(s.q); s.facts.forEach(f => add(f)); });
     TOPICS.forEach(tp => tp.kinds.forEach(k => { for (const age of [5, 6, 7, 8, 9]) { const r = k(3, age); if (r) add(r.q); } }));
+    Object.values(SEASON_KIDS).flat().forEach(k => { const r = k(3, 7); if (r) add(r.q); });
     Object.values(TYPE_FACTS).flat().concat(Object.values(ITEM_FACTS).flat()).forEach(f => add(f));
     PRAISE.flat().forEach(p => add(p));
     for (let n = 0; n <= 15; n++) add(scoreLine(n), `You got ${NUMWORDS[n]} ${n === 1 ? 'star' : 'stars'}!`);
@@ -1818,6 +1836,12 @@ body.pics .cheer h2 { font-size: 44px; }
   // ---------- Screens ----------
   const views = ['home', 'game', 'reward', 'bookView'];
   function show(id) { views.forEach(v => { $(v).hidden = v !== id; }); window.scrollTo(0, 0); }
+  function paintSpecial() {
+    const ks = todaySeasons(), b = $('specialBtn');
+    b.hidden = !ks.length || !!P.pics;
+    if (ks.length && typeof FB_SEASONS !== 'undefined') b.textContent = `${FB_SEASONS[ks[0]].emoji} ${FB_SEASONS[ks[0]].name} game!`;
+  }
+  paintSpecial();
   $('tiles').innerHTML = TOPICS.map(t => `<button class="tile" type="button" data-t="${t.id}"><span class="em" aria-hidden="true">${t.em}</span><b>${t.name}</b><span>${t.sub}</span></button>`).join('');
   const lvlBtns = [...document.querySelectorAll('.lvl button')];
   const paintLvl = () => lvlBtns.forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.lv) === P.start)));
@@ -1840,8 +1864,12 @@ body.pics .cheer h2 { font-size: 44px; }
   const STICKER_STARS = 9;
   let G = null, R = null;
   function startGame(topicId) {
+    const special = topicId === 'special'; if (special) topicId = null;
     G = { topic: topicId, i: 0, stars: 0, order: [], usedKinds: {}, facts: new Set(), types: new Set(), pics: !!P.pics };
-    try { window.ordoTrack && window.ordoTrack('kids_start', G.pics ? 'pics' : topicId || 'mix'); } catch {}
+    // On a special day: the themed game has three themed rounds; ordinary mixed play has one.
+    const sk = !G.pics && !topicId ? seasonKinds() : [];
+    G.seasonAt = sk.length ? (special ? [0, 2, 4] : [2]) : []; G.seasonUsed = [];
+    try { window.ordoTrack && window.ordoTrack('kids_start', G.pics ? 'pics' : special ? 'special-' + todaySeasons()[0] : topicId || 'mix'); } catch {}
     // Mixed play rotates topics and always includes some maths.
     if (!topicId) {
       const others = shuffle(['animals', 'grow', 'space', 'world']);
@@ -1857,6 +1885,13 @@ body.pics .cheer h2 { font-size: 44px; }
     const lv = levelOf(topic.id);
     const n = sizeFor(G.i, lv);
     let r = null;
+    if (G.seasonAt.includes(G.i)) {
+      // A themed kind not used yet this game, preferring one that fills the round (some have only 4 things).
+      const ks = seasonKinds(), fresh = shuffle(ks.filter(k => !G.seasonUsed.includes(k.t))), tries = (fresh.length ? fresh : shuffle(ks.slice()));
+      let best = null;
+      for (const k of tries) { const x = k(n, 5 + lv); if (x && (!best || x.items.length > best.r.items.length)) best = { k, r: x }; if (x && x.items.length >= n) break; }
+      if (best) { r = best.r; r.t = best.k.t; G.seasonUsed.push(r.t); G.types.add(r.t); r.topicId = topic.id; return startRound(r, lv); }
+    }
     const used = G.usedKinds[topic.id] = G.usedKinds[topic.id] || [];
     const tried = new Set();
     for (let t = 0; t < 20 && !r; t++) {
@@ -2202,6 +2237,7 @@ body.pics .cheer h2 { font-size: 44px; }
 
   $('playBtn').addEventListener('click', () => startGame(null));
   $('tiles').addEventListener('click', e => { const t = e.target.closest('.tile'); if (t) startGame(t.dataset.t); });
+  $('specialBtn').addEventListener('click', () => startGame('special'));
   $('againBtn').addEventListener('click', () => startGame(G && G.topic));
   $('toBook').addEventListener('click', showBook);
   $('bookBtn').addEventListener('click', showBook);
@@ -2225,7 +2261,7 @@ body.pics .cheer h2 { font-size: 44px; }
   gb.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) startHold(e); });
   gb.addEventListener('keyup', stopHold);
   const pm = $('picsMode');
-  const paintPM = () => { pm.setAttribute('aria-pressed', String(!!P.pics)); pm.textContent = P.pics ? 'On' : 'Off'; document.body.classList.toggle('pics', !!P.pics); };
+  const paintPM = () => { pm.setAttribute('aria-pressed', String(!!P.pics)); pm.textContent = P.pics ? 'On' : 'Off'; document.body.classList.toggle('pics', !!P.pics); paintSpecial(); };
   pm.addEventListener('click', () => { P.pics = !P.pics; save(); paintPM(); });
   paintPM();
   const ml = $('moveLimit');

@@ -2116,7 +2116,7 @@ h1 {
     { id: 'burntime', season: 'bonfire', subj: 'candles and sparklers', group: 'everyday', ask: ['burnT'], items: [
       ['A match', '🔥', { burnT: 0.33 }], ['A sparkler', '✨', { burnT: 1 }], ['A birthday candle', '🎂', { burnT: 10 }], ['A tealight', '🕯️', { burnT: 240 }],
       ['A dinner candle', '🕯️', { burnT: 480 }], ['A big church candle', '⛪', { burnT: 3000 }]] },
-    { id: 'bangs', season: 'bonfire', subj: 'fireworks', group: 'science', ask: [{ k: 'loud', q: 'Which makes the loudest noise?', basis: 'Typical sound level up close, in decibels.' }], items: [
+    { id: 'bangs', kids: 'season', kidsAsk: ['loud'], season: 'bonfire', subj: 'fireworks', group: 'science', ask: [{ k: 'loud', q: 'Which makes the loudest noise?', basis: 'Typical sound level up close, in decibels.' }], items: [
       ['Rustling leaves', '🍂', { loud: 20 }], ['A whisper', '🤫', { loud: 30 }], ['People chatting', '🗣️', { loud: 60 }], ['A barking dog', '🐕', { loud: 90 }],
       ['A firework bang', '🎆', { loud: 150 }]] },
     { id: 'traditions', season: 'bonfire', subj: 'traditions', group: 'people', ask: [{ k: 'firstY', q: 'Which yearly tradition began first?', basis: 'The year it first took place.' }], items: [
@@ -2132,9 +2132,9 @@ h1 {
     { id: 'xmasdinner', season: 'christmas', subj: 'Christmas dinner', group: 'everyday', ask: [{ k: 'cook', q: 'Which takes longest to cook for Christmas dinner?' }], items: [
       ['Brussels sprouts', '🥬', { cook: 8 }], ['Pigs in blankets', '🌭', { cook: 30 }], ['Roast potatoes', '🥔', { cook: 60 }], ['A 5 kg turkey', '🦃', { cook: 200 }],
       ['A Christmas pudding (steamed from fresh)', '🍮', { cook: 480 }]] },
-    { id: 'xmasweight', season: 'christmas', subj: 'Christmas food', group: 'everyday', ask: [{ k: 'g', q: 'Which is heaviest on the Christmas table?' }], items: [
+    { id: 'xmasweight', kids: 'season', kidsAsk: ['g'], season: 'christmas', subj: 'Christmas food', group: 'everyday', ask: [{ k: 'g', q: 'Which is heaviest on the Christmas table?' }], items: [
       ['A Brussels sprout', '🥬', { g: 12 }], ['A mince pie', '🥧', { g: 55 }], ['A large Christmas pudding', '🍮', { g: 900 }], ['A turkey for a family', '🦃', { g: 6000 }]] },
-    { id: 'xmasanimals', season: 'christmas', subj: 'Christmas animals', noun: 'Christmas animal', group: 'nature', ask: ['kg'], items: [
+    { id: 'xmasanimals', kids: 'season', kidsAsk: ['kg'], season: 'christmas', subj: 'Christmas animals', noun: 'Christmas animal', group: 'nature', ask: ['kg'], items: [
       ['Robin', '🐦', { kg: 0.018 }], ['Turkey', '🦃', { kg: 9 }], ['Emperor penguin', '🐧', { kg: 30 }], ['Reindeer', '🦌', { kg: 120 }],
       ['Donkey', '🫏', { kg: 250 }], ['Polar bear', '🐻‍❄️', { kg: 450 }]] },
     // New Year, 31 December and 1 January
@@ -2150,7 +2150,7 @@ h1 {
       ['Moscow', '🇷🇺', { janHigh: -4 }], ['New York', '🇺🇸', { janHigh: 4 }], ['London', '🇬🇧', { janHigh: 8 }], ['Rome', '🇮🇹', { janHigh: 12 }],
       ['Cairo', '🇪🇬', { janHigh: 19 }], ['Dubai', '🇦🇪', { janHigh: 24 }], ['Sydney', '🇦🇺', { janHigh: 26 }], ['Rio de Janeiro', '🇧🇷', { janHigh: 30 }]] },
     // Easter, Good Friday to Easter Monday
-    { id: 'eastereggs', season: 'easter', subj: 'eggs', group: 'nature', ask: [{ k: 'g', q: 'Which egg is heaviest, chocolate ones included?' }], items: [
+    { id: 'eastereggs', kids: 'season', kidsAsk: ['g'], season: 'easter', subj: 'eggs', group: 'nature', ask: [{ k: 'g', q: 'Which egg is heaviest, chocolate ones included?' }], items: [
       ['A quail\'s egg', '🥚', { g: 10 }], ['A Creme Egg', '🍫', { g: 40 }], ['A goose egg', '🪿', { g: 150 }], ['An emu egg', '🥚', { g: 600 }], ['An ostrich egg', '🥚', { g: 1400 }]] },
     { id: 'springflowers', season: 'easter', subj: 'spring flowers', group: 'nature', ask: [{ k: 'when', q: 'Which usually flowers first in the year?', basis: 'Typical peak flowering in Britain.' }], items: [
       ['Snowdrop', '🤍', { when: 32 }], ['Crocus', '🪻', { when: 60 }], ['Daffodil', '🌼', { when: 80 }], ['Tulip', '🌷', { when: 106 }], ['Bluebell', '🔔', { when: 121 }],
@@ -2165,7 +2165,7 @@ h1 {
     { id: 'pancakes', season: 'pancake', subj: 'world food', group: 'everyday', ask: ['panW'], items: [
       ['A blini', '🥞', { panW: 6 }], ['An American pancake', '🥞', { panW: 12 }], ['A French crêpe', '🥞', { panW: 30 }], ['Ethiopian injera', '🫓', { panW: 50 }]] },
     // Valentine's Day, 14 February
-    { id: 'bigheart', season: 'valentine', subj: 'hearts', group: 'nature', ask: ['heart'], items: [
+    { id: 'bigheart', kids: 'season', kidsAsk: ['heart'], season: 'valentine', subj: 'hearts', group: 'nature', ask: ['heart'], items: [
       ['Chicken', '🐔', { heart: 10 }], ['Human', '🧍', { heart: 300 }], ['Horse', '🐎', { heart: 4000 }], ['Giraffe', '🦒', { heart: 11000 }],
       ['Elephant', '🐘', { heart: 20000 }], ['Blue whale', '🐋', { heart: 180000 }]] },
     { id: 'romfilms', season: 'valentine', subj: 'romantic films', group: 'culture', ask: [{ k: 'filmY', q: 'Which love story came out first?' }], items: [
@@ -2179,7 +2179,7 @@ h1 {
       ['Loch Morar', '🌊', { lakeDeep: 310 }], ['Loch Ness', '🌊', { lakeDeep: 230 }], ['Loch Lomond', '🌊', { lakeDeep: 190 }], ['Loch Tay', '🌊', { lakeDeep: 150 }],
       ['Loch Awe', '🌊', { lakeDeep: 94 }], ['Loch Leven', '🌊', { lakeDeep: 25 }]] },
     // Chinese New Year
-    { id: 'zodiac', season: 'cny', subj: 'the Chinese zodiac', group: 'people', ask: ['zodiac'], items: [
+    { id: 'zodiac', kids: 'season', kidsAsk: ['zodiac'], season: 'cny', subj: 'the Chinese zodiac', group: 'people', ask: ['zodiac'], items: [
       ['Rat', '🐀', { zodiac: 1 }], ['Ox', '🐂', { zodiac: 2 }], ['Tiger', '🐅', { zodiac: 3 }], ['Rabbit', '🐇', { zodiac: 4 }], ['Dragon', '🐉', { zodiac: 5 }], ['Snake', '🐍', { zodiac: 6 }],
       ['Horse', '🐎', { zodiac: 7 }], ['Goat', '🐐', { zodiac: 8 }], ['Monkey', '🐒', { zodiac: 9 }], ['Rooster', '🐓', { zodiac: 10 }], ['Dog', '🐕', { zodiac: 11 }], ['Pig', '🐖', { zodiac: 12 }]] },
     { id: 'chinainvent', season: 'cny', subj: 'inventions', group: 'people', ask: [{ k: 'firstY', q: 'Which Chinese invention came first?' }], items: [
@@ -2204,9 +2204,18 @@ h1 {
       ['Reykjavik', '🇮🇸', { daylight: 21.1 }], ['Oslo', '🇳🇴', { daylight: 18.8 }], ['Edinburgh', '🏴', { daylight: 17.6 }], ['London', '🇬🇧', { daylight: 16.6 }],
       ['Rome', '🇮🇹', { daylight: 15.2 }], ['Cairo', '🇪🇬', { daylight: 14 }], ['Singapore', '🇸🇬', { daylight: 12.2 }], ['Sydney', '🇦🇺', { daylight: 9.9 }]] },
     // Halloween, 31 October
-    { id: 'spooky', season: 'halloween', subj: 'spooky animals', noun: 'Halloween creature', group: 'nature', ask: ['kg'], items: [
+    { id: 'spooky', kids: 'season', kidsAsk: ['kg'], season: 'halloween', subj: 'spooky animals', noun: 'Halloween creature', group: 'nature', ask: ['kg'], items: [
       ['Pipistrelle bat', '🦇', { kg: 0.005 }], ['Vampire bat', '🦇', { kg: 0.035 }], ['Barn owl', '🦉', { kg: 0.3 }], ['Giant fruit bat', '🦇', { kg: 1.2 }],
       ['Black cat', '🐈‍⬛', { kg: 4.5 }], ['Wolf', '🐺', { kg: 40 }]] },
+    // Ordo Kids only (special days)
+    { id: 'kidhot', kids: 'season', kidsAsk: ['heat'], season: 'bonfire', subj: 'fire', group: 'science', ask: [], items: [
+      ['Inside a fridge', '🧊', { heat: 4 }], ['A warm bath', '🛁', { heat: 38 }], ['A cup of tea', '☕', { heat: 70 }], ['A hot oven', '🍞', { heat: 220 }],
+      ['A sparkler', '✨', { heat: 1600 }], ['The Sun', '☀️', { heat: 5500 }]] },
+    { id: 'kidyear', kids: 'season', kidsAsk: ['when'], season: 'newyear', subj: 'calendar', group: 'everyday', ask: [], items: [
+      ['New Year\'s Day', '🎉', { when: 1 }], ['Valentine\'s Day', '❤️', { when: 45 }], ['April Fools\' Day', '🃏', { when: 91 }], ['Midsummer\'s Day', '☀️', { when: 172 }],
+      ['Halloween', '🎃', { when: 304 }], ['Christmas Day', '🎄', { when: 359 }]] },
+    { id: 'springbabies', kids: 'season', kidsAsk: ['baby'], season: 'easter', subj: 'baby animals', group: 'nature', ask: [], items: [
+      ['Chick', '🐣', { baby: 0.04 }], ['Piglet', '🐖', { baby: 1.3 }], ['Lamb', '🐑', { baby: 4 }], ['Calf', '🐄', { baby: 40 }]] },
     { id: 'scaryfilms', season: 'halloween', subj: 'scary films', group: 'culture', ask: [{ k: 'filmY', q: 'Which spooky film came out first?' }], items: [
       ['Psycho', '🔪', { filmY: 1960 }], ['The Exorcist', '😱', { filmY: 1973 }], ['Halloween', '🎃', { filmY: 1978 }], ['Ghostbusters', '👻', { filmY: 1984 }],
       ['Hocus Pocus', '🧙', { filmY: 1993 }], ['Coraline', '🧵', { filmY: 2009 }]] }
