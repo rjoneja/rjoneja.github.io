@@ -322,7 +322,7 @@ body.pics .cheer h2 { font-size: 44px; }
         </div>
         <p class="lvl-note"><span id="lvlCurric">Maths is pitched by age.</span> After that, each topic moves up or down by itself as your child plays. They never see a level.</p>
       </div>
-      <div class="switch"><span><b>Pictures only.</b> No reading or listening needed: words are hidden, each round's idea is shown with pictures, and every game starts with a short demo. For pre-readers and non-verbal children.</span><button class="toggle" id="picsMode" type="button" aria-pressed="false">Off</button></div>
+      <div class="switch"><span><b>Pictures only.</b> No reading or listening needed: words are hidden, each round's idea is shown with pictures, and every game starts with a short demo. For pre-readers and non-verbal children. <span id="picsNote">It has its own link too: <a href="/kids/pictures/">ordogame.com/kids/pictures</a></span></span><button class="toggle" id="picsMode" type="button" aria-pressed="false">Off</button></div>
       <div class="switch">Read questions aloud when a round starts<button class="toggle" id="autoRead" type="button" aria-pressed="false">Off</button></div>
       <div class="switch">Limit the number of moves (balloons pop with each move)<button class="toggle" id="moveLimit" type="button" aria-pressed="true">On</button></div>
       <div class="switch">Clear the sticker book<button class="toggle" id="resetBtn" type="button">Clear</button></div>
@@ -374,9 +374,12 @@ body.pics .cheer h2 { font-size: 44px; }
 <script>
 (() => {
   // ---------- Saved progress (this device only) ----------
-  const KEY = 'lineup.kids';
+  // ordogame.com/kids/pictures is Pictures only, always, with its own saved progress (so /kids keeps its own settings).
+  const PICS_PAGE = !!window.KIDS_PICS_PAGE;
+  const KEY = PICS_PAGE ? 'lineup.kids.pics' : 'lineup.kids';
   let P = { age: 7, stickers: [], sound: false, autoRead: false, games: 0, moveLimit: true };
   try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
+  if (PICS_PAGE) P.pics = true;
   // Levels: 0 Reception, 1 Year 1, 2 Year 2, 3 Year 3, 4 Year 4. Older saves stored an age of 6, 7 or 8.
   if (typeof P.start !== 'number') P.start = Math.max(0, Math.min(4, (P.age || 7) - 5));
   P.adj = P.adj || {};    // per topic, -2..+2 on top of the start level
@@ -1706,7 +1709,7 @@ body.pics .cheer h2 { font-size: 44px; }
 
   // ---------- Read aloud: recorded voice, with the device voice as a back-up ----------
   const lineKey = t => String(t).toLowerCase().replace(/[‘’]/g, "'").replace(/[–—−]/g, '-').replace(/\s+/g, ' ').trim();
-  const VOICE_URL = 'voice/emma';
+  const VOICE_URL = (PICS_PAGE ? '../' : '') + 'voice/emma';
   // Changes whenever the recordings change (set by the build), so phones never mix an old recording with new timings.
   const VOICE_V = 'c4d6db3f';
   const A = { ctx: null, buf: null, map: null, loading: null, srcs: [] };
@@ -2262,7 +2265,8 @@ body.pics .cheer h2 { font-size: 44px; }
   gb.addEventListener('keyup', stopHold);
   const pm = $('picsMode');
   const paintPM = () => { pm.setAttribute('aria-pressed', String(!!P.pics)); pm.textContent = P.pics ? 'On' : 'Off'; document.body.classList.toggle('pics', !!P.pics); paintSpecial(); };
-  pm.addEventListener('click', () => { P.pics = !P.pics; save(); paintPM(); });
+  pm.addEventListener('click', () => { if (PICS_PAGE) return; P.pics = !P.pics; save(); paintPM(); });
+  if (PICS_PAGE) { pm.disabled = true; $('picsNote').innerHTML = 'This page is always pictures only. The version with words and topics is at <a href="/kids/">ordogame.com/kids</a>.'; }
   paintPM();
   const ml = $('moveLimit');
   const paintML = () => { ml.setAttribute('aria-pressed', String(P.moveLimit !== false)); ml.textContent = P.moveLimit !== false ? 'On' : 'Off'; };
@@ -2276,7 +2280,8 @@ body.pics .cheer h2 { font-size: 44px; }
   // A plain invite for grown-ups (never shown to children: it lives behind the 2-second hold).
   $('sendKids').addEventListener('click', async () => {
     try { window.ordoTrack && window.ordoTrack('share', 'fr-kids'); } catch {}
-    const url = 'https://ordogame.com/kids/?s=fr', text = 'Ordo Kids: a free picture-first ordering game for ages 4 to 9. Read aloud, no ads, no sign-up.';
+    const url = PICS_PAGE ? 'https://ordogame.com/kids/pictures/?s=fr' : 'https://ordogame.com/kids/?s=fr';
+    const text = PICS_PAGE ? 'Ordo Kids, pictures only: a free ordering game with no reading or listening needed. For pre-readers and non-verbal children.' : 'Ordo Kids: a free picture-first ordering game for ages 4 to 9. Read aloud, no ads, no sign-up.';
     try { if (navigator.share) { await navigator.share({ title: 'Ordo Kids', text, url }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
     try { await navigator.clipboard.writeText(text + ' ' + url); $('sendKids').textContent = 'Copied'; setTimeout(() => { $('sendKids').textContent = 'Send'; }, 1800); }
     catch { window.open('https://wa.me/?text=' + encodeURIComponent(text + '\n' + url), '_blank', 'noopener'); }
