@@ -531,6 +531,7 @@ h1 {
 .st-rules { margin: 0; padding: 0 0 0 20px; display: grid; gap: 6px; font-size: 16px; }
 .st-go { font-size: 20px; padding: 16px; }
 .st-note { margin: 0; color: var(--muted); font-size: 14px; }
+.st-rules a { color: var(--accent); font-weight: 800; }
 .st-relax { appearance: none; background: none; border: 0; padding: 4px 0; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer;
   font: inherit; font-size: 16px; font-weight: 700; color: var(--fg); }
 .st-relax small { display: block; font-weight: 600; font-size: 13px; color: var(--muted); }
@@ -2349,13 +2350,13 @@ h1 {
   function logSet(ok) {
     let t, id, pos;
     if (S.mode === 'run') { t = S.turns[S.idx]; id = (S.relaxed ? 'r' : 'd') + S.no; pos = S.idx; }
-    else if (S.mode === 'countdown' && S.plan && S.seed && S.pace !== 'free') { pos = Math.min(S.round, S.plan.length - 1); t = S.plan[pos]; id = (runFactor > 1 ? 'q' : 'p') + S.seed.toString(36); }
+    else if (S.mode === 'countdown' && S.plan && S.seed && S.pace !== 'free') { pos = Math.min(S.round, S.plan.length - 1); t = S.plan[pos]; id = (S.pace === 'bank' ? 'b' : runFactor > 1 ? 'q' : 'p') + S.seed.toString(36); }
     if (!t) return;
     track(ok ? 'set' : 'miss', id + ':' + pos + ':' + setKey(t), Math.round((ok ? R.elapsed : R.ceiling) * 1000));
   }
   window.__ordoSetKey = setKey;
   // Tag shared links with where they were shared (?s=wa); a challenge link's own ?c=… follows as &c=….
-  const tagLink = (text, src) => text.replace(/https:\/\/ordogame\.com\/(\?)?/g, (m, q) => BASE + '?s=' + src + (q ? '&' : ''));
+  const tagLink = (text, src) => text.replace(/https:\/\/ordogame\.com\/([a-z]+\/)?(\?)?/g, (m, path, q) => BASE + (path || '') + '?s=' + src + (q ? '&' : ''));
   const SQ = { warm: '🟩', same: '🟨', cold: '🟥' };
 
   const store = {
@@ -2606,16 +2607,26 @@ h1 {
 
   // Practice: the same rules as today's run, with a random sequence.
   const CD_TIMES = [10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3];
+  // ---------- Save your time (ordogame.com/saveyourtime, a test version from Jack's idea) ----------
+  // Time left on a set isn't lost: it's added to the next one. Each set brings a little new time of its own,
+  // less than the normal clock, so a quick start builds a cushion for the harder 4- and 5-item sets.
+  const SAYT = window.ORDO_PAGE === 'sayt';
+  const bankBase = r => r === 0 ? 10 : r < 4 ? [7, 6, 5][r - 1] : r < 15 ? 5 : r < 20 ? 4 : 3;
   const cdLimit = r => runSpec(r).time;
   // ---------- Free play (was "Practice"): as many runs as you like, at Standard, Relaxed or No clock pace ----------
-  const fpCeiling = () => S.pace === 'free' ? Infinity : cdLimit(S.round);
+  const fpCeiling = () => S.pace === 'free' ? Infinity : S.pace === 'bank' ? Math.round((bankBase(S.round) + (S.bank || 0)) * 10) / 10 : cdLimit(S.round);
   function fpEyebrow() {
     el.eyebrow.hidden = false;
+    if (S.pace === 'bank') {
+      const saved = Math.round((S.bank || 0) * 10) / 10;
+      el.eyebrow.textContent = `${R.n} items · ${bankBase(S.round)}s new` + (saved ? ` + ${saved}s saved` : '') + (S.cleared ? ` · ${S.cleared} done` : '');
+      return;
+    }
     el.eyebrow.textContent = innerHeight < 700 ? `${R.n} items` + (S.cleared ? ` · ${S.cleared} done` : '')
       : `Free play · ${R.n} items · ` + (isFinite(R.ceiling) ? `${R.ceiling} seconds` : 'no clock') + (S.cleared ? ` · ${S.cleared} done` : '');
   }
   function paintPace() {
-    const on = S.mode === 'countdown' && !play.hidden;
+    const on = S.mode === 'countdown' && !play.hidden && S.pace !== 'bank';
     $('pace').hidden = !on;
     [...$('pace').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pace === S.pace)));
     $('fpDone').hidden = !(on && S.pace === 'free');
@@ -3090,6 +3101,7 @@ h1 {
       const grid = (rows.length ? rows : ['']).map((r, i, a) => i === a.length - 1 ? r + '⏰' : r);
       const fire = S.cleared >= 20 ? ' 🔥🔥🔥' : S.cleared >= 12 ? ' 🔥🔥' : S.cleared >= 8 ? ' 🔥' : '';
       if (S.freeDone) return [`🌿 Ordo free play: ${S.cleared} sets sorted, no clock.`, 'Have a go:', BASE].join('\n');
+      if (S.pace === 'bank') return [`⏳ Ordo · Save your time: ${S.cleared} in a row${fire}`, ...grid, `Beaten by the ${R.n}-item sets.`, `Can you beat ${S.cleared}? 👇`, BASE + 'saveyourtime/'].join('\n');
       return [`⏱ Ordo free play: ${S.cleared} in a row${fire}`, ...grid, `Beaten by the ${R.n}-item sets (${R.ceiling} seconds).`, 'How far can you get?', BASE].join('\n');
     }
     const solved = R.status === 'solved';
@@ -3151,6 +3163,7 @@ h1 {
     }
     if (S.mode === 'countdown') {
       logSet(true);
+      if (S.pace === 'bank') { const left = Math.max(0, R.ceiling - R.elapsed - penalty()); S.bank = Math.round(left * 10) / 10; if (S.bank >= 0.5) toast(`+${S.bank.toFixed(1)}s saved`); }
       S.cleared++; S.score = S.cleared; hud();
       (S.cdRes = S.cdRes || []).push(R.elapsed / R.ceiling);
       const run = S;
@@ -3385,10 +3398,10 @@ h1 {
   // Rebuild a logged set ("d6", 3) for the difficulty model. Cached per run, as building one takes a few ms.
   const runCache = {};
   window.__ordoSetFor = (run, pos) => {
-    const kind = run[0], id = kind === 'p' || kind === 'q' ? parseInt(run.slice(1), 36) : +run.slice(1);
+    const kind = run[0], id = kind === 'p' || kind === 'q' || kind === 'b' ? parseInt(run.slice(1), 36) : +run.slice(1);
     if (!runCache[run]) {
       const keep = runFactor; runFactor = 1;
-      runCache[run] = kind === 'p' || kind === 'q' ? buildRun(id, 150, Infinity) : buildRun(id, 150);
+      runCache[run] = kind === 'p' || kind === 'q' || kind === 'b' ? buildRun(id, 150, Infinity) : buildRun(id, 150);
       runFactor = keep;
     }
     const t = runCache[run][pos]; if (!t) return null;
@@ -3555,7 +3568,23 @@ h1 {
     el.app.classList.remove('sheet-open');
     el.eyebrow.hidden = true;
   }
+  function saytHome() {
+    hideAll();
+    S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'home' };
+    shownScore = 0; hud();
+    el.lives.parentElement.classList.add('quiet');
+    $('start').querySelector('.eyebrow').textContent = 'Ordo · test version';
+    $('stTitle').textContent = 'Save your time ⏳';
+    $('start').querySelector('.st-rules').innerHTML = '<li>Put each set in order before the clock runs out.</li><li>Time you have left isn\'t lost: it\'s added to the next set. Each set brings a few new seconds of its own.</li>'
+      + '<li>Every 5 sets adds an item, so build a cushion early.</li><li>Play as often as you like. This is a test version of an idea from a player: tell us what you think at <a href="mailto:hello@ordogame.com">hello@ordogame.com</a>.</li>';
+    $('stGo').textContent = 'Start';
+    $('stRelax').hidden = true;
+    const note = $('stNote'); note.textContent = prog.bankBest ? `Your best: ${prog.bankBest} in a row.` : ''; note.hidden = !note.textContent;
+    $('start').hidden = false;
+    try { scrollTo(0, 0); } catch {}
+  }
   function goHome() {
+    if (SAYT) return saytHome();
     releasePointer();
     if (R && R.status === 'play') R.status = 'idle';
     if (S.mode === 'run' && prog.runLive) settleLeftRun();
@@ -3591,6 +3620,7 @@ h1 {
   // Today's run, paused between sets (here or in another tab), if there is one.
   const pausedRun = () => { const l = prog.runLive; return l && l.paused && l.no === dailyNo() && !prog.run[l.no] ? l : null; };
   function beginRun() {
+    if (SAYT) return startCountdown();
     const no = dailyNo();
     if (prog.run[no]) return showRunDone(no, false);
     const held = pausedRun();
@@ -4106,8 +4136,8 @@ h1 {
     if (S.mode === 'countdown') {
       // A run's best counts at its gentlest pace: any set with no clock means no best; any relaxed set makes it a relaxed best.
       const used = S.paceUsed || new Set(['std']), got = S.cleared;
-      const key = used.has('free') ? null : used.has('rx') ? 'cdBestRx' : 'cdBest', kind = key === 'cdBestRx' ? 'relaxed ' : '';
-      track('practice_end', key === 'cdBestRx' ? 'relaxed' : key ? '' : 'mixed', got);
+      const key = S.pace === 'bank' ? 'bankBest' : used.has('free') ? null : used.has('rx') ? 'cdBestRx' : 'cdBest', kind = key === 'cdBestRx' ? 'relaxed ' : '';
+      track('practice_end', S.pace === 'bank' ? 'bank' : key === 'cdBestRx' ? 'relaxed' : key ? '' : 'mixed', got);
       if (!key) return setPanel("Time's up", `${got} in a row`, false, `The ${R.n}-item sets got you. Part of this run had no clock, so there's no best for it.`, 'Play again');
       const best = prog[key] || 0;
       if (got > best) { prog[key] = got; saveProg(); }
@@ -4256,11 +4286,11 @@ h1 {
     $('cdNameIn').blur();
   });
   function startCountdown() {
-    const pace = ['std', 'rx', 'free'].includes(prog.fpPace) ? prog.fpPace : relaxedOn() ? 'rx' : 'std';
-    S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'countdown', pace, paceUsed: new Set() };
+    const pace = SAYT ? 'bank' : ['std', 'rx', 'free'].includes(prog.fpPace) ? prog.fpPace : relaxedOn() ? 'rx' : 'std';
+    S = { round: 0, score: 0, lives: 1, cleared: 0, played: 0, best: S.best, lastCat: -1, group: 'mix', mode: 'countdown', pace, paceUsed: new Set(), bank: 0 };
     shownScore = 0;
     if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
-    track('practice', pace === 'rx' ? 'relaxed' : pace === 'free' ? 'free' : '');
+    track('practice', pace === 'rx' ? 'relaxed' : pace === 'free' ? 'free' : pace === 'bank' ? 'bank' : '');
     runFactor = pace === 'rx' ? 2 : 1;
     hideAll();
     play.hidden = false;
@@ -4285,6 +4315,7 @@ h1 {
   $('leaveGo').addEventListener('click', () => { const t = leaveThen; closeLeave(); if (t) t(); });
   $('mark').addEventListener('click', () => askLeave(() => {
     $('tools').hidden = true; $('setBtn').setAttribute('aria-expanded', 'false');
+    if (SAYT) { releasePointer(); if (R && R.status === 'play') R.status = 'idle'; return saytHome(); }
     if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
     showPicker();
     try { scrollTo(0, 0); } catch {}
