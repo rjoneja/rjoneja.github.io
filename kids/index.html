@@ -770,6 +770,9 @@ body.pics .cheer h2 { font-size: 44px; }
     ms: v => FB_n(v) + ' m a second',
     age: v => v < 1 ? Math.round(v * 12) + ' months old' : FB_n(v) + ' years old',
     dayN: v => 'Day ' + v,
+    scov: v => FB_n(v) + ' Scoville units',
+    prot: v => FB_n(v) + ' g of protein',
+    dayLen: v => v < 48 ? FB_n(v) + ' hours' : FB_n(Math.round(v / 24)) + ' Earth days',
     tzOff: v => v === 0 ? 'London time' : (v > 0 ? FB_n(v) + (v === 1 ? ' hour' : ' hours') + ' before London' : FB_n(-v) + (v === -1 ? ' hour' : ' hours') + ' after London'),
     signN: v => ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'][v] + ' sign',
     nth: v => ['', 'Top', '2nd', '3rd', '4th', '5th', '6th', 'Bottom'][v] || String(v),
@@ -902,6 +905,13 @@ body.pics .cheer h2 { font-size: 44px; }
     era: { m: 'time ago', q: 'Which lived longest ago?', top: 'Longest ago', bottom: 'Most recent', fmt: 'ago', gap: .4, basis: 'Roughly when it lived.' },
     nation: { m: 'population', q: 'Which has the most people?', top: 'Most people', bottom: 'Fewest', fmt: 'pop', gap: .35, basis: 'Population, rounded.', tier: 'known' },
     trainSpeed: { m: 'speed', q: 'Which train is fastest?', top: 'Fastest', bottom: 'Slowest', fmt: 'kmh', gap: .3, basis: 'Top speed, rounded.', tier: 'known' },
+    // Batch 6 (from puzzle 17).
+    heatS: { m: 'spiciness', q: 'Which is hottest to eat?', top: 'Hottest', bottom: 'Mildest', fmt: 'scov', gap: .5, basis: 'Scoville heat units, typical.' },
+    spin: { m: 'day length', q: 'Which planet takes longest to spin round once?', top: 'Slowest spin', bottom: 'Fastest spin', fmt: 'dayLen', gap: .35, basis: 'Time for one spin on its axis.' },
+    moons: { m: 'count', q: 'Which planet has the most moons?', top: 'Most moons', bottom: 'Fewest', fmt: 'n', gap: .4, basis: 'Known moons in 2025. More keep being found.' },
+    runtime: { m: 'duration', q: 'Which film is longest?', top: 'Longest', bottom: 'Shortest', fmt: 'min', gap: .2, basis: 'Running time of the original release.', tier: 'known' },
+    hitSpeed: { m: 'speed', q: 'Which goes fastest in sport?', top: 'Fastest', bottom: 'Slowest', fmt: 'kmh', gap: .25, basis: 'Fastest ever measured, rounded.' },
+    protein: { m: 'nutrition', q: 'Which has the most protein?', top: 'Most protein', bottom: 'Least', fmt: 'prot', gap: .4, basis: 'Per 100 g.' },
     // Seasonal measures (special days only: see FB_SEASONS).
     firstY: { m: 'time ago', q: 'Which came first?', top: 'First', bottom: 'Last', asc: true, fmt: 'year', gapAbs: 30, basis: 'Year, rounded where it\'s not known exactly.' },
     filmY: { m: 'time ago', q: 'Which came out first?', top: 'First', bottom: 'Last', asc: true, fmt: 'year', gapAbs: 4, basis: 'Year of release.', tier: 'known' },
@@ -1492,7 +1502,44 @@ body.pics .cheer h2 { font-size: 44px; }
       ['Chick', '🐣', { baby: 0.04 }], ['Piglet', '🐖', { baby: 1.3 }], ['Lamb', '🐑', { baby: 4 }], ['Calf', '🐄', { baby: 40 }]] },
     { id: 'scaryfilms', season: 'halloween', subj: 'scary films', group: 'culture', ask: [{ k: 'filmY', q: 'Which spooky film came out first?' }], items: [
       ['Psycho', '🔪', { filmY: 1960 }], ['The Exorcist', '😱', { filmY: 1973 }], ['Halloween', '🎃', { filmY: 1978 }], ['Ghostbusters', '👻', { filmY: 1984 }],
-      ['Hocus Pocus', '🧙', { filmY: 1993 }], ['Coraline', '🧵', { filmY: 2009 }]] }
+      ['Hocus Pocus', '🧙', { filmY: 1993 }], ['Coraline', '🧵', { filmY: 2009 }]] },
+    // ===== Batch 6 (from puzzle 17, 6 Nov 2026): more variety now that every go has fresh sets =====
+    { id: 'chillies', from: 17, subj: 'spicy food', group: 'everyday', ask: ['heatS'], items: [
+      ['A pepperoncini', '🌶️', { heatS: 300 }], ['A jalapeño', '🌶️', { heatS: 5000 }], ['Cayenne pepper', '🌶️', { heatS: 40000 }], ['A Scotch bonnet', '🌶️', { heatS: 250000 }],
+      ['A Carolina Reaper', '🔥', { heatS: 1600000 }]] },
+    { id: 'highcaps', from: 17, subj: 'capital cities', group: 'places', ask: [{ k: 'alt', q: 'Which capital city is highest above sea level?', basis: 'Height of the city centre, rounded.' }], items: [
+      ['La Paz', '🇧🇴', { alt: 3640 }], ['Addis Ababa', '🇪🇹', { alt: 2355 }], ['Kathmandu', '🇳🇵', { alt: 1400 }], ['Madrid', '🇪🇸', { alt: 650 }], ['Paris', '🇫🇷', { alt: 35 }], ['London', '🇬🇧', { alt: 11 }]] },
+    { id: 'deepest', from: 17, subj: 'the deep', group: 'science', ask: [{ k: 'dive', q: 'Which goes deepest?', basis: 'Depth below the surface, rounded.' }], items: [
+      ['Hampstead (London\'s deepest Tube station)', '🚇', { dive: 58 }], ['The deepest scuba dive', '🤿', { dive: 332 }], ['An emperor penguin\'s deepest dive', '🐧', { dive: 500 }],
+      ['The wreck of the Titanic', '🚢', { dive: 3800 }], ['The Mariana Trench', '🌊', { dive: 10994 }]] },
+    { id: 'companies', from: 17, subj: 'companies', group: 'people', ask: [{ k: 'firstY', q: 'Which company was founded first?', basis: 'Year it started.' }], items: [
+      ['Twinings', '🍵', { firstY: 1706 }], ['Cadbury', '🍫', { firstY: 1824 }], ['Nintendo', '🎮', { firstY: 1889 }], ['Lego', '🧱', { firstY: 1932 }], ['Apple', '🍎', { firstY: 1976 }], ['Google', '🔍', { firstY: 1998 }]] },
+    { id: 'online', from: 17, subj: 'the internet', group: 'culture', ask: [{ k: 'filmY', q: 'Which came first online?', basis: 'Year it began.' }], items: [
+      ['The first email', '📧', { filmY: 1971 }], ['The first text message', '💬', { filmY: 1992 }], ['Wikipedia', '📚', { filmY: 2001 }], ['YouTube', '▶️', { filmY: 2005 }],
+      ['Instagram', '📸', { filmY: 2010 }], ['TikTok', '🎵', { filmY: 2017 }]] },
+    { id: 'ukcities', from: 17, subj: 'UK cities', group: 'places', ask: [{ k: 'nation', q: 'Which UK city has the most people?', basis: 'City population, rounded.' }], items: [
+      ['London', '🏙️', { nation: 8900000 }], ['Birmingham', '🏙️', { nation: 1150000 }], ['Glasgow', '🏴', { nation: 630000 }], ['Bristol', '🌉', { nation: 470000 }],
+      ['Cardiff', '🏴', { nation: 370000 }], ['Inverness', '🏔️', { nation: 48000 }]] },
+    { id: 'planetday', from: 17, subj: 'planets', group: 'science', ask: ['spin'], items: [
+      ['Jupiter', '🪐', { spin: 9.9 }], ['Neptune', '🔵', { spin: 16.1 }], ['Earth', '🌍', { spin: 24 }], ['Mercury', '☿️', { spin: 1408 }], ['Venus', '♀️', { spin: 5832 }]] },
+    { id: 'moons', from: 17, subj: 'planets', group: 'science', ask: ['moons'], items: [
+      ['Saturn', '🪐', { moons: 274 }], ['Jupiter', '🪐', { moons: 95 }], ['Uranus', '🔵', { moons: 28 }], ['Neptune', '🔵', { moons: 16 }], ['Mars', '🔴', { moons: 2 }], ['Earth', '🌍', { moons: 1 }]] },
+    { id: 'filmlength', from: 17, subj: 'films', group: 'culture', ask: ['runtime'], items: [
+      ['Toy Story', '🤠', { runtime: 81 }], ['Frozen', '❄️', { runtime: 102 }], ['Mary Poppins', '☂️', { runtime: 139 }], ['Oppenheimer', '💥', { runtime: 180 }],
+      ['Titanic', '🚢', { runtime: 194 }], ['Gone with the Wind', '🎞️', { runtime: 238 }]] },
+    { id: 'hitspeed', from: 17, subj: 'sport', group: 'sport', ask: ['hitSpeed'], items: [
+      ['A badminton smash', '🏸', { hitSpeed: 565 }], ['A golf drive', '⛳', { hitSpeed: 354 }], ['A tennis serve', '🎾', { hitSpeed: 263 }], ['A cricket ball, bowled', '🏏', { hitSpeed: 161 }],
+      ['A table tennis smash', '🏓', { hitSpeed: 116 }]] },
+    { id: 'protein', from: 17, subj: 'food and drink', group: 'everyday', ask: ['protein'], items: [
+      ['Chicken breast', '🍗', { protein: 31 }], ['An egg', '🥚', { protein: 13 }], ['Bread', '🍞', { protein: 9 }], ['Milk', '🥛', { protein: 3.4 }], ['An apple', '🍎', { protein: 0.3 }]] },
+    { id: 'famousweight', from: 17, subj: 'famous objects', group: 'places', ask: [{ k: 'kg', q: 'Which famous thing is heaviest?', basis: 'Weight, rounded.' }], items: [
+      ['St Edward\'s Crown', '👑', { kg: 2.23 }], ['The FA Cup trophy', '🏆', { kg: 6.3 }], ['Big Ben\'s bell', '🔔', { kg: 13700 }], ['The Statue of Liberty', '🗽', { kg: 225000 }],
+      ['The Eiffel Tower', '🗼', { kg: 10100000 }]] },
+    { id: 'dinoweight', from: 17, subj: 'dinosaurs', noun: 'dinosaur', group: 'nature', ask: ['kg'], items: [
+      ['Velociraptor', '🦖', { kg: 15 }], ['Iguanodon', '🦕', { kg: 3000 }], ['Stegosaurus', '🦕', { kg: 5000 }], ['Tyrannosaurus rex', '🦖', { kg: 8000 }], ['Argentinosaurus', '🦕', { kg: 70000 }]] },
+    { id: 'tongues', from: 17, subj: 'languages', group: 'people', ask: [{ k: 'nation', q: 'Which language has the most native speakers?', basis: 'Native speakers worldwide, rounded.' }], items: [
+      ['Mandarin Chinese', '🇨🇳', { nation: 940000000 }], ['Spanish', '🇪🇸', { nation: 485000000 }], ['Hindi', '🇮🇳', { nation: 345000000 }], ['Japanese', '🇯🇵', { nation: 123000000 }],
+      ['Italian', '🇮🇹', { nation: 64000000 }], ['Icelandic', '🇮🇸', { nation: 330000 }]] }
   ];
   // ---------- Special days ----------
   // md: every year on these dates; easter: days from Easter Sunday; dates: one-off dates (moving festivals).
