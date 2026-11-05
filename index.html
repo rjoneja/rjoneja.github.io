@@ -3707,7 +3707,7 @@ h1 {
     if (!isV5(no) && prog.run[no]) return showRunDone(no, false);
     const held = pausedRun();
     if (held) { track('run_start', 'resume'); return resumeRun(held); }
-    track('run_start', relaxedOn() ? 'relaxed' : '');
+    track('run_start', againNext ? 'again' : relaxedOn() ? 'relaxed' : ''); againNext = false;
     hideAll();
     runFactor = relaxedOn() ? 2 : 1;
     // From puzzle 16: fresh sets every go. A friend's challenge (not yet taken up) gives its exact sets instead.
@@ -4129,7 +4129,8 @@ h1 {
   });
   $('rBoardLink').addEventListener('click', () => { const rec = prog.run[dailyNo()]; boardRelaxed = !!(rec && rec.relaxed); openBoards('cd', cdBoardTab || 'day'); });
   $('rPractice').addEventListener('click', () => startCountdown());
-  $('rAgain').addEventListener('click', () => beginRun());
+  let againNext = false;
+  $('rAgain').addEventListener('click', () => { againNext = true; beginRun(); });
   const canCard = (() => { try { const c = document.createElement('canvas'); return !!(c.getContext && c.getContext('2d') && c.toBlob); } catch { return false; } })();
   $('rImg').addEventListener('click', shareCard);
   $('rFriend').addEventListener('click', () => sendFriend('results'));
