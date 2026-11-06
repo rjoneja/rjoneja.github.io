@@ -397,11 +397,9 @@ h1 {
 /* A friend's challenge: their score to beat, on the Start screen and against yours on the results. */
 .r-chal { margin: 0; font-weight: 800; font-size: 17px; }
 .r-best { margin: -4px 0 0; color: var(--muted); font-weight: 700; font-size: 15px; }
-.r-again { width: 100%; }
+.r-acts { display: flex; gap: 10px; }
+.r-acts .btn { flex: 1 1 0; min-width: 0; padding-left: 10px; padding-right: 10px; white-space: nowrap; }
 .st-chal { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--surface); border: 2px solid var(--accent); font-weight: 800; font-size: 16px; line-height: 1.3; }
-.d-actions.has-img { grid-template-columns: minmax(0, 1fr) auto auto; }
-.r-img { padding-left: 12px; padding-right: 12px; font-size: 20px; line-height: 1; }
-@media (max-width: 359px) { .d-actions.has-img .wa-long { display: none; } .d-actions.has-img { gap: 6px; } }
 .trophy-note { margin: 0; font-size: 13px; color: #4A3F5E; }
 @media (max-height: 700px) { .trophy-note { grid-column: 1; font-size: 12px; line-height: 1.3; align-self: center; } .trophy-ask .trophy-skip { grid-column: 2; justify-self: end; } }
 /* Resuming: the next set stays covered during 3-2-1, so a pause never buys reading time. */
@@ -840,12 +838,10 @@ h1 {
     </form>
     <div class="r-grid" id="rGrid" aria-hidden="true"></div>
     <p class="r-why" id="rWhy"></p>
-    <div class="actions d-actions">
-      <a class="btn" id="rWa" href="https://wa.me/" target="_blank" rel="noopener"><span class="wa-long">Share on </span>WhatsApp</a>
-      <button class="btn-alt" id="rCopy" type="button">Copy</button>
-      <button class="btn-alt r-img" id="rImg" type="button" aria-label="Share as a picture">🖼️</button>
+    <div class="r-acts">
+      <button class="btn" id="rShare" type="button">Share</button>
+      <button class="btn r-again" id="rAgain" type="button" hidden>▶ Play again</button>
     </div>
-    <button class="btn r-again" id="rAgain" type="button" hidden>▶ Play again</button>
     <textarea class="sharebox" id="rShareText" rows="5" readonly hidden aria-label="Result message"></textarea>
     <div class="install" id="rInstall" hidden>
       <button class="btn-alt install-btn" id="rInstallBtn" type="button">📲 Add Ordo to your home screen</button>
@@ -3361,7 +3357,9 @@ h1 {
         renderShared(list, tab === 'day' ? b.today : b.all, tab === 'all', true);
         note.textContent = (tab === 'day' ? "Today's longest runs" : 'Longest runs ever, one per player') + (rx ? ' on the relaxed clock 🐢.' : '.');
         boardShown = { rows: (tab === 'day' ? b.today : b.all).slice(0, 5), all: tab === 'all', rx, players: tab === 'day' ? b.players : b.playersEver, no: dailyNo() };
-        $('boardShare').hidden = !boardShown.rows.length || !canCard;
+        boardShown.place = boardShown.rows.findIndex(r => r.me) + 1;   // only players on the board get to share it
+        $('boardShare').hidden = !boardShown.place || !canCard;
+        if (boardShown.place) $('boardShare').textContent = `🏆 Share it: I'm ${placeTxt(boardShown.place)} ${tab === 'all' ? 'all time' : 'today'}`;
         if (!$('boardShare').hidden) boardCardFor(boardShown);
       });
       return;
@@ -3380,9 +3378,9 @@ h1 {
   // Today's (or all-time) top 5 as a 1080 × 1350 card, ready for WhatsApp Status or Instagram Stories. Drawn ahead, so the share
   // sheet opens straight from the tap.
   let boardShown = null, boardCard = null;
+  const placeTxt = n => n + (['th', 'st', 'nd', 'rd'][n] || 'th');
   async function boardCardFor(bd) {
-    const me = bd.rows.find(r => r.me), td = prog.run && prog.run[bd.no];
-    const key = JSON.stringify([bd.rows.map(r => [r.name, r.score, !!r.me]), bd.all, bd.rx, bd.players, td && (td.best || td.score)]);
+    const key = JSON.stringify([bd.rows.map(r => [r.name, r.score, !!r.me]), bd.all, bd.rx, bd.players, bd.place]);
     if (boardCard && boardCard.key === key) return boardCard;
     const mine = boardCard = { key, blob: null };
     try {
@@ -3400,9 +3398,9 @@ h1 {
       g.restore();
       g.fillStyle = ink; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.font = disp.replace('{s}', 104); g.fillText('ordo', W / 2 - 30, 152);
       g.textAlign = 'center';
-      g.font = disp.replace('{s}', 76); g.fillText(bd.all ? '🏆 All-time top 5' : '🏆 Today\'s top 5', W / 2, 290);
+      g.font = disp.replace('{s}', 76); g.fillText(`🏆 I'm ${placeTxt(bd.place)} ${bd.all ? 'all time' : 'today'}!`, W / 2, 290);
       g.fillStyle = muted; g.font = `700 40px ${body}`;
-      g.fillText((bd.all ? 'Longest runs ever' : runDate(bd.no)) + (bd.rx ? ' · relaxed clock 🐢' : ''), W / 2, 350);
+      g.fillText((bd.all ? 'All-time top 5' : 'Today\'s top 5 · ' + runDate(bd.no)) + (bd.rx ? ' · relaxed clock 🐢' : ''), W / 2, 350);
       // Rows.
       const medal = ['#FFC82E', '#C9CEDB', '#E3A06B'], x0 = 90, wRow = W - 180, hRow = 124;
       let y = 410;
@@ -3419,28 +3417,25 @@ h1 {
         y += hRow;
       });
       g.textBaseline = 'alphabetic'; g.textAlign = 'center';
-      // You, when you're not in the top 5.
-      const myBest = td ? (td.best || td.score) : 0;
-      if (!me && !bd.all && myBest > 0) { g.fillStyle = accent; g.font = `800 42px ${body}`; g.fillText(`My best today: ${myBest} in a row`, W / 2, y + 40); y += 70; }
       if (bd.players >= SHOW_COUNT) { g.fillStyle = muted; g.font = `700 36px ${body}`; g.fillText(`${n0(bd.players)} players ${bd.all ? 'so far' : 'today'}`, W / 2, y + 36); }
       // Call to action.
       const py = H - 176, pw = 900, ph = 116;
       rr(W / 2 - pw / 2, py, pw, ph, 58); g.fillStyle = accent; g.fill(); g.lineWidth = 6; g.strokeStyle = ink; g.stroke();
       g.fillStyle = '#FFFFFF'; g.textBaseline = 'middle';
-      let fs = 46; do { g.font = `800 ${fs}px ${body}`; fs -= 2; } while (g.measureText('Can you get on the board? ordogame.com').width > pw - 80 && fs > 28);
-      g.fillText('Can you get on the board? ordogame.com', W / 2, py + ph / 2 + 2);
+      let fs = 46; do { g.font = `800 ${fs}px ${body}`; fs -= 2; } while (g.measureText('Can you beat me? ordogame.com').width > pw - 80 && fs > 28);
+      g.fillText('Can you beat me? ordogame.com', W / 2, py + ph / 2 + 2);
       const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
       if (boardCard === mine) mine.blob = blob;
     } catch { if (boardCard === mine) boardCard = null; }
     return boardCard;
   }
   async function shareBoard() {
-    if (!boardShown) return;
+    if (!boardShown || !boardShown.place) return;
     track('share', 'board-img');
     let c = boardCard; if (!c || !c.blob) c = await boardCardFor(boardShown);
     if (!c || !c.blob) { toast("Couldn't make the picture."); return; }
     const file = new File([c.blob], `ordo-leaderboard-${boardShown.no}.png`, { type: 'image/png' });
-    const text = `Ordo leaderboard · ${boardShown.all ? 'all time' : runDate(boardShown.no, true)}\nCan you get on it? 👇\n` + BASE + '?s=lb';
+    const text = `I'm ${placeTxt(boardShown.place)} on the Ordo leaderboard ${boardShown.all ? '(all time)' : 'today'} 🏆\nCan you beat me? 👇\n` + BASE + '?s=lb';
     try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return; } }
     catch (e) { if (e && e.name === 'AbortError') return; }
     const a = document.createElement('a'); a.href = URL.createObjectURL(c.blob); a.download = file.name;
@@ -3979,81 +3974,9 @@ h1 {
   }
   function paintShare(no, rec) {
     const text = runShare(no, rec);
-    $('rShareText').value = tagLink(text, 'cp');
-    $('rWa').href = 'https://wa.me/?text=' + encodeURIComponent(tagLink(text, 'wa'));
-    cardFor(no, rec);
+    shareTxt = text; $('rShareText').value = tagLink(text, 'cp');
   }
-  // ---------- Result as a picture (for Instagram Stories, WhatsApp Status and the like) ----------
-  // Drawn ahead of time so the Share sheet opens straight from the tap (phones insist on that).
-  let card = null;
-  const CARD_SQ = ['#2FB14A', '#FFC82E', '#FF8A2B'];
-  async function cardFor(no, rec) {
-    const key = JSON.stringify([no, rec.score, rec.pct, rec.relaxed, nickname()]);
-    if (card && card.key === key) return card;
-    const mine = card = { key, blob: null };
-    try {
-      try { await Promise.all(['600 100px Fredoka', '800 40px Nunito', '700 40px Nunito'].map(f => document.fonts.load(f))); } catch {}
-      const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-      const g = cv.getContext('2d'); if (!g) return null;
-      const ink = '#1A1033', muted = '#5D5880', accent = '#B414B4', body = 'Nunito, "Arial Rounded MT Bold", system-ui, sans-serif';
-      g.fillStyle = '#EDF0FF'; g.fillRect(0, 0, W, H);
-      // Logo and wordmark.
-      g.save(); g.translate(W / 2 - 205, 70); g.scale(1.25, 1.25); g.lineJoin = 'round'; g.strokeStyle = ink;
-      const poly = (pts, fill) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fillStyle = fill; g.fill(); g.lineWidth = 5; g.stroke(); };
-      const bar = (x, y, w) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, 13, 6.5) : g.rect(x, y, w, 13); g.fillStyle = '#FFC82E'; g.fill(); g.lineWidth = 4; g.stroke(); };
-      poly([[60, 6], [86, 28], [34, 28]], '#F2353B'); bar(20, 38, 80); bar(28, 55, 64); bar(36, 72, 48); poly([[34, 92], [86, 92], [60, 114]], '#3FB6E8');
-      g.restore();
-      g.fillStyle = ink; g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.font = '600 130px Fredoka, "Arial Rounded MT Bold", system-ui, sans-serif';
-      g.fillText('ordo', W / 2 - 40, 190);
-      g.textAlign = 'center';
-      g.fillStyle = muted; g.font = `700 44px ${body}`;
-      g.fillText(runDate(no) + (rec.relaxed ? ' · relaxed clock 🐢' : ''), W / 2, 300);
-      g.fillStyle = ink; g.font = '600 280px Fredoka, "Arial Rounded MT Bold", system-ui, sans-serif';
-      g.fillText(String(rec.score), W / 2, 590);
-      g.font = `800 60px ${body}`;
-      g.fillText('in a row' + fireFor(rec.score), W / 2, 680);
-      // The grid: one square per set, coloured by how much of the clock it took.
-      const res = (rec.res || []).slice(0, 39).concat(rec.left || rec.paused ? [] : ['x']), per = 10, sz = 70, gap = 14;   // x: the set that beat the clock
-      const rows = Math.max(1, Math.ceil(res.length / per));
-      let y = 740;
-      res.forEach((f, i) => {
-        const r = Math.floor(i / per), c = i % per, inRow = Math.min(per, res.length - r * per);
-        const x = W / 2 - (inRow * sz + (inRow - 1) * gap) / 2 + c * (sz + gap), yy = y + r * (sz + gap);
-        g.beginPath(); g.roundRect ? g.roundRect(x, yy, sz, sz, 14) : g.rect(x, yy, sz, sz);
-        g.fillStyle = f === 'x' ? '#FFFFFF' : CARD_SQ[f < 0.5 ? 0 : f < 0.8 ? 1 : 2]; g.fill(); g.lineWidth = 5; g.strokeStyle = ink; g.stroke();
-        if (f === 'x') { g.save(); g.font = '44px system-ui, sans-serif'; g.textBaseline = 'middle'; g.fillText('⏰', x + sz / 2, yy + sz / 2 + 2); g.restore(); }
-      });
-      y += res.length ? rows * (sz + gap) + 40 : 20;
-      g.fillStyle = muted; g.font = `700 40px ${body}`;
-      if ((rec.res || []).length > 39) { g.fillText(`…and ${rec.res.length - 39} more`, W / 2, y); y += 56; }
-      g.fillText(beatenBy(rec) + '.', W / 2, y); y += 64;
-      if (rec.pct >= 30) { g.fillStyle = accent; g.font = `800 44px ${body}`; g.fillText(pctLine(rec.pct) + (rec.pct >= 50 ? ' 🏅' : ''), W / 2, y); }
-      // Call to action.
-      const py = H - 190, pw = 860, ph = 120;
-      g.beginPath(); g.roundRect ? g.roundRect(W / 2 - pw / 2, py, pw, ph, 60) : g.rect(W / 2 - pw / 2, py, pw, ph);
-      g.fillStyle = accent; g.fill(); g.lineWidth = 6; g.strokeStyle = ink; g.stroke();
-      g.fillStyle = '#FFFFFF'; g.font = `800 50px ${body}`; g.textBaseline = 'middle';
-      g.fillText(`Can you beat ${rec.score}? ordogame.com`, W / 2, py + ph / 2 + 2);
-      const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
-      if (card === mine) mine.blob = blob;
-    } catch { if (card === mine) card = null; }
-    return card;
-  }
-  async function shareCard() {
-    const no = dailyNo(), rec = prog.run[no]; if (!rec) return;
-    track('share', 'img-daily');
-    let c = card; if (!c || !c.blob) c = await cardFor(no, rec);
-    if (!c || !c.blob) { toast("Couldn't make the picture."); return; }
-    const file = new File([c.blob], `ordo-${no}.png`, { type: 'image/png' });
-    const text = tagLink(runShare(no, rec), 'img');
-    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return; } }
-    catch (e) { if (e && e.name === 'AbortError') return; }
-    // No share sheet (most computers): save the picture instead.
-    const a = document.createElement('a'); a.href = URL.createObjectURL(c.blob); a.download = file.name;
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-    toast('Picture saved');
-  }
-  window.__ordoCard = async () => { const no = dailyNo(), rec = prog.run[no]; const c = rec && await cardFor(no, rec); return c && c.blob ? { size: c.blob.size, type: c.blob.type } : null; };
+  let shareTxt = '';
   // ---------- Send Ordo to a friend: a plain invite, separate from sharing a score ----------
   async function sendFriend(where) {
     track('share', 'fr-' + where);
@@ -4130,7 +4053,6 @@ h1 {
     $('rShareText').hidden = true;
     paintChal(no, rec, fresh);
     paintShare(no, rec);
-    $('rImg').hidden = !canCard; $('rImg').parentElement.classList.toggle('has-img', canCard);
     $('rRank').hidden = true; $('rNamer').hidden = true;
     paintInstall(); paintRemind(); $('rRemindDone').hidden = true;
     $('rPct').textContent = pctLine(rec.pct); $('rPct').hidden = !$('rPct').textContent;
@@ -4196,22 +4118,26 @@ h1 {
     if (prog.run[dailyNo()]) paintShare(dailyNo(), prog.run[dailyNo()]);   // the challenge link now carries the name
   });
   const shareCtx = () => S.mode === 'countdown' ? 'practice' : S.mode === 'run' || S.mode === 'done' ? 'daily' : (S.mode || 'cat');
-  $('rWa').addEventListener('click', () => track('share', 'wa-daily'));
   el.pWa.addEventListener('click', () => track('share', 'wa-' + shareCtx()));
   el.pCopy.addEventListener('click', () => track('share', 'cp-' + shareCtx()));
-  $('rCopy').addEventListener('click', () => {
+  // One Share button: the phone's share sheet (WhatsApp, Messages, Copy… all in there); computers without one copy the text.
+  $('rShare').addEventListener('click', async () => {
+    if (!shareTxt) return;
+    if (navigator.share) {
+      track('share', 'sh-daily');
+      try { await navigator.share({ text: tagLink(shareTxt, 'sh') }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
     track('share', 'cp-daily');
-    const text = $('rShareText').value;
-    const done = () => { $('rCopy').textContent = 'Copied'; setTimeout(() => { $('rCopy').textContent = 'Copy'; }, 1600); };
-    try { navigator.clipboard.writeText(text).then(done, () => { $('rShareText').hidden = false; $('rShareText').select(); }); }
-    catch { $('rShareText').hidden = false; $('rShareText').select(); }
+    const text = $('rShareText').value, b = $('rShare');
+    const done = () => { b.textContent = 'Copied ✓'; toast('Copied. Paste it anywhere.'); setTimeout(() => { b.textContent = 'Share'; }, 1600); };
+    const box = () => { $('rShareText').hidden = false; $('rShareText').select(); };
+    try { navigator.clipboard.writeText(text).then(done, box); } catch { box(); }
   });
   $('rBoardLink').addEventListener('click', () => { const rec = prog.run[dailyNo()]; boardRelaxed = !!(rec && rec.relaxed); openBoards('cd', cdBoardTab || 'day'); });
   $('rPractice').addEventListener('click', () => startCountdown());
   let againNext = false;
   $('rAgain').addEventListener('click', () => { againNext = true; beginRun(); });
   const canCard = (() => { try { const c = document.createElement('canvas'); return !!(c.getContext && c.getContext('2d') && c.toBlob); } catch { return false; } })();
-  $('rImg').addEventListener('click', shareCard);
   $('rFriend').addEventListener('click', () => sendFriend('results'));
   $('aboutFriend').addEventListener('click', () => sendFriend('about'));
   $('stGo').addEventListener('click', beginRun);
