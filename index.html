@@ -462,6 +462,7 @@ h1 {
 .board .who span { font-size: 12px; color: var(--muted); }
 .board .sc { font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
 .board li.me { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.board-share { width: 100%; margin-top: 4px; }
 .board .empty { grid-template-columns: 1fr; color: var(--muted); text-align: center; }
 .panel .board li { padding: 6px 10px; }
 .board-note { margin: 0; font-size: 12px; color: var(--muted); }
@@ -891,6 +892,7 @@ h1 {
     </div>
     <ol class="board" id="boardList"></ol>
     <p class="board-note" id="boardNote">Daily puzzle scores played on this device.</p>
+    <button class="btn-alt board-share" id="boardShare" type="button" hidden>🖼️ Share the leaderboard</button>
   </section>
 
   <section class="about" id="about" hidden>
@@ -3342,6 +3344,7 @@ h1 {
   }
   function showBoards() {
     $('picker').hidden = true; $('boards').hidden = false;
+    $('boardShare').hidden = true; boardShown = null;
     $('tabDay').setAttribute('aria-pressed', String(boardTab === 'day'));
     $('tabAll').setAttribute('aria-pressed', String(boardTab === 'all'));
     $('gameDaily').setAttribute('aria-pressed', String(boardGame === 'daily'));
@@ -3357,6 +3360,9 @@ h1 {
         if (!b) { list.innerHTML = '<li class="empty">Couldn’t reach the board just now.</li>'; return; }
         renderShared(list, tab === 'day' ? b.today : b.all, tab === 'all', true);
         note.textContent = (tab === 'day' ? "Today's longest runs" : 'Longest runs ever, one per player') + (rx ? ' on the relaxed clock 🐢.' : '.');
+        boardShown = { rows: (tab === 'day' ? b.today : b.all).slice(0, 5), all: tab === 'all', rx, players: tab === 'day' ? b.players : b.playersEver, no: dailyNo() };
+        $('boardShare').hidden = !boardShown.rows.length || !canCard;
+        if (!$('boardShare').hidden) boardCardFor(boardShown);
       });
       return;
     }
@@ -3370,6 +3376,79 @@ h1 {
         : `Best daily scores ever` + (b.playersEver >= SHOW_COUNT ? `, from ${n0(b.playersEver)} players.` : '.');
     });
   }
+  // ---------- The leaderboard as a picture ----------
+  // Today's (or all-time) top 5 as a 1080 × 1350 card, ready for WhatsApp Status or Instagram Stories. Drawn ahead, so the share
+  // sheet opens straight from the tap.
+  let boardShown = null, boardCard = null;
+  async function boardCardFor(bd) {
+    const me = bd.rows.find(r => r.me), td = prog.run && prog.run[bd.no];
+    const key = JSON.stringify([bd.rows.map(r => [r.name, r.score, !!r.me]), bd.all, bd.rx, bd.players, td && (td.best || td.score)]);
+    if (boardCard && boardCard.key === key) return boardCard;
+    const mine = boardCard = { key, blob: null };
+    try {
+      try { await Promise.all(['600 100px Fredoka', '800 40px Nunito', '700 40px Nunito'].map(f => document.fonts.load(f))); } catch {}
+      const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const g = cv.getContext('2d'); if (!g) return null;
+      const ink = '#1A1033', muted = '#5D5880', accent = '#B414B4', body = 'Nunito, "Arial Rounded MT Bold", system-ui, sans-serif', disp = '600 {s}px Fredoka, "Arial Rounded MT Bold", system-ui, sans-serif';
+      const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); };
+      g.fillStyle = '#EDF0FF'; g.fillRect(0, 0, W, H);
+      // Logo and wordmark.
+      g.save(); g.translate(W / 2 - 165, 56); g.scale(1, 1); g.lineJoin = 'round'; g.strokeStyle = ink;
+      const poly = (pts, fill) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fillStyle = fill; g.fill(); g.lineWidth = 5; g.stroke(); };
+      const bar = (x, y, w) => { rr(x, y, w, 13, 6.5); g.fillStyle = '#FFC82E'; g.fill(); g.lineWidth = 4; g.stroke(); };
+      poly([[60, 6], [86, 28], [34, 28]], '#F2353B'); bar(20, 38, 80); bar(28, 55, 64); bar(36, 72, 48); poly([[34, 92], [86, 92], [60, 114]], '#3FB6E8');
+      g.restore();
+      g.fillStyle = ink; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.font = disp.replace('{s}', 104); g.fillText('ordo', W / 2 - 30, 152);
+      g.textAlign = 'center';
+      g.font = disp.replace('{s}', 76); g.fillText(bd.all ? '🏆 All-time top 5' : '🏆 Today\'s top 5', W / 2, 290);
+      g.fillStyle = muted; g.font = `700 40px ${body}`;
+      g.fillText((bd.all ? 'Longest runs ever' : runDate(bd.no)) + (bd.rx ? ' · relaxed clock 🐢' : ''), W / 2, 350);
+      // Rows.
+      const medal = ['#FFC82E', '#C9CEDB', '#E3A06B'], x0 = 90, wRow = W - 180, hRow = 124;
+      let y = 410;
+      bd.rows.forEach((r, i) => {
+        rr(x0, y, wRow, hRow - 18, 28); g.fillStyle = r.me ? 'rgba(180,20,180,0.10)' : '#FFFFFF'; g.fill();
+        g.lineWidth = r.me ? 7 : 5; g.strokeStyle = r.me ? accent : ink; g.stroke();
+        const cy = y + (hRow - 18) / 2;
+        g.beginPath(); g.arc(x0 + 62, cy, 34, 0, Math.PI * 2); g.fillStyle = medal[i] || '#FFFFFF'; g.fill(); g.lineWidth = 4; g.strokeStyle = ink; g.stroke();
+        g.fillStyle = ink; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = disp.replace('{s}', 40); g.fillText(String(i + 1), x0 + 62, cy + 2);
+        g.textAlign = 'left'; g.font = `800 46px ${body}`;
+        let name = String(r.name || 'Player'); while (g.measureText(name).width > wRow - 430 && name.length > 2) name = name.slice(0, -2) + '…';
+        g.fillText(name + (r.me ? ' (you)' : ''), x0 + 124, cy + 2);
+        g.textAlign = 'right'; g.font = `800 44px ${body}`; g.fillText(`${r.score} in a row`, x0 + wRow - 36, cy + 2);
+        y += hRow;
+      });
+      g.textBaseline = 'alphabetic'; g.textAlign = 'center';
+      // You, when you're not in the top 5.
+      const myBest = td ? (td.best || td.score) : 0;
+      if (!me && !bd.all && myBest > 0) { g.fillStyle = accent; g.font = `800 42px ${body}`; g.fillText(`My best today: ${myBest} in a row`, W / 2, y + 40); y += 70; }
+      if (bd.players >= SHOW_COUNT) { g.fillStyle = muted; g.font = `700 36px ${body}`; g.fillText(`${n0(bd.players)} players ${bd.all ? 'so far' : 'today'}`, W / 2, y + 36); }
+      // Call to action.
+      const py = H - 176, pw = 900, ph = 116;
+      rr(W / 2 - pw / 2, py, pw, ph, 58); g.fillStyle = accent; g.fill(); g.lineWidth = 6; g.strokeStyle = ink; g.stroke();
+      g.fillStyle = '#FFFFFF'; g.textBaseline = 'middle';
+      let fs = 46; do { g.font = `800 ${fs}px ${body}`; fs -= 2; } while (g.measureText('Can you get on the board? ordogame.com').width > pw - 80 && fs > 28);
+      g.fillText('Can you get on the board? ordogame.com', W / 2, py + ph / 2 + 2);
+      const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+      if (boardCard === mine) mine.blob = blob;
+    } catch { if (boardCard === mine) boardCard = null; }
+    return boardCard;
+  }
+  async function shareBoard() {
+    if (!boardShown) return;
+    track('share', 'board-img');
+    let c = boardCard; if (!c || !c.blob) c = await boardCardFor(boardShown);
+    if (!c || !c.blob) { toast("Couldn't make the picture."); return; }
+    const file = new File([c.blob], `ordo-leaderboard-${boardShown.no}.png`, { type: 'image/png' });
+    const text = `Ordo leaderboard · ${boardShown.all ? 'all time' : runDate(boardShown.no, true)}\nCan you get on it? 👇\n` + BASE + '?s=lb';
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return; } }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(c.blob); a.download = file.name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('Picture saved');
+  }
+  $('boardShare').addEventListener('click', shareBoard);
+  window.__ordoBoardCard = async () => { const c = boardShown && await boardCardFor(boardShown); return c && c.blob ? { size: c.blob.size, type: c.blob.type } : null; };
   $('boardsBtn').addEventListener('click', () => openBoards());
   $('topBtn').addEventListener('click', () => { $('tools').hidden = true; $('setBtn').setAttribute('aria-expanded', 'false'); askLeave(() => openBoards()); });
   $('dBoardLink').addEventListener('click', () => openBoards('daily', pendingBoardTab || 'day'));
