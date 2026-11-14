@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Albie &amp; Avani's birthday present list</title>
+<meta name="description" content="Present ideas for Albie and Avani. Pop your name against anything you're getting so nobody doubles up.">
+<meta name="theme-color" content="#fbf6ee">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
+<style>
+  :root {
+    --bg: #fbf6ee;
+    --card: #ffffff;
+    --ink: #2a2420;
+    --muted: #7a6f66;
+    --line: #ece3d6;
+    --accent: #e0573b;
+    --accent-ink: #ffffff;
+    --done: #3f8f5a;
+    --done-bg: #eef7f0;
+    --albie: #1f7a8c;
+    --albie-bg: #e4f2f5;
+    --avani: #8c3f7a;
+    --avani-bg: #f6e8f2;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 28px 18px 60px; }
+  header h1 { font-size: 30px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02em; }
+  header p { margin: 0 0 6px; color: var(--muted); }
+  .progress { margin: 18px 0 6px; height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .progress > span { display: block; height: 100%; width: 0; background: var(--done); transition: width .4s ease; }
+  .progress-label { font-size: 14px; color: var(--muted); }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 14px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 99px; padding: 7px 14px; font: inherit; font-size: 15px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .notice {
+    background: #fff4d6; border: 1px solid #f0dca0; border-radius: 12px;
+    padding: 10px 14px; font-size: 15px; margin: 0 0 14px;
+  }
+  .notice[hidden] { display: none; }
+
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .item {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px; display: grid; gap: 10px;
+  }
+  .item.claimed { background: var(--done-bg); border-color: #cfe6d6; }
+  .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .name { font-weight: 650; font-size: 18px; margin: 0; }
+  .item.claimed .name { color: #4d5c52; }
+  .note { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
+  .note a { color: var(--accent); }
+  .tag { font-size: 13px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+  .tag.albie { background: var(--albie-bg); color: var(--albie); }
+  .tag.avani { background: var(--avani-bg); color: var(--avani); }
+
+  .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  button.primary, button.secondary, button.link {
+    font: inherit; font-size: 16px; border-radius: 12px; cursor: pointer; padding: 10px 16px;
+  }
+  button.primary { background: var(--accent); color: var(--accent-ink); border: 0; font-weight: 600; }
+  button.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  button.link { background: none; border: 0; padding: 6px 4px; color: var(--muted); text-decoration: underline; font-size: 15px; }
+  button:disabled { opacity: .55; cursor: default; }
+  .who { color: var(--done); font-weight: 600; }
+  .who::before { content: "✓ "; }
+
+  form.claim { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
+  form.claim input {
+    flex: 1 1 180px; min-width: 0; font: inherit; font-size: 16px;
+    padding: 10px 12px; border: 1px solid #d8ccbb; border-radius: 12px; background: #fff;
+  }
+  form.claim input:focus, button:focus-visible, .chip:focus-visible { outline: 3px solid #f2b8a8; outline-offset: 1px; }
+  .err { color: #b3261e; font-size: 14px; width: 100%; margin: 0; }
+
+  footer { margin-top: 28px; color: var(--muted); font-size: 14px; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>🎁 Albie &amp; Avani's birthday list</h1>
+    <p>Some ideas if you're kindly getting the kids something. If you pick one, put your name against it so nobody else buys the same thing.</p>
+    <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+    <div class="progress-label" id="count">Loading…</div>
+  </header>
+
+  <div class="filters" role="group" aria-label="Show">
+    <button class="chip" data-filter="all" aria-pressed="true">Everything</button>
+    <button class="chip" data-filter="albie" aria-pressed="false">Albie</button>
+    <button class="chip" data-filter="avani" aria-pressed="false">Avani</button>
+    <button class="chip" data-filter="open" aria-pressed="false">Still needed</button>
+  </div>
+
+  <p class="notice" id="notice" hidden></p>
+  <ul id="list"></ul>
+
+  <footer>Changed your mind? Tap "Undo" on the item. The undo button only shows on the phone or computer you used to claim it.</footer>
+</main>
+
+<script>
+// ---------------------------------------------------------------------------
+// SETTINGS
+// API_URL: the Google Apps Script web app URL (ends in /exec). Leave empty to
+// show the list without claiming.
+const API_URL = "";
+
+// The list. Keep each id the same once people have started claiming, because
+// claims are stored against the id. for: "albie", "avani" or "" (either).
+const ITEMS = [
+  { id: "globe",      name: "Globe of the world",              for: "" },
+  { id: "twister",    name: "Twister",                         for: "" },
+  { id: "hubelino",   name: "Hubelino marble run",             for: "", note: "A marble run that clicks onto Duplo" },
+  { id: "flextrack",  name: "Brio–Duplo flex tracks",          for: "", note: "Track pieces that connect Brio to Duplo" },
+  { id: "brio",       name: "Brio train set with motorised trains", for: "albie" },
+  { id: "chess",      name: "Chess set",                       for: "avani" },
+  { id: "piano",      name: "Piano",                           for: "avani", link: "https://amzn.eu/d/028phfFH", linkText: "This one on Amazon" },
+  { id: "bikes",      name: "New bikes",                       for: "" },
+  { id: "spooner",    name: "Spooner Board",                   for: "", note: "Like a balance board you can use indoors" },
+  { id: "cones",      name: "Small stackable football cones",  for: "albie" },
+  { id: "sphero",     name: "Sphero robot",                    for: "" },
+  { id: "dumpling",   name: "Squishy dumpling",                for: "" },
+  { id: "hoops",      name: "Door-frame hanging hoops",        for: "avani", note: "Gravity brand" },
+  { id: "skateboard", name: "Skateboard for a 3-year-old",     for: "albie" },
+];
+// ---------------------------------------------------------------------------
+
+const KIDS = { albie: "Albie", avani: "Avani" };
+const listEl = document.getElementById("list");
+const noticeEl = document.getElementById("notice");
+let claims = {};          // id -> { name }
+let filter = "all";
+let openForm = null;      // id of the item whose name form is open
+let busy = new Set();
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+let myName = store.get("presents.name", "");
+let mine = new Set(store.get("presents.mine", []));
+function saveMine() { store.set("presents.mine", [...mine]); }
+
+function showNotice(msg) { noticeEl.textContent = msg; noticeEl.hidden = !msg; }
+
+async function api(params) {
+  const url = API_URL + "?" + new URLSearchParams(params).toString();
+  const res = await fetch(url, { method: "GET", redirect: "follow" });
+  if (!res.ok) throw new Error("Network error " + res.status);
+  return res.json();
+}
+
+async function refresh() {
+  if (!API_URL) {
+    showNotice("Claiming isn't switched on yet, so you can look but not add your name. Check back soon.");
+    render();
+    return;
+  }
+  try {
+    const data = await api({ action: "list" });
+    claims = data.claims || {};
+    showNotice("");
+  } catch (e) {
+    showNotice("Couldn't load who's getting what. Check your connection and refresh.");
+  }
+  render();
+}
+
+async function claim(id, name) {
+  busy.add(id); render();
+  try {
+    const item = ITEMS.find(i => i.id === id);
+    const data = await api({ action: "claim", id, item: item ? item.name : id, name });
+    claims = data.claims || claims;
+    if (data.ok) {
+      mine.add(id); saveMine();
+      myName = name; store.set("presents.name", name);
+      openForm = null;
+    } else if (data.error === "taken") {
+      openForm = null;
+      showNotice("Someone got there first. That one's already taken.");
+    } else {
+      showNotice(data.error || "Something went wrong. Please try again.");
+    }
+  } catch (e) {
+    showNotice("Couldn't save. Check your connection and try again.");
+  }
+  busy.delete(id); render();
+}
+
+async function unclaim(id) {
+  const c = claims[id];
+  if (!c) return;
+  busy.add(id); render();
+  try {
+    const data = await api({ action: "unclaim", id, name: c.name });
+    claims = data.claims || claims;
+    if (data.ok) { mine.delete(id); saveMine(); }
+    else showNotice(data.error || "Couldn't undo that.");
+  } catch (e) {
+    showNotice("Couldn't save. Check your connection and try again.");
+  }
+  busy.delete(id); render();
+}
+
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") n.className = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false) n.append(c);
+  return n;
+}
+
+function render() {
+  const total = ITEMS.length;
+  const taken = ITEMS.filter(i => claims[i.id]).length;
+  document.getElementById("bar").style.width = (taken / total * 100) + "%";
+  document.getElementById("count").textContent = API_URL
+    ? `${taken} of ${total} taken · ${total - taken} still needed`
+    : `${total} ideas`;
+
+  const visible = ITEMS.filter(i => {
+    if (filter === "open") return !claims[i.id];
+    if (filter === "albie" || filter === "avani") return i.for === filter || i.for === "";
+    return true;
+  });
+
+  listEl.replaceChildren(...visible.map(item => {
+    const c = claims[item.id];
+    const isBusy = busy.has(item.id);
+    const note = (item.note || item.link) ? el("p", { class: "note" },
+      item.note || "",
+      item.note && item.link ? " · " : "",
+      item.link ? el("a", { href: item.link, target: "_blank", rel: "noopener" }, item.linkText || "Link") : ""
+    ) : null;
+
+    const top = el("div", { class: "top" },
+      el("div", {}, el("p", { class: "name" }, item.name), note),
+      item.for ? el("span", { class: "tag " + item.for }, KIDS[item.for]) : null
+    );
+
+    let actions;
+    if (c) {
+      actions = el("div", { class: "actions" },
+        el("span", { class: "who" }, `${c.name} is getting this`),
+        mine.has(item.id) ? el("button", { class: "link", disabled: isBusy, onclick: () => unclaim(item.id) }, isBusy ? "Saving…" : "Undo") : null
+      );
+    } else if (openForm === item.id) {
+      const input = el("input", { type: "text", name: "name", placeholder: "Your name", value: myName, maxlength: "40", autocomplete: "name", required: true, "aria-label": "Your name" });
+      const err = el("p", { class: "err", hidden: true });
+      const form = el("form", { class: "claim", onsubmit: (e) => {
+        e.preventDefault();
+        const name = input.value.trim().replace(/\s+/g, " ");
+        if (!name) { err.textContent = "Please add your name."; err.hidden = false; return; }
+        claim(item.id, name);
+      } },
+        input,
+        el("button", { class: "primary", type: "submit", disabled: isBusy }, isBusy ? "Saving…" : "Confirm"),
+        el("button", { class: "secondary", type: "button", onclick: () => { openForm = null; render(); } }, "Cancel"),
+        err
+      );
+      actions = el("div", { class: "actions" }, form);
+      requestAnimationFrame(() => { if (!myName) input.focus(); });
+    } else {
+      actions = el("div", { class: "actions" },
+        el("button", { class: "primary", disabled: !API_URL, onclick: () => { openForm = item.id; showNotice(""); render(); } }, "I'll get this")
+      );
+    }
+
+    return el("li", { class: "item" + (c ? " claimed" : "") }, top, actions);
+  }));
+}
+
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.filter;
+  document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  render();
+}));
+document.addEventListener("visibilitychange", () => { if (!document.hidden && !openForm) refresh(); });
+setInterval(() => { if (!document.hidden && !openForm && !busy.size) refresh(); }, 45000);
+
+render();
+refresh();
+</script>
+</body>
+</html>
