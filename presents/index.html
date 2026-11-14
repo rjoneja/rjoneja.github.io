@@ -236,10 +236,8 @@ const ITEMS = [
     desc: "A few small cones for dribbling practice in the garden or park. Any will do.",
     example: "Mitre mini cone set (4)", shop: "Live4Sport", price: "£5.95", url: "https://www.live4sport.co.uk/?p=18063",
     alt: { text: "Nicer set of 8 with a bag: Jaques, £17.99", url: "https://jaqueslondon.co.uk/products/jaques-of-london-activity-cones-set-of-8" } },
-  { id: "sphero", name: "Sphero robot", for: "", emoji: "🤖", q: "Sphero Mini",
-    desc: "A ping-pong-ball-sized robot you drive (and later code) from a phone or tablet. The box says 8+, but a 6-year-old will manage with a grown-up. Works fine second-hand.",
-    example: "Sphero Mini", shop: "Amazon", price: "~£50", url: AMZ("Sphero Mini"),
-    img: "https://cdn.pji.nu/product/standard/800/4559594.jpg" },
+  { id: "sphero", name: "Sphero robot", for: "avani", emoji: "🤖", done: "Raj & Rosie",
+    desc: "Already sorted: we found one second-hand." },
   { id: "dumpling", name: "Squishy dumpling", for: "", emoji: "🥟", q: "squishy dumpling",
     desc: "A palm-sized squishy dumpling toy. Any brand. Ages 3+.",
     example: "Scrunchems Sugar Dumpling", shop: "Home Education Resources", price: "£2", url: "https://home-education-resources.co.uk/?p=20493",
@@ -260,6 +258,7 @@ const KIDS = { albie: "Albie", avani: "Avani" };
 const listEl = document.getElementById("list");
 const noticeEl = document.getElementById("notice");
 let claims = {};          // id -> { name }
+const claimOf = i => i.done ? { name: i.done, fixed: true } : claims[i.id];
 let suggestions = [];     // [{ id, name, for, link, by }] added by visitors
 let suggestOn = false;    // true once the backend supports suggestions
 function allItems() {
@@ -360,20 +359,20 @@ function el(tag, attrs = {}, ...kids) {
 function render() {
   const items = allItems();
   const total = items.length;
-  const taken = items.filter(i => claims[i.id]).length;
+  const taken = items.filter(i => claimOf(i)).length;
   document.getElementById("bar").style.width = (taken / total * 100) + "%";
   document.getElementById("count").textContent = API_URL
     ? `${taken} of ${total} taken · ${total - taken} still needed`
     : `${total} ideas`;
 
   const visible = items.filter(i => {
-    if (filter === "open") return !claims[i.id];
+    if (filter === "open") return !claimOf(i);
     if (filter === "albie" || filter === "avani") return i.for === filter || i.for === "";
     return true;
   });
 
   listEl.replaceChildren(...visible.map(item => {
-    const c = claims[item.id];
+    const c = claimOf(item);
     const isBusy = busy.has(item.id);
     const bits = [];
     if (item.note) bits.push(item.note);
@@ -417,8 +416,8 @@ function render() {
     let actions;
     if (c) {
       actions = el("div", { class: "actions" },
-        el("span", { class: "who" }, `${c.name} is getting this`),
-        mine.has(item.id) ? el("button", { class: "link", disabled: isBusy, onclick: () => unclaim(item.id) }, isBusy ? "Saving…" : "Undo") : null
+        el("span", { class: "who" }, c.fixed ? "Already bought" : `${c.name} is getting this`),
+        mine.has(item.id) && !c.fixed ? el("button", { class: "link", disabled: isBusy, onclick: () => unclaim(item.id) }, isBusy ? "Saving…" : "Undo") : null
       );
     } else if (openForm === item.id) {
       const input = el("input", { type: "text", name: "name", placeholder: "Your name", value: myName, maxlength: "40", autocomplete: "name", required: true, "aria-label": "Your name" });
