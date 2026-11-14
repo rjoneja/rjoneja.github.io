@@ -7,6 +7,7 @@
 <title>Albie &amp; Avani's birthday present list</title>
 <meta name="description" content="Present ideas for Albie and Avani. Pop your name against anything you're getting so nobody doubles up.">
 <meta name="theme-color" content="#fbf6ee">
+<meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
 <style>
   :root {
@@ -65,6 +66,22 @@
   .item.claimed .name { color: #4d5c52; }
   .note { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
   .note a { color: var(--accent); }
+  .body { display: flex; gap: 14px; align-items: flex-start; }
+  .thumb {
+    flex: 0 0 84px; width: 84px; height: 84px; border-radius: 12px; overflow: hidden;
+    background: #f3ede4; display: grid; place-items: center; font-size: 38px;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: contain; background: #fff; display: block; }
+  .info { flex: 1; min-width: 0; display: grid; gap: 6px; }
+  .desc { margin: 0; font-size: 15px; color: #4a423c; }
+  .buy { margin: 0; font-size: 15px; }
+  .buy a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  .buy a:hover { text-decoration: underline; }
+  .buy .price { font-weight: 600; color: var(--ink); }
+  .alt { margin: 0; font-size: 13.5px; color: var(--muted); }
+  .alt a { color: var(--muted); }
+  .item.claimed .thumb { opacity: .6; }
+  @media (max-width: 380px) { .thumb { flex-basis: 64px; width: 64px; height: 64px; font-size: 30px; } }
   .tag { font-size: 13px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
   .tag.albie { background: var(--albie-bg); color: var(--albie); }
   .tag.avani { background: var(--avani-bg); color: var(--avani); }
@@ -120,7 +137,7 @@
 <main>
   <header>
     <h1>🎁 Albie &amp; Avani's birthday list</h1>
-    <p>Some ideas if you're kindly getting the kids something. If you pick one, put your name against it so nobody else buys the same thing.</p>
+    <p>Albie is turning 3 and Avani is turning 6. Here are some ideas if you're kindly getting them something. If you pick one, put your name against it so nobody else buys the same thing.</p>
     <div class="progress" aria-hidden="true"><span id="bar"></span></div>
     <div class="progress-label" id="count">Loading…</div>
   </header>
@@ -174,22 +191,70 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbx8Q8rtdUQR_h9fqmgeTj28g8t5AN6nAbLftv0sZC-yDyRnOoaFqpde9rDAw5ZFmQqGUA/exec";
 
 // The list. Keep each id the same once people have started claiming, because
-// claims are stored against the id. for: "albie", "avani" or "" (either).
+// claims are stored against the id. for: "albie" (turning 3), "avani" (turning 6) or "" (either).
+// shop/price/url = where to buy (independent shop unless a big retailer was more than £1 cheaper).
+// alt = optional extra line (cheaper option, or a comparison link). Prices checked 14 Nov 2026.
+const AMZ = q => "https://www.amazon.co.uk/s?k=" + encodeURIComponent(q);
 const ITEMS = [
-  { id: "globe",      name: "Globe of the world",              for: "" },
-  { id: "twister",    name: "Twister",                         for: "" },
-  { id: "hubelino",   name: "Hubelino marble run",             for: "", note: "A marble run that clicks onto Duplo" },
-  { id: "flextrack",  name: "Brio–Duplo flex tracks",          for: "", note: "Track pieces that connect Brio to Duplo" },
-  { id: "brio",       name: "Brio train set with motorised trains", for: "albie" },
-  { id: "chess",      name: "Chess set",                       for: "avani" },
-  { id: "piano",      name: "Piano",                           for: "avani", link: "https://amzn.eu/d/028phfFH", linkText: "This one on Amazon" },
-  { id: "bikes",      name: "New bikes",                       for: "" },
-  { id: "spooner",    name: "Spooner Board",                   for: "", note: "Like a balance board you can use indoors" },
-  { id: "cones",      name: "Small stackable football cones",  for: "albie" },
-  { id: "sphero",     name: "Sphero robot",                    for: "" },
-  { id: "dumpling",   name: "Squishy dumpling",                for: "" },
-  { id: "hoops",      name: "Door-frame hanging hoops",        for: "avani", note: "Gravity brand" },
-  { id: "skateboard", name: "Skateboard for a 3-year-old",     for: "albie" },
+  { id: "globe", name: "Globe 4 Kids (25cm)", for: "", emoji: "🌍",
+    desc: "A children's globe made in the UK, covered in over 400 little pictures of animals, monuments and landmarks, with country names and big cities. Aimed at ages 3–7.",
+    shop: "JustGlobes", price: "£60", url: "https://justglobes.co.uk/globe-4-kids-illuminated-1.html",
+    img: "https://justglobes.co.uk/media/catalog/product/cache/756f081b623549a69100a859b511fd99/g/l/globe-4-kids-non-illuminated-1.jpg",
+    alt: { text: "Cheaper light-up option: Nova Rico animals globe, £40.99 at John Lewis", url: "https://www.johnlewis.com/nova-rico-25cm-illuminated-animals-childrens-globe-pink/p111577119" } },
+  { id: "twister", name: "Twister", for: "", emoji: "🌀",
+    desc: "The classic Hasbro game: spin, then left hand red… until someone falls over. Box says ages 6+, but little ones love joining in.",
+    shop: "Hoyle's of Oxford", price: "£24.95", url: "https://hoylesoxford.com/products/twister",
+    alt: { text: "Often cheaper on Amazon: check before buying", url: AMZ("Hasbro Twister game") } },
+  { id: "hubelino", name: "Hubelino marble run: 55-piece set", for: "", emoji: "🔵",
+    desc: "51 marble-run pieces and 4 marbles that click straight onto the Duplo bricks they already have, so the Duplo becomes the towers. Made in Germany. Ages 4+.",
+    shop: "Brickshop (ships from NL)", price: "€42.49 (~£37)", url: "https://brickshop.eu/hubelino/hubelino-run-elements-set-55-pcs",
+    img: "https://www.brickshop.eu/components/com_virtuemart/shop_image/product/HUBELINO_55_Deli_647f2290c7355.jpg",
+    alt: { text: "UK shop Fun Learning has it at £50 when in stock · compare on Amazon", url: AMZ("Hubelino 55 run elements 420473") } },
+  { id: "flextrack", name: "Toy2 Brio–Duplo track connectors", for: "", emoji: "🛤️",
+    desc: "Clever little connectors that let Brio (or IKEA) wooden track sit on top of Duplo bricks, so you can build bridges, ramps and layouts on two levels. This set has 33 connectors.",
+    shop: "2TTOYS (ships from NL)", price: "£37", url: "https://2ttoys.nl/ar-gb/products/toy2-allround-large-track-connectors",
+    alt: { text: "Compare on Amazon", url: AMZ("Toy2 track connectors Brio Duplo") } },
+  { id: "brio", name: "BRIO Steaming Train Set", for: "albie", emoji: "🚂",
+    desc: "A figure-of-8 wooden railway with a battery engine that puffs harmless cold-water steam, plus a tunnel, crossing and trees. 24 pieces, and it works with all other BRIO track. Ages 3+.",
+    shop: "Reactive Toys", price: "£59.99", url: "https://www.reactivetoys.co.uk/products/brio-steaming-train-set-36017",
+    img: "https://www.reactivetoys.co.uk/cdn/shop/files/71Dk1QU2V6L._AC_SL1500_1200x972.jpg?v=1707491509",
+    alt: { text: "£75 at Argos and John Lewis" } },
+  { id: "chess", name: "Story Time Chess", for: "avani", emoji: "♟️",
+    desc: "Teaches chess through silly stories and mini-games, so you don't need to know chess to teach it. Great for a 6-year-old, and the double-sided board works for normal chess too.",
+    shop: "Hoyle's of Oxford", price: "£24.95", url: "https://hoylesoxford.com/products/story-time-chess",
+    img: "https://hoylesoxford.com/cdn/shop/files/StoryTimeChess-box.jpg?v=1699197881" },
+  { id: "piano", name: "Piano", for: "avani", emoji: "🎹",
+    desc: "The specific piano Raj and Rosie picked out.",
+    shop: "Amazon", price: "", url: "https://amzn.eu/d/028phfFH" },
+  { id: "bikes", name: "New bikes", for: "", emoji: "🚲",
+    desc: "Avani will be 6 and Albie 3, so they need quite different sizes. Please check with Raj or Rosie before buying." },
+  { id: "spooner", name: "Spooner Freestyle Board", for: "", emoji: "🏄",
+    desc: "A curved plastic board that rocks, spins and slides. Like a skateboard or surfboard you can use indoors, and practically indestructible. Ages 3+.",
+    shop: "MessyPlay NI", price: "£48 + VAT", url: "https://messyplayni.co.uk/product/spooner-board-freestyle-board-blue/",
+    img: "https://messyplayni.co.uk/wp-content/uploads/2023/04/spooner-510x510-2.jpg",
+    alt: { text: "Compare on Amazon", url: AMZ("Spooner Freestyle board") } },
+  { id: "cones", name: "Stackable football cones", for: "albie", emoji: "⚽",
+    desc: "8 bright 23cm cones that stack together, with a drawstring bag. Good for dribbling practice and garden sports days. From age 3.",
+    shop: "Jaques of London", price: "£17.99", url: "https://jaqueslondon.co.uk/products/jaques-of-london-activity-cones-set-of-8",
+    img: "https://www.jaqueslondon.co.uk/cdn/shop/products/Activity-Cones-Spread-Out-80707.jpg?v=1630416279",
+    alt: { text: "Smaller budget option: Mitre mini cone set (4 cones), £5.95 at Live4Sport", url: "https://www.live4sport.co.uk/?p=18063" } },
+  { id: "sphero", name: "Sphero Mini robot", for: "", emoji: "🤖",
+    desc: "A robot the size of a ping-pong ball that you drive (and later code) from a phone or tablet. The box says 8+, but a 6-year-old will manage with a grown-up.",
+    shop: "Amazon", price: "~£50", url: AMZ("Sphero Mini"),
+    img: "https://cdn.pji.nu/product/standard/800/4559594.jpg",
+    alt: { text: "Independent robot shops charge about £65, so Amazon is the cheaper option here" } },
+  { id: "dumpling", name: "Squishy dumpling", for: "", emoji: "🥟",
+    desc: "A palm-sized Scrunchems Sugar Dumpling, filled with slow-squishing 'sugar' gel. Ages 3+.",
+    shop: "Home Education Resources", price: "£2", url: "https://home-education-resources.co.uk/?p=20493",
+    img: "https://cdn.shopify.com/s/files/1/0649/0688/7411/files/Scrunchems-Sugar-Dumpling-Squishy.webp?v=1776449114" },
+  { id: "hoops", name: "Door-frame hanging rings (Gravity)", for: "avani", emoji: "🤸",
+    desc: "Gravity Fitness wooden gymnastic rings on adjustable straps. Pick the 28mm size for smaller hands. They hang from a doorway pull-up bar, which Gravity sells for £39.95 if needed.",
+    shop: "Gravity Fitness", price: "£37.95", url: "https://gravity.fitness/products/gravity-fitness-wooden-gymnastic-rings",
+    img: "https://gravity.fitness/cdn/shop/files/35-Gravity-Fitness-Wooden-Gymnastic-Rings_600x.webp?v=1780485847" },
+  { id: "skateboard", name: "Banwood skateboard", for: "albie", emoji: "🛹",
+    desc: "A small (52cm) maple cruiser with soft grip and soft wheels, made for little riders aged 3 and up.",
+    shop: "Folk Interiors", price: "£80", url: "https://folkinteriors.co.uk/products/banwood-skateboard-red",
+    alt: { text: "Same price at John Lewis, with more colours", url: "https://www.johnlewis.com/banwood-canadian-maple-skateboard/p111944143" } },
 ];
 // ---------------------------------------------------------------------------
 
@@ -318,9 +383,31 @@ function render() {
     if (item.by) bits.push(el("span", { class: "by" }, `Suggested by ${item.by}`));
     const note = bits.length ? el("p", { class: "note" }, bits.flatMap((b, i) => i ? [" · ", b] : [b])) : null;
 
-    const top = el("div", { class: "top" },
-      el("div", {}, el("p", { class: "name" }, item.name), note),
-      item.for ? el("span", { class: "tag " + item.for }, KIDS[item.for]) : null
+    const thumb = el("div", { class: "thumb", "aria-hidden": "true" }, item.emoji || "🎁");
+    if (item.img) {
+      const im = el("img", { src: item.img, alt: "", loading: "lazy", referrerpolicy: "no-referrer" });
+      im.addEventListener("error", () => { thumb.replaceChildren(item.emoji || "🎁"); });
+      thumb.replaceChildren(im);
+    }
+    const ext = { target: "_blank", rel: "noopener noreferrer" };
+    const buy = item.url ? el("p", { class: "buy" },
+      el("a", { href: item.url, ...ext }, `Buy at ${item.shop || "shop"} ↗`),
+      item.price ? [" · ", el("span", { class: "price" }, item.price)] : null
+    ) : null;
+    const alt = item.alt ? el("p", { class: "alt" },
+      item.alt.url ? el("a", { href: item.alt.url, ...ext }, item.alt.text) : item.alt.text
+    ) : null;
+
+    const top = el("div", { class: "body" },
+      thumb,
+      el("div", { class: "info" },
+        el("div", { class: "top" },
+          el("p", { class: "name" }, item.name),
+          item.for ? el("span", { class: "tag " + item.for }, KIDS[item.for]) : null
+        ),
+        item.desc ? el("p", { class: "desc" }, item.desc) : null,
+        note, buy, alt
+      )
     );
 
     let actions;
