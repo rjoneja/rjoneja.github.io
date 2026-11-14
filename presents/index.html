@@ -88,6 +88,31 @@
   form.claim input:focus, button:focus-visible, .chip:focus-visible { outline: 3px solid #f2b8a8; outline-offset: 1px; }
   .err { color: #b3261e; font-size: 14px; width: 100%; margin: 0; }
 
+  .suggest-wrap { margin-top: 18px; }
+  .suggest-wrap[hidden], #suggestForm[hidden] { display: none; }
+  #suggestOpen { width: 100%; background: transparent; border: 2px dashed #d8ccbb; color: var(--ink); font-weight: 600; padding: 14px; }
+  #suggestForm {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px; display: grid; gap: 12px;
+  }
+  #suggestForm h2 { font-size: 18px; margin: 0; }
+  #suggestForm label { display: grid; gap: 5px; font-size: 15px; font-weight: 600; }
+  #suggestForm label span.opt { font-weight: 400; color: var(--muted); }
+  #suggestForm input[type=text], #suggestForm input[type=url] {
+    font: inherit; font-size: 16px; font-weight: 400; padding: 10px 12px;
+    border: 1px solid #d8ccbb; border-radius: 12px; background: #fff; width: 100%;
+  }
+  #suggestForm input:focus { outline: 3px solid #f2b8a8; outline-offset: 1px; }
+  .seg { display: flex; gap: 8px; flex-wrap: wrap; border: 0; padding: 0; margin: 0; }
+  .seg legend { font-size: 15px; font-weight: 600; margin-bottom: 5px; padding: 0; }
+  .seg label { display: inline-flex !important; align-items: center; gap: 6px; font-weight: 400 !important;
+    border: 1px solid var(--line); border-radius: 99px; padding: 6px 12px; cursor: pointer; }
+  .seg label:has(input:checked) { border-color: var(--ink); background: #f3ede4; }
+  label.check { display: flex !important; align-items: center; gap: 8px; font-weight: 400 !important; }
+  label.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .by { font-style: italic; }
+
   footer { margin-top: 28px; color: var(--muted); font-size: 14px; text-align: center; }
 </style>
 </head>
@@ -109,6 +134,34 @@
 
   <p class="notice" id="notice" hidden></p>
   <ul id="list"></ul>
+
+  <div class="suggest-wrap" id="suggestWrap" hidden>
+    <button class="secondary" id="suggestOpen" type="button">＋ Suggest something else</button>
+    <form id="suggestForm" hidden>
+      <h2>Suggest a present</h2>
+      <label>What is it?
+        <input type="text" id="sItem" maxlength="80" placeholder="e.g. Kids' binoculars" required>
+      </label>
+      <fieldset class="seg">
+        <legend>Who for?</legend>
+        <label><input type="radio" name="sFor" value="" checked> Either</label>
+        <label><input type="radio" name="sFor" value="albie"> Albie</label>
+        <label><input type="radio" name="sFor" value="avani"> Avani</label>
+      </fieldset>
+      <label><span>Link <span class="opt">(optional)</span></span>
+        <input type="url" id="sLink" maxlength="500" placeholder="https://…" inputmode="url">
+      </label>
+      <label>Your name
+        <input type="text" id="sBy" maxlength="40" autocomplete="name" required>
+      </label>
+      <label class="check"><input type="checkbox" id="sClaim"> I'm getting this myself</label>
+      <p class="err" id="sErr" hidden></p>
+      <div class="row">
+        <button class="primary" type="submit" id="sSubmit">Add to the list</button>
+        <button class="secondary" type="button" id="sCancel">Cancel</button>
+      </div>
+    </form>
+  </div>
 
   <footer>Changed your mind? Tap "Undo" on the item. The undo button only shows on the phone or computer you used to claim it.</footer>
 </main>
@@ -144,6 +197,15 @@ const KIDS = { albie: "Albie", avani: "Avani" };
 const listEl = document.getElementById("list");
 const noticeEl = document.getElementById("notice");
 let claims = {};          // id -> { name }
+let suggestions = [];     // [{ id, name, for, link, by }] added by visitors
+let suggestOn = false;    // true once the backend supports suggestions
+function allItems() {
+  const known = new Set(ITEMS.map(i => i.id));
+  return ITEMS.concat(suggestions.filter(s => !known.has(s.id)).map(s => ({
+    id: s.id, name: s.name, for: s.for === "albie" || s.for === "avani" ? s.for : "",
+    link: /^https?:\/\//i.test(s.link || "") ? s.link : "", linkText: "Link", by: s.by,
+  })));
+}
 let filter = "all";
 let openForm = null;      // id of the item whose name form is open
 let busy = new Set();
@@ -174,6 +236,9 @@ async function refresh() {
   try {
     const data = await api({ action: "list" });
     claims = data.claims || {};
+    suggestOn = Array.isArray(data.suggestions);
+    suggestions = data.suggestions || [];
+    document.getElementById("suggestWrap").hidden = !suggestOn;
     showNotice("");
   } catch (e) {
     showNotice("Couldn't load who's getting what. Check your connection and refresh.");
@@ -184,7 +249,7 @@ async function refresh() {
 async function claim(id, name) {
   busy.add(id); render();
   try {
-    const item = ITEMS.find(i => i.id === id);
+    const item = allItems().find(i => i.id === id);
     const data = await api({ action: "claim", id, item: item ? item.name : id, name });
     claims = data.claims || claims;
     if (data.ok) {
@@ -230,14 +295,15 @@ function el(tag, attrs = {}, ...kids) {
 }
 
 function render() {
-  const total = ITEMS.length;
-  const taken = ITEMS.filter(i => claims[i.id]).length;
+  const items = allItems();
+  const total = items.length;
+  const taken = items.filter(i => claims[i.id]).length;
   document.getElementById("bar").style.width = (taken / total * 100) + "%";
   document.getElementById("count").textContent = API_URL
     ? `${taken} of ${total} taken · ${total - taken} still needed`
     : `${total} ideas`;
 
-  const visible = ITEMS.filter(i => {
+  const visible = items.filter(i => {
     if (filter === "open") return !claims[i.id];
     if (filter === "albie" || filter === "avani") return i.for === filter || i.for === "";
     return true;
@@ -246,11 +312,11 @@ function render() {
   listEl.replaceChildren(...visible.map(item => {
     const c = claims[item.id];
     const isBusy = busy.has(item.id);
-    const note = (item.note || item.link) ? el("p", { class: "note" },
-      item.note || "",
-      item.note && item.link ? " · " : "",
-      item.link ? el("a", { href: item.link, target: "_blank", rel: "noopener" }, item.linkText || "Link") : ""
-    ) : null;
+    const bits = [];
+    if (item.note) bits.push(item.note);
+    if (item.link) bits.push(el("a", { href: item.link, target: "_blank", rel: "noopener" }, item.linkText || "Link"));
+    if (item.by) bits.push(el("span", { class: "by" }, `Suggested by ${item.by}`));
+    const note = bits.length ? el("p", { class: "note" }, bits.flatMap((b, i) => i ? [" · ", b] : [b])) : null;
 
     const top = el("div", { class: "top" },
       el("div", {}, el("p", { class: "name" }, item.name), note),
@@ -294,8 +360,52 @@ document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () =
   document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
   render();
 }));
-document.addEventListener("visibilitychange", () => { if (!document.hidden && !openForm) refresh(); });
-setInterval(() => { if (!document.hidden && !openForm && !busy.size) refresh(); }, 45000);
+// Suggest form
+const sForm = document.getElementById("suggestForm");
+const sOpen = document.getElementById("suggestOpen");
+const sErr = document.getElementById("sErr");
+const sSubmit = document.getElementById("sSubmit");
+function closeSuggest() { sForm.hidden = true; sOpen.hidden = false; sErr.hidden = true; }
+sOpen.addEventListener("click", () => {
+  sOpen.hidden = true; sForm.hidden = false;
+  document.getElementById("sBy").value = myName;
+  document.getElementById("sItem").focus();
+});
+document.getElementById("sCancel").addEventListener("click", closeSuggest);
+sForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const item = document.getElementById("sItem").value.trim().replace(/\s+/g, " ");
+  const by = document.getElementById("sBy").value.trim().replace(/\s+/g, " ");
+  const link = document.getElementById("sLink").value.trim();
+  const forKid = (sForm.querySelector("input[name=sFor]:checked") || {}).value || "";
+  const claimIt = document.getElementById("sClaim").checked;
+  if (!item) { sErr.textContent = "Please say what the present is."; sErr.hidden = false; return; }
+  if (!by) { sErr.textContent = "Please add your name."; sErr.hidden = false; return; }
+  if (link && !/^https?:\/\//i.test(link)) { sErr.textContent = "Links should start with https://"; sErr.hidden = false; return; }
+  sSubmit.disabled = true; sSubmit.textContent = "Adding…"; sErr.hidden = true;
+  try {
+    const params = { action: "suggest", item, by, link, for: forKid };
+    if (claimIt) params.claim = "1";
+    const data = await api(params);
+    if (data.claims) claims = data.claims;
+    if (data.suggestions) suggestions = data.suggestions;
+    if (data.ok) {
+      myName = by; store.set("presents.name", by);
+      if (claimIt && data.id) { mine.add(data.id); saveMine(); }
+      sForm.reset(); closeSuggest();
+      showNotice(claimIt ? `Thanks! "${item}" is on the list with your name against it.` : `Thanks! "${item}" is now on the list.`);
+      render();
+    } else {
+      sErr.textContent = data.error || "Something went wrong. Please try again."; sErr.hidden = false;
+    }
+  } catch (err) {
+    sErr.textContent = "Couldn't save. Check your connection and try again."; sErr.hidden = false;
+  }
+  sSubmit.disabled = false; sSubmit.textContent = "Add to the list";
+});
+
+document.addEventListener("visibilitychange", () => { if (!document.hidden && !openForm && sForm.hidden) refresh(); });
+setInterval(() => { if (!document.hidden && !openForm && sForm.hidden && !busy.size) refresh(); }, 45000);
 
 render();
 refresh();
