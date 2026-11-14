@@ -38,6 +38,7 @@
   main { max-width: 640px; margin: 0 auto; padding: 28px 18px 60px; }
   header h1 { font-size: 30px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02em; }
   header p { margin: 0 0 6px; color: var(--muted); }
+  header p.hint { margin-top: 10px; background: #eef7f0; color: #2f5d3e; border-radius: 12px; padding: 10px 14px; font-size: 15px; }
   .progress { margin: 18px 0 6px; height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
   .progress > span { display: block; height: 100%; width: 0; background: var(--done); transition: width .4s ease; }
   .progress-label { font-size: 14px; color: var(--muted); }
@@ -80,6 +81,9 @@
   .buy .price { font-weight: 600; color: var(--ink); }
   .alt { margin: 0; font-size: 13.5px; color: var(--muted); }
   .alt a { color: var(--muted); }
+  .used { margin: 2px 0 0; display: flex; gap: 8px; flex-wrap: wrap; }
+  .used a { font-size: 13.5px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line); color: var(--ink); text-decoration: none; background: #fff; }
+  .used a:hover { border-color: #cbbfae; }
   .item.claimed .thumb { opacity: .6; }
   @media (max-width: 380px) { .thumb { flex-basis: 64px; width: 64px; height: 64px; font-size: 30px; } }
   .tag { font-size: 13px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
@@ -138,6 +142,7 @@
   <header>
     <h1>🎁 Albie &amp; Avani's birthday list</h1>
     <p>Albie is turning 3 and Avani is turning 6. Here are some ideas if you're kindly getting them something. If you pick one, put your name against it so nobody else buys the same thing.</p>
+    <p class="hint">♻️ Second-hand is very welcome: Vinted, eBay and charity shops all count. It doesn't need to be the exact one shown; the links are just examples.</p>
     <div class="progress" aria-hidden="true"><span id="bar"></span></div>
     <div class="progress-label" id="count">Loading…</div>
   </header>
@@ -192,69 +197,67 @@ const API_URL = "https://script.google.com/macros/s/AKfycbx8Q8rtdUQR_h9fqmgeTj28
 
 // The list. Keep each id the same once people have started claiming, because
 // claims are stored against the id. for: "albie" (turning 3), "avani" (turning 6) or "" (either).
-// shop/price/url = where to buy (independent shop unless a big retailer was more than £1 cheaper).
-// alt = optional extra line (cheaper option, or a comparison link). Prices checked 14 Nov 2026.
+// example = one suggestion with where to buy it. alt = a cheaper option. q = Vinted/eBay search words.
+// Prices checked 14 Nov 2026.
 const AMZ = q => "https://www.amazon.co.uk/s?k=" + encodeURIComponent(q);
 const ITEMS = [
-  { id: "globe", name: "Globe 4 Kids (25cm)", for: "", emoji: "🌍",
-    desc: "A children's globe made in the UK, covered in over 400 little pictures of animals, monuments and landmarks, with country names and big cities. Aimed at ages 3–7.",
-    shop: "JustGlobes", price: "£60", url: "https://justglobes.co.uk/globe-4-kids-illuminated-1.html",
+  { id: "globe", name: "Globe of the world", for: "", emoji: "🌍", q: "kids globe",
+    desc: "Any child-friendly globe is great. Ones with animals and landmarks drawn on are extra fun.",
+    example: "Globe 4 Kids (made in the UK)", shop: "JustGlobes", price: "£60", url: "https://justglobes.co.uk/globe-4-kids-illuminated-1.html",
     img: "https://justglobes.co.uk/media/catalog/product/cache/756f081b623549a69100a859b511fd99/g/l/globe-4-kids-non-illuminated-1.jpg",
-    alt: { text: "Cheaper light-up option: Nova Rico animals globe, £40.99 at John Lewis", url: "https://www.johnlewis.com/nova-rico-25cm-illuminated-animals-childrens-globe-pink/p111577119" } },
-  { id: "twister", name: "Twister", for: "", emoji: "🌀",
-    desc: "The classic Hasbro game: spin, then left hand red… until someone falls over. Box says ages 6+, but little ones love joining in.",
-    shop: "Hoyle's of Oxford", price: "£24.95", url: "https://hoylesoxford.com/products/twister",
-    alt: { text: "Often cheaper on Amazon: check before buying", url: AMZ("Hasbro Twister game") } },
-  { id: "hubelino", name: "Hubelino marble run: 55-piece set", for: "", emoji: "🔵",
-    desc: "51 marble-run pieces and 4 marbles that click straight onto the Duplo bricks they already have, so the Duplo becomes the towers. Made in Germany. Ages 4+.",
-    shop: "Brickshop (ships from NL)", price: "€42.49 (~£37)", url: "https://brickshop.eu/hubelino/hubelino-run-elements-set-55-pcs",
-    img: "https://www.brickshop.eu/components/com_virtuemart/shop_image/product/HUBELINO_55_Deli_647f2290c7355.jpg",
-    alt: { text: "UK shop Fun Learning has it at £50 when in stock · compare on Amazon", url: AMZ("Hubelino 55 run elements 420473") } },
-  { id: "flextrack", name: "Toy2 Brio–Duplo track connectors", for: "", emoji: "🛤️",
-    desc: "Clever little connectors that let Brio (or IKEA) wooden track sit on top of Duplo bricks, so you can build bridges, ramps and layouts on two levels. This set has 33 connectors.",
-    shop: "2TTOYS (ships from NL)", price: "£37", url: "https://2ttoys.nl/ar-gb/products/toy2-allround-large-track-connectors",
-    alt: { text: "Compare on Amazon", url: AMZ("Toy2 track connectors Brio Duplo") } },
-  { id: "brio", name: "BRIO Steaming Train Set", for: "albie", emoji: "🚂",
-    desc: "A figure-of-8 wooden railway with a battery engine that puffs harmless cold-water steam, plus a tunnel, crossing and trees. 24 pieces, and it works with all other BRIO track. Ages 3+.",
-    shop: "Reactive Toys", price: "£59.99", url: "https://www.reactivetoys.co.uk/products/brio-steaming-train-set-36017",
+    alt: { text: "Cheaper: Toyrific 20cm kids' globe, £14.99 new on eBay", url: "https://ebay.co.uk/p/18034809291" } },
+  { id: "twister", name: "Twister", for: "", emoji: "🌀", q: "Twister game",
+    desc: "The classic game: spin, then left hand red… until someone falls over. Any version is fine, and second-hand is easy to find.",
+    example: "Twister", shop: "Hoyle's of Oxford", price: "£24.95", url: "https://hoylesoxford.com/products/twister",
+    alt: { text: "Often cheaper on Amazon", url: AMZ("Hasbro Twister game") } },
+  { id: "hubelino", name: "Hubelino marble run (fits Duplo)", for: "", emoji: "🔵", q: "Hubelino",
+    desc: "Marble-run pieces that click onto the Duplo bricks they already have, so the Duplo becomes the towers. Any Hubelino set works. Ages 4+.",
+    example: "Hubelino 55-piece set", shop: "Brickshop (ships from NL)", price: "€42.49 (~£37)", url: "https://brickshop.eu/hubelino/hubelino-run-elements-set-55-pcs",
+    img: "https://www.brickshop.eu/components/com_virtuemart/shop_image/product/HUBELINO_55_Deli_647f2290c7355.jpg" },
+  { id: "flextrack", name: "Brio–Duplo connector tracks", for: "", emoji: "🛤️", q: "Toy2 track connectors",
+    desc: "Connectors that let wooden Brio track sit on top of Duplo bricks, for bridges, ramps and layouts on two levels. Toy2 is the main brand.",
+    example: "Toy2 Allround Large (33 pieces)", shop: "2TTOYS (ships from NL)", price: "£37", url: "https://2ttoys.nl/ar-gb/products/toy2-allround-large-track-connectors",
+    alt: { text: "Smaller Toy2 sets are cheaper · compare on Amazon", url: AMZ("Toy2 track connectors Brio Duplo") } },
+  { id: "brio", name: "Brio train set with battery trains", for: "albie", emoji: "🚂", q: "Brio battery train",
+    desc: "Any Brio (or Brio-compatible) wooden track plus a battery engine. Second-hand Brio is plentiful and lasts forever. Ages 3+.",
+    example: "BRIO Steaming Train Set", shop: "Reactive Toys", price: "£59.99", url: "https://www.reactivetoys.co.uk/products/brio-steaming-train-set-36017",
     img: "https://www.reactivetoys.co.uk/cdn/shop/files/71Dk1QU2V6L._AC_SL1500_1200x972.jpg?v=1707491509",
-    alt: { text: "£75 at Argos and John Lewis" } },
-  { id: "chess", name: "Story Time Chess", for: "avani", emoji: "♟️",
-    desc: "Teaches chess through silly stories and mini-games, so you don't need to know chess to teach it. Great for a 6-year-old, and the double-sided board works for normal chess too.",
-    shop: "Hoyle's of Oxford", price: "£24.95", url: "https://hoylesoxford.com/products/story-time-chess",
+    alt: { text: "Or just a Brio battery engine to add to their track: about £17–25 new" } },
+  { id: "chess", name: "Chess set", for: "avani", emoji: "♟️", q: "kids chess set",
+    desc: "Any chess set will do. Story Time Chess is a lovely one for a 6-year-old: it teaches the moves through silly stories, so no grown-up chess skills are needed.",
+    example: "Story Time Chess", shop: "Hoyle's of Oxford", price: "£24.95", url: "https://hoylesoxford.com/products/story-time-chess",
     img: "https://hoylesoxford.com/cdn/shop/files/StoryTimeChess-box.jpg?v=1699197881" },
-  { id: "piano", name: "Piano", for: "avani", emoji: "🎹",
-    desc: "The specific piano Raj and Rosie picked out.",
-    shop: "Amazon", price: "", url: "https://amzn.eu/d/028phfFH" },
-  { id: "bikes", name: "New bikes", for: "", emoji: "🚲",
-    desc: "Avani will be 6 and Albie 3, so they need quite different sizes. Please check with Raj or Rosie before buying." },
-  { id: "spooner", name: "Spooner Freestyle Board", for: "", emoji: "🏄",
-    desc: "A curved plastic board that rocks, spins and slides. Like a skateboard or surfboard you can use indoors, and practically indestructible. Ages 3+.",
-    shop: "MessyPlay NI", price: "£48 + VAT", url: "https://messyplayni.co.uk/product/spooner-board-freestyle-board-blue/",
+  { id: "piano", name: "Piano", for: "avani", emoji: "🎹", q: "kids keyboard piano",
+    desc: "Raj and Rosie had this one in mind, but something similar is fine.",
+    example: "The one they picked", shop: "Amazon", price: "", url: "https://amzn.eu/d/028phfFH" },
+  { id: "bikes", name: "New bikes", for: "", emoji: "🚲", q: "kids bike",
+    desc: "Avani will be 6 and Albie 3, so they need quite different sizes. Please check with Raj or Rosie before buying. Second-hand is great." },
+  { id: "spooner", name: "Indoor balance board", for: "", emoji: "🏄", q: "Spooner board",
+    desc: "A curved board to rock, spin and 'surf' on indoors. A Spooner is what we had in mind, but any kids' curvy balance board is fine. Ages 3+.",
+    example: "Spooner Freestyle", shop: "MessyPlay NI", price: "£48 + VAT", url: "https://messyplayni.co.uk/product/spooner-board-freestyle-board-blue/",
     img: "https://messyplayni.co.uk/wp-content/uploads/2023/04/spooner-510x510-2.jpg",
-    alt: { text: "Compare on Amazon", url: AMZ("Spooner Freestyle board") } },
-  { id: "cones", name: "Stackable football cones", for: "albie", emoji: "⚽",
-    desc: "8 bright 23cm cones that stack together, with a drawstring bag. Good for dribbling practice and garden sports days. From age 3.",
-    shop: "Jaques of London", price: "£17.99", url: "https://jaqueslondon.co.uk/products/jaques-of-london-activity-cones-set-of-8",
-    img: "https://www.jaqueslondon.co.uk/cdn/shop/products/Activity-Cones-Spread-Out-80707.jpg?v=1630416279",
-    alt: { text: "Smaller budget option: Mitre mini cone set (4 cones), £5.95 at Live4Sport", url: "https://www.live4sport.co.uk/?p=18063" } },
-  { id: "sphero", name: "Sphero Mini robot", for: "", emoji: "🤖",
-    desc: "A robot the size of a ping-pong ball that you drive (and later code) from a phone or tablet. The box says 8+, but a 6-year-old will manage with a grown-up.",
-    shop: "Amazon", price: "~£50", url: AMZ("Sphero Mini"),
-    img: "https://cdn.pji.nu/product/standard/800/4559594.jpg",
-    alt: { text: "Independent robot shops charge about £65, so Amazon is the cheaper option here" } },
-  { id: "dumpling", name: "Squishy dumpling", for: "", emoji: "🥟",
-    desc: "A palm-sized Scrunchems Sugar Dumpling, filled with slow-squishing 'sugar' gel. Ages 3+.",
-    shop: "Home Education Resources", price: "£2", url: "https://home-education-resources.co.uk/?p=20493",
+    alt: { text: "Cheaper: AIYAPLAY curved balance board, £23.99 at Argos", url: "https://www.argos.co.uk/product/9xmhjkc3" } },
+  { id: "cones", name: "Small stackable football cones", for: "albie", emoji: "⚽", q: "mini football cones",
+    desc: "A few small cones for dribbling practice in the garden or park. Any will do.",
+    example: "Mitre mini cone set (4)", shop: "Live4Sport", price: "£5.95", url: "https://www.live4sport.co.uk/?p=18063",
+    alt: { text: "Nicer set of 8 with a bag: Jaques, £17.99", url: "https://jaqueslondon.co.uk/products/jaques-of-london-activity-cones-set-of-8" } },
+  { id: "sphero", name: "Sphero robot", for: "", emoji: "🤖", q: "Sphero Mini",
+    desc: "A ping-pong-ball-sized robot you drive (and later code) from a phone or tablet. The box says 8+, but a 6-year-old will manage with a grown-up. Works fine second-hand.",
+    example: "Sphero Mini", shop: "Amazon", price: "~£50", url: AMZ("Sphero Mini"),
+    img: "https://cdn.pji.nu/product/standard/800/4559594.jpg" },
+  { id: "dumpling", name: "Squishy dumpling", for: "", emoji: "🥟", q: "squishy dumpling",
+    desc: "A palm-sized squishy dumpling toy. Any brand. Ages 3+.",
+    example: "Scrunchems Sugar Dumpling", shop: "Home Education Resources", price: "£2", url: "https://home-education-resources.co.uk/?p=20493",
     img: "https://cdn.shopify.com/s/files/1/0649/0688/7411/files/Scrunchems-Sugar-Dumpling-Squishy.webp?v=1776449114" },
-  { id: "hoops", name: "Door-frame hanging rings (Gravity)", for: "avani", emoji: "🤸",
-    desc: "Gravity Fitness wooden gymnastic rings on adjustable straps. Pick the 28mm size for smaller hands. They hang from a doorway pull-up bar, which Gravity sells for £39.95 if needed.",
-    shop: "Gravity Fitness", price: "£37.95", url: "https://gravity.fitness/products/gravity-fitness-wooden-gymnastic-rings",
-    img: "https://gravity.fitness/cdn/shop/files/35-Gravity-Fitness-Wooden-Gymnastic-Rings_600x.webp?v=1780485847" },
-  { id: "skateboard", name: "Banwood skateboard", for: "albie", emoji: "🛹",
-    desc: "A small (52cm) maple cruiser with soft grip and soft wheels, made for little riders aged 3 and up.",
-    shop: "Folk Interiors", price: "£80", url: "https://folkinteriors.co.uk/products/banwood-skateboard-red",
-    alt: { text: "Same price at John Lewis, with more colours", url: "https://www.johnlewis.com/banwood-canadian-maple-skateboard/p111944143" } },
+  { id: "hoops", name: "Door-frame hanging rings", for: "avani", emoji: "🤸", q: "gymnastic rings",
+    desc: "Gymnastic rings to hang from a doorway pull-up bar. We had the Gravity brand in mind, but any sturdy kids' rings are fine. Smaller (28mm) grips suit small hands.",
+    example: "Gravity wooden rings", shop: "Gravity Fitness", price: "£37.95", url: "https://gravity.fitness/products/gravity-fitness-wooden-gymnastic-rings",
+    img: "https://gravity.fitness/cdn/shop/files/35-Gravity-Fitness-Wooden-Gymnastic-Rings_600x.webp?v=1780485847",
+    alt: { text: "Gym rings often go for £10–25 on Vinted", url: "https://www.vinted.co.uk/catalog?search_text=gymnastic%20rings" } },
+  { id: "skateboard", name: "Skateboard for a 3-year-old", for: "albie", emoji: "🛹", q: "kids skateboard",
+    desc: "A small, stable board for a beginner. Avoid the really tiny 17-inch ones, which are too small to stand on properly.",
+    example: "Banwood skateboard", shop: "Folk Interiors", price: "£80", url: "https://folkinteriors.co.uk/products/banwood-skateboard-red",
+    alt: { text: "Cheaper: Xootz 24-inch skateboard (ages 3–10), £20 at The Entertainer", url: "https://thetoyshop.com/outdoor-toys/skateboards/Xootz-Skateboard-24-inch-Bright-Swirl/p/549994" } },
 ];
 // ---------------------------------------------------------------------------
 
@@ -391,8 +394,14 @@ function render() {
     }
     const ext = { target: "_blank", rel: "noopener noreferrer" };
     const buy = item.url ? el("p", { class: "buy" },
-      el("a", { href: item.url, ...ext }, `Buy at ${item.shop || "shop"} ↗`),
+      item.example ? "e.g. " : null,
+      el("a", { href: item.url, ...ext }, item.example ? `${item.example}, ${item.shop} ↗` : `Buy at ${item.shop || "shop"} ↗`),
       item.price ? [" · ", el("span", { class: "price" }, item.price)] : null
+    ) : null;
+    const q = item.q || (item.example ? null : item.name);
+    const used = q ? el("p", { class: "used" },
+      el("a", { href: "https://www.vinted.co.uk/catalog?search_text=" + encodeURIComponent(q), ...ext }, "Vinted ↗"),
+      el("a", { href: "https://www.ebay.co.uk/sch/i.html?_nkw=" + encodeURIComponent(q), ...ext }, "eBay ↗")
     ) : null;
     const alt = item.alt ? el("p", { class: "alt" },
       item.alt.url ? el("a", { href: item.alt.url, ...ext }, item.alt.text) : item.alt.text
@@ -406,7 +415,7 @@ function render() {
           item.for ? el("span", { class: "tag " + item.for }, KIDS[item.for]) : null
         ),
         item.desc ? el("p", { class: "desc" }, item.desc) : null,
-        note, buy, alt
+        note, buy, alt, used
       )
     );
 
